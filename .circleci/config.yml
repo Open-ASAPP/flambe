@@ -6,7 +6,7 @@ jobs:
       steps:
         - checkout
         - run: pip install --user tox
-        - run: aws configure --region us-east-1
+        - run: python3 -m awscli configure set region us-east-1
         - run: python3 -m tox -- -m "not end2end"
 workflows:
   version: 2

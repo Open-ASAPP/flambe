@@ -21,10 +21,8 @@ def _reduce_iterations(d):
 
 
 def _preprocess_experiment(fname, save_path):
-    print(fname)
     content = list(yaml.load_all(open(fname)))
     experiment = content[-1]
-    print(isinstance(experiment, Experiment))
     if isinstance(experiment, Experiment):
         experiment.set_serializable_attr("save_path", save_path)
         _reduce_iterations(experiment.pipeline)

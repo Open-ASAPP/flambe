@@ -6,7 +6,8 @@ jobs:
       steps:
         - checkout
         - run: pip install --user tox
-        - run: python3 -m tox -- -k "not test_examples_experiment" -v 
+        - run: aws configure --region us-east-1
+        - run: python3 -m tox -- -m "not end2end"
 workflows:
   version: 2
   build:

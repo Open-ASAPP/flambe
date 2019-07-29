@@ -33,13 +33,13 @@ def ec2_mock():
 # Create a mock subnet_id
 @pytest.fixture
 def subnet():
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
     vpc = ec2.create_vpc(CidrBlock='192.168.0.0/16')
     yield ec2.create_subnet(CidrBlock='192.168.0.0/16', VpcId=vpc.id)
 
 @pytest.fixture
 def sec_group(subnet):
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
     return ec2.create_security_group(GroupName='slice_0', Description='slice_0 sec group', VpcId=subnet.vpc.id)
 
 
@@ -113,7 +113,7 @@ def test_secrets(get_cluster, get_secrets):
 
 
 def test_launch_orchestrator(subnet, sec_group, get_cluster):
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     cluster = get_cluster(
         name='cluster_name',
@@ -164,7 +164,7 @@ def test_launch_orchestrator(subnet, sec_group, get_cluster):
 
 
 def test_existing_orch(get_cluster):
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     cluster = get_cluster()
 
@@ -185,7 +185,7 @@ def test_existing_orch(get_cluster):
 
 
 def test_existing_orch2(get_cluster):
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     # Existing clusters are evaluated based on creator
     # and name
@@ -220,7 +220,7 @@ def test_existing_orch2(get_cluster):
 
 
 def test_existing_multiple_orchs(get_cluster):
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     # Existing clusters are evaluated based on creator
     # and name
@@ -241,7 +241,7 @@ def test_existing_multiple_orchs(get_cluster):
 def test_launch_factories(mock_wait, mock_contains_gpu, subnet, sec_group, get_cluster):
     mock_contains_gpu.return_value = True
 
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     cluster = get_cluster(
         name='cluster_name',
@@ -295,7 +295,7 @@ def test_launch_factories(mock_wait, mock_contains_gpu, subnet, sec_group, get_c
 def test_launch_gpu_factories(mock_wait, mock_contains_gpu, create_cluster):
     mock_contains_gpu.return_value = True
 
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
     cluster = create_cluster()
 
     instances = list(ec2.instances.all())
@@ -311,7 +311,7 @@ def test_launch_gpu_factories(mock_wait, mock_contains_gpu, create_cluster):
 def test_launch_cpu_factories(mock_wait, mock_contains_gpu, create_cluster):
     mock_contains_gpu.return_value = False
 
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
     cluster = create_cluster()
 
     instances = list(ec2.instances.all())
@@ -326,7 +326,7 @@ def test_launch_cpu_factories(mock_wait, mock_contains_gpu, create_cluster):
 @mock.patch('flambe.cluster.instance.instance.Instance.wait_until_accessible')
 def test_existing_factories(mock_wait, mock_contains_gpu, get_cluster):
     mock_contains_gpu.return_value = False
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     cluster = get_cluster(factories_num=1)
 
@@ -349,7 +349,7 @@ def test_existing_factories(mock_wait, mock_contains_gpu, get_cluster):
 @mock.patch('flambe.cluster.instance.instance.Instance.wait_until_accessible')
 def test_tags(mock_wait, mock_contains_gpu, create_cluster):
     mock_contains_gpu.return_value = True
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     cluster = create_cluster(
         tags={
@@ -375,7 +375,7 @@ def test_tags(mock_wait, mock_contains_gpu, create_cluster):
 @mock.patch('flambe.cluster.instance.instance.Instance.wait_until_accessible')
 def test_instances_lifecycle(mock_wait, mock_contains_gpu, create_cluster):
     mock_contains_gpu.return_value = True
-    ec2 = boto3.resource('ec2', region_name='us-east-1')
+    ec2 = boto3.resource('ec2')
 
     cluster = create_cluster()
 

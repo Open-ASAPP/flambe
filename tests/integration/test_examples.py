@@ -25,6 +25,7 @@ def _preprocess_experiment(fname, save_path):
     experiment = content[-1]
     if isinstance(experiment, Experiment):
         experiment.set_serializable_attr("save_path", save_path)
+        experiment.set_serializable_attr("devices", {"cpu": 2, "gpu": 0})
         _reduce_iterations(experiment.pipeline)
         return content
 

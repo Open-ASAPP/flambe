@@ -146,3 +146,7 @@ pre span {
 .rst-content .warning {
     background: #ffefef;
 }
+
+.wy-side-nav-search>div.version {
+    color: rgba(0, 0, 0, 0.79);
+}

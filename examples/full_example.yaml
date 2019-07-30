@@ -7,7 +7,7 @@ pipeline: # Define the list of components to execute
     dataset: !SSTDataset # dataset is an argument to Trainer.__init__
       transform: # Similarly, transform is an argument to the SSTDataset.__init__
         text: !TextField # Fields produce columns, this particular Textfield produces a single one
-          embeddings: glove-twitter-100 # note the native support for gensim embedddings
+          embeddings: glove-twitter-200 # note the native support for gensim embedddings
           embeddings_format: gensim
         label: !LabelField
     train_sampler: !BaseSampler
@@ -19,12 +19,14 @@ pipeline: # Define the list of components to execute
         embedding: !Embeddings.from_pretrained
           embeddings: !@ 1_train.dataset.text.embedding_matrix # Link over attributes of previously defined objects
           freeze: True
+        embedding_dropout: 0.3
         encoder: !PooledRNNEncoder
           input_size: !@ 1_train.model.embedder.embedding.embedding_dim 
           rnn_type: lstm
           n_layers: !g [2, 3, 4]  # Grid search over the number of layers
           hidden_size: 256
           pooling: last
+          dropout: 0.3
       output_layer: !SoftmaxLayer
         input_size: !@ 1_train.model.embedder.encoder.rnn.hidden_size 
         output_size: !@ 1_train.dataset.label.vocab_size

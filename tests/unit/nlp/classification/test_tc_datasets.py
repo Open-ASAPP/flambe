@@ -3,13 +3,13 @@ from flambe.nlp.classification import SSTDataset, TRECDataset, NewsGroupDataset
 
 def test_dataset_sst():
     dataset = SSTDataset()
-    assert len(dataset.train) == 8544
+    assert len(dataset.train) == 6920 
     assert len(dataset.train[0]) == 2
 
-    assert len(dataset.val) == 1101
+    assert len(dataset.val) == 872
     assert len(dataset.val[0]) == 2
 
-    assert len(dataset.test) == 2210
+    assert len(dataset.test) == 1821
     assert len(dataset.test[0]) == 2
 
 

@@ -43,9 +43,8 @@ Getting started
 Define an ``Experiment``:
 
 .. code-block:: yaml
-
     !Experiment
-    
+
     name: sst-text-classification
 
     pipeline:
@@ -59,14 +58,16 @@ Define an ``Experiment``:
       # Stage 1 - Define a model
       model: !TextClassifier
           embedder: !Embedder
-            embedding: !Embeddings
-              num_embeddings: !@ dataset.text.vocab_size  # Link to previously defined attributes
+            embedding: !torch.Embedding  # automatically use pytorch classes
+              num_embeddings: !@ dataset.text.vocab_size
               embedding_dim: 300
+            embedding_dropout: 0.3
             encoder: !PooledRNNEncoder
               input_size: 300
-              n_layers: !g [2, 3, 4]  # Grid search over hyperparameters!
-              hidden_size: 256
-              rnn_type: lstm
+              n_layers: !g [2, 3, 4]
+              hidden_size: 128
+              rnn_type: sru
+              dropout: 0.3
           output_layer: !SoftmaxLayer
               input_size: !@ model.embedder.encoder.rnn.hidden_size
               output_size: !@ dataset.label.vocab_size
@@ -81,9 +82,8 @@ Define an ``Experiment``:
         metric_fn: !Accuracy
         optimizer: !torch.Adam
           params: !@ train.model.trainable_params
-        max_steps: 200
-        iter_per_step: 500
-        
+        max_steps: 10
+        iter_per_step: 100
 
       # Stage 3 - Eval on the test set
       eval: !Evaluator
@@ -96,9 +96,6 @@ Define an ``Experiment``:
     schedulers:
       train: !tune.HyperBandScheduler
 
-    # Reduce to the best N variants (the best one in this case)
-    reduce:
-      train: 1
 
 Now just execute:
 
@@ -106,7 +103,7 @@ Now just execute:
 
     flambe example.yaml 
 
-Note that defining objects like model and dataset ahead of time is optional; it's usefull if you want to reference the same model architecture multiple times later in the pipeline.
+Note that defining objects like model and dataset ahead of time is optional; it's useful if you want to reference the same model architecture multiple times later in the pipeline.
 
 Progress can be monitored via the Report Site (with full integration with Tensorboard):
 

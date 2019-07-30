@@ -76,6 +76,12 @@ The experiment can be executed by running:
 
     flambe experiment.yaml
 
+.. tip::
+    All objects in the ``pipeline`` are subclasses of :class:`~flambe.compile.Component`, which
+    are automatically registered to be used with YAML. Custom :class:`~flambe.compile.Component`
+    implementations must implement :meth:`~flambe.compile.Compile.run` to add custom
+    behavior when being executed.
+
 By defining a cluster:
 
 .. code-block:: yaml

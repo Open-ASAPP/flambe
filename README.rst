@@ -52,6 +52,7 @@ Getting started
 Define an ``Experiment``:
 
 .. code-block:: yaml
+
     !Experiment
 
     name: sst-text-classification
@@ -105,6 +106,9 @@ Define an ``Experiment``:
     schedulers:
       train: !tune.HyperBandScheduler
 
+All objects in the ``pipeline`` are subclasses of ``Component``, which
+are automatically registered to be used with YAML. Custom ``Component``
+implementations must implement ``run`` to add custom behavior when being executed.
 
 Now just execute:
 

@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
       docker:
-        - image: ubuntu:19.04
+        - image: python:3.6
       steps:
         - checkout
         - run: python3 -m pip install --user tox awscli

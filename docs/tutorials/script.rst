@@ -47,7 +47,7 @@ Your setup should contain all of the external library requirements, used by your
 Once this is done, you should make an attempt at running your script using the ``-m`` argument,
 which will treat ``train.py`` as an executable module. You can do so by running:
 
-.. code:: bash
+.. code-block:: bash
 
     python -m my_project.train --arg1 value1 --arg2 value2
 
@@ -80,11 +80,11 @@ Once you have done the above step, you can use your script in Flambé as follows
 
 That's it! You can now execute this configuration file, with the regular command:
 
-.. code:: bash
+.. code-block:: bash
     flambe config.yaml --cluster cluster.yaml
 
 In order to see tensorboard logs, simply import the logger, and use it anywhere in your script:
 
-.. code:: bash
+.. code-block:: bash
     from flambe import log
 

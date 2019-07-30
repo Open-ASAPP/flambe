@@ -133,7 +133,7 @@ running with Flambé in just a few minutes!
 
 
 .. toctree::
-   :maxdepth: 2
+   :titlesonly:
    :hidden:
    :caption: Tutorials
 
@@ -142,25 +142,25 @@ running with Flambé in just a few minutes!
    tutorials/multistage
 
 .. toctree::
-   :maxdepth: 2
+   :titlesonly:
    :hidden:
    :caption: Package Reference
 
-   source/flambe.cluster
-   source/flambe.compile
-   source/flambe.dataset
-   source/flambe.experiment
-   source/flambe.export
-   source/flambe.field
-   source/flambe.learn
-   source/flambe.logging
-   source/flambe.metric
-   source/flambe.model
-   source/flambe.nlp
-   source/flambe.nn
-   source/flambe.runnable
-   source/flambe.runner
-   source/flambe.sampler
-   source/flambe.tokenizer
-   source/flambe.vision
-
+   autoapi/flambe/dataset/index
+   autoapi/flambe/cluster/index
+   autoapi/flambe/compile/index
+   autoapi/flambe/dataset/index
+   autoapi/flambe/experiment/index
+   autoapi/flambe/export/index
+   autoapi/flambe/field/index
+   autoapi/flambe/learn/index
+   autoapi/flambe/logging/index
+   autoapi/flambe/metric/index
+   autoapi/flambe/model/index
+   autoapi/flambe/nlp/index
+   autoapi/flambe/nn/index
+   autoapi/flambe/runnable/index
+   autoapi/flambe/runner/index
+   autoapi/flambe/sampler/index
+   autoapi/flambe/tokenizer/index
+   autoapi/flambe/vision/index

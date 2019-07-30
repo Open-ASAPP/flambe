@@ -46,7 +46,13 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx_autodoc_typehints',
               'sphinx.ext.coverage',
               'sphinx.ext.viewcode',
-              'sphinx.ext.githubpages']
+              'sphinx.ext.githubpages',
+              'autoapi.extension']
+
+
+autoapi_dirs = ['../flambe']
+autoapi_add_toctree_entry = False
+# autoapi_generate_api_docs = False
 
 
 # Add any paths that contain templates here, relative to this directory.

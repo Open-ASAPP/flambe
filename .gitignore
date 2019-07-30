@@ -2,6 +2,9 @@
 # Created by https://www.gitignore.io/api/vim,linux,macos,python,pycharm,virtualenv,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=vim,linux,macos,python,pycharm,virtualenv,visualstudiocode
 
+### tox ###
+.tox/*
+
 ### Linux ###
 *~
 

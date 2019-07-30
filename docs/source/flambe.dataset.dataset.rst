@@ -1,5 +1,3 @@
-.. _dataset_interface:
-
 flambe.dataset.dataset module
 =============================
 

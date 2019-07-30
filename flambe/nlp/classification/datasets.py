@@ -10,7 +10,7 @@ class SSTDataset(TabularDataset):
     URL = "https://raw.githubusercontent.com/harvardnlp/sent-conv-torch/master/data/"
 
     def __init__(self,
-                 binary: bool = False,
+                 binary: bool = True,
                  phrases: bool = False,
                  cache: bool = True,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
@@ -19,9 +19,10 @@ class SSTDataset(TabularDataset):
         Parameters
         ----------
         binary: bool
-            Set to true to train and evaluate in binary mode
+            Set to true to train and evaluate in binary mode.
+            Defaults to True.
         phrases: bool
-            Set to true to train on phrases
+            Set to true to train on phrases. Defaults to False.
 
         """
         binary_str = 'binary' if binary else 'fine'

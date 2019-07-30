@@ -10,6 +10,15 @@
 
 |
 
+.. image:: https://circleci.com/gh/Open-ASAPP/flambe.svg?style=svg
+    :target: https://circleci.com/gh/Open-ASAPP/flambe
+
+.. image:: https://readthedocs.org/projects/flambe/badge/?version=latest
+    :target: https://flambe.ai/en/latest/?badge=latest
+    :alt: Documentation Status
+
+|
+
 Welcome to Flambé, a `PyTorch <https://pytorch.org/>`_-based library that allows users to:
 
 * Run complex experiments with **multiple training and processing stages**
@@ -32,7 +41,7 @@ Installation
 
 .. code-block:: bash
 
-    git clone git@github.com:.../flambe.git
+    git clone git@github.com:Open-ASAPP/flambe.git
     cd flambe
     pip install .
     

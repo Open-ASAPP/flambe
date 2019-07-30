@@ -23,7 +23,7 @@ For the lastest version you can install from source:
 
 .. code:: bash
 
-    git clone git@github.com:.../flambe.git
+    git clone git@github.com:Open-ASAPP/flambe.git
     cd flambe
     pip install .
 

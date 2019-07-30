@@ -1133,7 +1133,7 @@ class OrchestratorInstance(Instance):
         cmd = (
             f"tmux new-session -d -s 'flambe' " +
             f"'bash -lc \"flambe {config_file} -i --secrets {secrets_file} " +
-            f"{force_params} --verbose &> output.log\"'"
+            f"{force_params} &> output.log\"'"
         )
 
         ret = self._run_cmd(cmd)

@@ -6,16 +6,16 @@
 
 |
 
-.. image:: https://circleci.com/gh/Open-ASAPP/flambe.svg?style=svg
-    :target: https://circleci.com/gh/Open-ASAPP/flambe
+------------
 
 |
+
+.. image:: https://circleci.com/gh/Open-ASAPP/flambe.svg?style=svg
+    :target: https://circleci.com/gh/Open-ASAPP/flambe
 
 .. image:: https://readthedocs.org/projects/flambe/badge/?version=latest
     :target: https://flambe.ai/en/latest/?badge=latest
     :alt: Documentation Status
-
-------------
 
 |
 

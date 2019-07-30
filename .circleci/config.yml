@@ -2,10 +2,10 @@ version: 2
 jobs:
   test:
       docker:
-        - image: circleci/python:3.6
+        - image: ubuntu:19.04
       steps:
         - checkout
-        - run: pip install --user tox awscli
+        - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run: python3 -m tox -- -k "not test_examples_experiments" -v
 workflows:

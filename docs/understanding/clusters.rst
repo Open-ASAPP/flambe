@@ -60,6 +60,35 @@ flambé with the YAML config as an argument:
 
 .. _understanding-clusters-submit_label:
 
+Setting the cluster up
+----------------------
+
+All implementations of :class:`~flambe.cluster.Cluster` support setting :attr:`~flambe.cluster.Cluster.setup_cmds`,
+which are a list of ``bash`` commands that will run on all instances after creating the cluster:
+
+.. code-block:: yaml
+
+    !XXXCluster
+
+    name: my_cluster
+
+    ...
+
+    setup_cmds:
+      - sshfs user@host:/path/to/remote /path/to/local/mount/point  # Mount a remote filesystem
+      - pip config set index_url https://my-custom-pypi.com  # Configure PyPI
+
+Note that all commands will run sequentially in all the hosts of the cluster.
+
+.. tip::
+    This could be useful for mounting volumes, configuring tools or install binaries.
+
+.. attention::
+    If you need more complex setup you can also create your own base images for the hosts.
+    :class:`~flambe.cluster.AWSCluster` supports specifying `AMIs <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html>`_
+    for both the Orchestrator and factories.
+
+
 Submitting Jobs to a Cluster
 ----------------------------
 

@@ -3,7 +3,7 @@ SOCKET_TIMEOUT = 50
 
 # SSH connection settings
 RETRY_DELAY = 1
-RETRIES = 30
+RETRIES = 5
 
 TENSORBOARD_IMAGE = "tensorflow/tensorflow:latest"
 

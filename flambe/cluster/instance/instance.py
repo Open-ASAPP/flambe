@@ -187,6 +187,7 @@ class Instance(object):
 
         """
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(const.RETRY_DELAY)
         result = sock.connect_ex((self.host if self.use_public else self.private_host, 22))
         return result == 0
 

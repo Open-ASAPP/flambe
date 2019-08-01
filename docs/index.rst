@@ -152,6 +152,7 @@ running with Flambé in just a few minutes!
    tutorials/script
    tutorials/custom
    tutorials/multistage
+   tutorials/ssh_cluster
 
 .. toctree::
    :titlesonly:

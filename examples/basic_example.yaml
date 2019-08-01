@@ -1,35 +1,52 @@
 !Experiment
 
 name: sst-text-classification
+
 pipeline:
 
-  # stage 0 - Load the SSTDataset and run preprocessing
-  0_dataset: !SSTDataset
-    transform:
+  # stage 0 - Load the Stanford Sentiment Treebank dataset and run preprocessing
+  dataset: !SSTDataset # this is a simple Python object, and the arguments to build it
+    transform: # these arguments are passed to the init method
       text: !TextField
       label: !LabelField
 
-  # stage 1 - train the text classifier
-  1_train: !Trainer
-    dataset: !@ 0_dataset  # link back to the existing dataset
-    train_sampler: !BaseSampler  # define a way of sampling dataset
-    val_sampler: !BaseSampler
-    model: !TextClassifier
+  # Stage 1 - Define a model
+  model: !TextClassifier
       embedder: !Embedder
         embedding: !torch.Embedding  # automatically use pytorch classes
-          num_embeddings: !@ 1_train.dataset.text.vocab_size
+          num_embeddings: !@ dataset.text.vocab_size # link to other components, and attributes
           embedding_dim: 300
+        embedding_dropout: 0.3
         encoder: !PooledRNNEncoder
           input_size: 300
-          rnn_type: lstm
-          n_layers: !g [2, 3, 4]  # Grid search over hyperparameters!
-          hidden_size: 256
+          n_layers: !g [2, 3, 4] # grid search over any parameters
+          hidden_size: 128
+          rnn_type: sru
+          dropout: 0.3
       output_layer: !SoftmaxLayer
-        input_size: !@ 1_train.model.embedder.encoder.rnn.hidden_size
-        output_size: !@ 1_train.label.vocab_size
-    loss_fn: !torch.NLLLoss  # Use existing PyTorch negative log likelihood
-    metric_fn: !Accuracy  # Used for validation set evaluation
+          input_size: !@ model.embedder.encoder.rnn.hidden_size # also use inner-links
+          output_size: !@ dataset.label.vocab_size
+
+  # Stage 2 - Train the model on the dataset
+  train: !Trainer
+    dataset: !@ dataset
+    model: !@ model
+    train_sampler: !BaseSampler
+    val_sampler: !BaseSampler
+    loss_fn: !torch.NLLLoss
+    metric_fn: !Accuracy
     optimizer: !torch.Adam
-      params: !@ 1_train.model.trainable_params  # Link to model's parameters
-    max_steps: 20  # Each step runs `iter_per_step` iterations
-    iter_per_step: 50  # Eval and checkpoint every 50 iterations
+      params: !@ train.model.trainable_params
+    max_steps: 100
+    iter_per_step: 100
+
+  # Stage 3 - Eval on the test set
+  eval: !Evaluator
+    dataset: !@ dataset
+    model: !@ train.model
+    metric_fn: !Accuracy
+    eval_sampler: !BaseSampler
+
+# Define how to schedule variants
+schedulers:
+  train: !tune.HyperBandScheduler

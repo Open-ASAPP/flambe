@@ -60,8 +60,8 @@ Define an ``Experiment``:
     pipeline:
 
       # stage 0 - Load the Stanford Sentiment Treebank dataset and run preprocessing
-      dataset: !SSTDataset
-        transform:
+      dataset: !SSTDataset # this is a simple Python object, and the arguments to build it
+        transform: # these arguments are passed to the init method
           text: !TextField
           label: !LabelField
 
@@ -69,17 +69,17 @@ Define an ``Experiment``:
       model: !TextClassifier
           embedder: !Embedder
             embedding: !torch.Embedding  # automatically use pytorch classes
-              num_embeddings: !@ dataset.text.vocab_size
+              num_embeddings: !@ dataset.text.vocab_size # link to other components, and attributes
               embedding_dim: 300
             embedding_dropout: 0.3
             encoder: !PooledRNNEncoder
               input_size: 300
-              n_layers: !g [2, 3, 4]
+              n_layers: !g [2, 3, 4] # grid search over any parameters
               hidden_size: 128
               rnn_type: sru
               dropout: 0.3
           output_layer: !SoftmaxLayer
-              input_size: !@ model.embedder.encoder.rnn.hidden_size
+              input_size: !@ model.embedder.encoder.rnn.hidden_size # also use inner-links
               output_size: !@ dataset.label.vocab_size
 
       # Stage 2 - Train the model on the dataset
@@ -92,7 +92,7 @@ Define an ``Experiment``:
         metric_fn: !Accuracy
         optimizer: !torch.Adam
           params: !@ train.model.trainable_params
-        max_steps: 10
+        max_steps: 100
         iter_per_step: 100
 
       # Stage 3 - Eval on the test set

@@ -18,6 +18,7 @@ Setting up your AWS account
     * Have a key pair to access instances.
     * Create instances with automatic public IPs.
     * Connect through SSH from the outside world.
+    * Have the security credentials and configuration files locally.
 
     If any of this requirements is not met, please review the following steps.
 
@@ -76,6 +77,66 @@ Create a key pair and notice that a **.pem** file will be downloaded:
 
         chmod 400 /path/to/my-pair.pem
 
+Create security credentials
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. important::
+    If you already have security credentials, feel free to skip this section.
+
+Security credentials are a way of authentication additionally to user/password information.
+For more information about this, go `here <https://docs.aws.amazon.com/general/latest/gr/aws-security-credentials.html>`_
+
+In order to create the Security Credentials, go to the right top section that contains your name. Press on **My Security Credentials**:
+
+.. image:: ../image/aws-cluster/access-keys.png
+    :width: 100%
+    :name: report-site
+    :align: center
+
+Go to **Access Keys** and click **Create New Access Key**.
+
+When creating them, you should see something like:
+
+.. image:: ../image/aws-cluster/download-keys.png
+    :width: 100%
+    :name: report-site
+    :align: center
+
+.. important::
+    Download the file and make sure you save it in a safe location. **Note that you won't be able to access this information
+    again from the console**.
+
+**Basic local configuration**
+
+Having access now to your ``AWS_ACCESS_KEY_ID`` and ``AWS_SECRET_ACCESS_KEY``, you will need to configure 2 configuration files:
+
+.. code-block::
+    :caption: ~/.aws/config
+
+    [default]
+    region=us-east-1
+    output=json
+
+.. code-block::
+    :caption: ~/.aws/credentials
+
+    [default]
+    aws_access_key_id = XXXXXXXXXXXXXXXXXXX
+    aws_secret_access_key = XXXXXXXXXXXXXXXXXXXXXXXXXX
+
+.. tip::
+    This is an initial and basic configuration. More information `here <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html>`_.
+
+.. important::
+    At this point, you should have full access to AWS from your local computer through the Security Credentials. This snippet should
+    run without raising errors:
+
+    .. code-block:: python
+        :linenos:
+
+        import boto3
+        sess = boto3.Session()
+        sess.client("ec2").describe_instances()  # This may return no content if you have no instances
 
 Create VPC and Subnet
 ~~~~~~~~~~~~~~~~~~~~~

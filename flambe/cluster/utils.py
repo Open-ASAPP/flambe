@@ -25,8 +25,7 @@ def _get_images():
 
     """
     client = boto3.client('ec2')
-    return client.describe_images(Owners=[const.AWS_FLAMBE_ACCOUNT],
-                                  Filters=[{'Name': 'tag:Creator', 'Values': ['flambe@asapp.com']}])
+    return client.describe_images(Owners=[const.AWS_FLAMBE_ACCOUNT])
 
 
 def _get_matching_ami(_type: str, version: str, default: bool = True) -> Optional[str]:
@@ -60,7 +59,7 @@ def _get_matching_ami(_type: str, version: str, default: bool = True) -> Optiona
     return ami
 
 
-def _get_ami(_type: str, version: str):
+def _get_ami(_type: str, version: str) -> Optional[str]:
     """Given a type and a version, get the correct Flambe AMI.
 
     Parameters
@@ -78,16 +77,10 @@ def _get_ami(_type: str, version: str):
     """
     images = _get_images()
     for i in images['Images']:
-        match_type, match_version = False, False
-        if 'Tags' in i:
-            tags = i['Tags']
-            for t in tags:
-                if t['Key'] == "Type" and t['Value'] == _type:
-                    match_type = True
-                if t['Key'] == "Version" and t['Value'] == version:
-                    match_version = True
-            if match_type and match_version:
-                return i['ImageId']
+        # Name is for example 'flambe-orchestrator 0.0.0'
+        n, v = i['Name'].split()
+        if n == f"flambe-{_type.lower()}-ami" and v == version:
+            return i['ImageId']
 
     return None
 

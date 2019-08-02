@@ -473,9 +473,6 @@ class AWSCluster(Cluster):
                 }
             }
         ]
-        iam = {
-            'Name': 'Flambe_Orchestrator'
-        }
         tags_param = [
             {
                 'ResourceType': 'instance',
@@ -496,7 +493,6 @@ class AWSCluster(Cluster):
             InstanceType=instance_type,
             KeyName=self.key_name,
             SecurityGroupIds=[self.security_group],
-            IamInstanceProfile=iam,
             MaxCount=number, MinCount=1, SubnetId=self.subnet_id,
             BlockDeviceMappings=bdm, TagSpecifications=tags_param, Placement=placement,
             EbsOptimized=True)

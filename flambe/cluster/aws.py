@@ -56,6 +56,10 @@ class AWSCluster(Cluster):
     key: str
         The path to the ssh key used to communicate to all instances.
         IMPORTANT: all instances must be accessible with the same key.
+    region_name: str
+        The region name to use. If not specified, it uses the locally
+        configured region name or 'us-east-1' in case it's not
+        configured.
     username: str
         The username of the instances the cluster will handle. Defaults
         to 'ubuntu'.
@@ -111,6 +115,7 @@ class AWSCluster(Cluster):
                  subnet_id: str,
                  creator: str,
                  key: str,
+                 region_name: str = None,
                  username: str = "ubuntu",
                  tags: Dict[str, str] = None,
                  orchestrator_ami: str = None,
@@ -125,7 +130,11 @@ class AWSCluster(Cluster):
         self.factories_type = factories_type
         self.orchestrator_type = orchestrator_type
 
-        self._load_boto_apis()
+        self.sess = self._get_boto_session(region_name)
+
+        self.ec2_resource = self.sess.resource('ec2')
+        self.ec2_cli = self.sess.client('ec2')
+        self.cloudwatch = self.sess.client('cloudwatch')
 
         self.factory_ami = factory_ami
         self.orchestrator_ami = orchestrator_ami
@@ -146,15 +155,24 @@ class AWSCluster(Cluster):
 
         self.created_instances_ids: List[str] = []
 
-    def _load_boto_apis(self) -> None:
-        """Load the ec2 and cloudwatch apis.
+    def _get_boto_session(self, region_name) -> boto3.Session:
+        """Get the boto3 Session from which the resources
+        and clients will be created.
 
         This method is called by the contructor.
 
+        Parameters
+        ----------
+        region_name: str
+            The region to use.
+
+        Returns
+        -------
+        boto3.Session
+            The boto3 Session to use
+
         """
-        self.ec2_resource = boto3.resource('ec2')
-        self.ec2_cli = boto3.client('ec2')
-        self.cloudwatch = boto3.client('cloudwatch')
+        return boto3.Session(region_name=region_name)
 
     def load_all_instances(self) -> None:
         """Launch all instances for the experiment.
@@ -199,16 +217,22 @@ class AWSCluster(Cluster):
             elif pending_new_factories < 0:
                 logger.info(cl.BL(f"Reusing existing {len(boto_factories)} factories."))
 
-            if future_orch:
-                self.orchestrator = future_orch.result()
-                logger.info(cl.BL(f"New orchestrator created {self.orchestrator.host}"))
+            try:
+                if future_orch:
+                    self.orchestrator = future_orch.result()
+                    logger.info(cl.BL(f"New orchestrator created {self.orchestrator.host}"))
 
-            if future_factories:
-                new_factories = future_factories.result()
-                self.factories.extend(new_factories)
-                logger.info(cl.BL(
-                    f"{pending_new_factories} factories {self.factories_type} created " +
-                    f"({str([f.host for f in new_factories])})."))
+                if future_factories:
+                    new_factories = future_factories.result()
+                    self.factories.extend(new_factories)
+                    logger.info(cl.BL(
+                        f"{pending_new_factories} factories {self.factories_type} created " +
+                        f"({str([f.host for f in new_factories])})."))
+            except botocore.exceptions.ClientError as e:
+                raise errors.ClusterError(
+                    "Error creating the instances. Check that the provided configuration " +
+                    f" is correct. Original error: {e}"
+                )
 
         self.name_hosts()
         self.update_tags()

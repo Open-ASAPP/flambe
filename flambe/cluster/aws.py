@@ -56,7 +56,7 @@ class AWSCluster(Cluster):
     key: str
         The path to the ssh key used to communicate to all instances.
         IMPORTANT: all instances must be accessible with the same key.
-    region_name: str
+    region_name: Optional[str]
         The region name to use. If not specified, it uses the locally
         configured region name or 'us-east-1' in case it's not
         configured.
@@ -115,7 +115,7 @@ class AWSCluster(Cluster):
                  subnet_id: str,
                  creator: str,
                  key: str,
-                 region_name: str = None,
+                 region_name: Optional[str] = None,
                  username: str = "ubuntu",
                  tags: Dict[str, str] = None,
                  orchestrator_ami: str = None,
@@ -155,7 +155,7 @@ class AWSCluster(Cluster):
 
         self.created_instances_ids: List[str] = []
 
-    def _get_boto_session(self, region_name) -> boto3.Session:
+    def _get_boto_session(self, region_name: Optional[str]) -> boto3.Session:
         """Get the boto3 Session from which the resources
         and clients will be created.
 
@@ -163,8 +163,10 @@ class AWSCluster(Cluster):
 
         Parameters
         ----------
-        region_name: str
-            The region to use.
+        region_name: Optional[str]
+            The region to use. If None, boto3 will resolve to the
+            locally configured region_name or 'us-east-1' if not
+            configured.
 
         Returns
         -------

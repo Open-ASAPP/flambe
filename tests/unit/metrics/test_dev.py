@@ -92,14 +92,14 @@ def test_inverted_binary_precision():
     """
     y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
 
-    metric_test_case(y_pred, torch.tensor([1, 1, 1, 1]), BinaryPrecision(invert=True), 0)
-    metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryPrecision(invert=True), 1)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 0]), BinaryPrecision(invert=True), 1)
-    metric_test_case(y_pred, torch.tensor([0, 1, 0, 1]), BinaryPrecision(invert=True), 0)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryPrecision(invert=True), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 1, 1, 1]), BinaryPrecision(invert=True), 0)
-    metric_test_case(y_pred, torch.tensor([0, 0, 1, 1]), BinaryPrecision(0.65, invert=True), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryPrecision(0.75, invert=True), 2 / 3)
+    metric_test_case(y_pred, torch.tensor([1, 1, 1, 1]), BinaryPrecision(positive_label=0), 0)
+    metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryPrecision(positive_label=0), 1)
+    metric_test_case(y_pred, torch.tensor([0, 0, 0, 0]), BinaryPrecision(positive_label=0), 1)
+    metric_test_case(y_pred, torch.tensor([0, 1, 0, 1]), BinaryPrecision(positive_label=0), 0)
+    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryPrecision(positive_label=0), 0.5)
+    metric_test_case(y_pred, torch.tensor([0, 1, 1, 1]), BinaryPrecision(positive_label=0), 0)
+    metric_test_case(y_pred, torch.tensor([0, 0, 1, 1]), BinaryPrecision(0.65, positive_label=0), 0.5)
+    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryPrecision(0.75, positive_label=0), 2 / 3)
 
 
 def test_binary_recall():
@@ -142,14 +142,14 @@ def test_inverted_binary_recall():
     """
     y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
 
-    metric_test_case(y_pred, torch.tensor([1, 1, 1, 1]), BinaryRecall(invert=True), 0)
-    metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryRecall(invert=True), 1)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 0]), BinaryRecall(invert=True), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 1, 0, 1]), BinaryRecall(invert=True), 0)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryRecall(invert=True), 1 / 3)
-    metric_test_case(y_pred, torch.tensor([0, 1, 1, 1]), BinaryRecall(invert=True), 0)
-    metric_test_case(y_pred, torch.tensor([0, 0, 1, 1]), BinaryRecall(0.65, invert=True), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryRecall(0.75, invert=True), 2 / 3)
+    metric_test_case(y_pred, torch.tensor([1, 1, 1, 1]), BinaryRecall(positive_label=0), 0)
+    metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryRecall(positive_label=0), 1)
+    metric_test_case(y_pred, torch.tensor([0, 0, 0, 0]), BinaryRecall(positive_label=0), 0.5)
+    metric_test_case(y_pred, torch.tensor([0, 1, 0, 1]), BinaryRecall(positive_label=0), 0)
+    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryRecall(positive_label=0), 1 / 3)
+    metric_test_case(y_pred, torch.tensor([0, 1, 1, 1]), BinaryRecall(positive_label=0), 0)
+    metric_test_case(y_pred, torch.tensor([0, 0, 1, 1]), BinaryRecall(0.65, positive_label=0), 0.5)
+    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryRecall(0.75, positive_label=0), 2 / 3)
 
 
 def test_binary_accuracy():

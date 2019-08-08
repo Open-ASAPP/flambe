@@ -115,7 +115,7 @@ class BinaryPrecision(BinaryMetric):
 
     """
 
-    def __init__(self, threshold: float = 0.5, invert: bool = False) -> None:
+    def __init__(self, threshold: float = 0.5, positive_label: int = 1) -> None:
         """Initialize the Binary metric.
 
         Parameters
@@ -124,14 +124,16 @@ class BinaryPrecision(BinaryMetric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
-        invert: bool
+        positive_label: int
             Specify if the positive class should be 1 or 0.
-            If False, 1 will be positive. If True, 0 will be positive.
-            Defaults to False.
+            Defaults to 1.
 
         """
+        if positive_label not in [0, 1]:
+            raise ValueError("positive_label should be either 0 or 1")
+
         super().__init__(threshold)
-        self.invert = invert
+        self.positive_label = positive_label
 
     def compute_binary(self,
                        pred: torch.Tensor,
@@ -152,7 +154,7 @@ class BinaryPrecision(BinaryMetric):
             The computed binary metric
 
         """
-        if self.invert:
+        if self.positive_label == 0:
             pred = ~pred
             target = ~target
 
@@ -170,7 +172,7 @@ class BinaryPrecision(BinaryMetric):
 
     def __str__(self) -> str:
         """Return the name of the Metric (for use in logging)."""
-        invert_label = "Negative" if self.invert else "Positive"
+        invert_label = "Negative" if self.positive_label == 0 else "Positive"
         return f"{invert_label}{self.__class__.__name__}"
 
 
@@ -185,7 +187,7 @@ class BinaryRecall(BinaryMetric):
     ```
 
     """
-    def __init__(self, threshold: float = 0.5, invert: bool = False) -> None:
+    def __init__(self, threshold: float = 0.5, positive_label: int = 1) -> None:
         """Initialize the Binary metric.
 
         Parameters
@@ -194,14 +196,16 @@ class BinaryRecall(BinaryMetric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
-        invert: bool
-            To specify if the positive class should be 1 or 0.
-            If False, 1 will be positive. If True, 0 will be positive.
-            Defaults to False.
+        positive_label: int
+            Specify if the positive class should be 1 or 0.
+            Defaults to 1.
 
         """
+        if positive_label not in [0, 1]:
+            raise ValueError("positive_label should be either 0 or 1")
+
         super().__init__(threshold)
-        self.invert = invert
+        self.positive_label = positive_label
 
     def compute_binary(self,
                        pred: torch.Tensor,
@@ -222,7 +226,7 @@ class BinaryRecall(BinaryMetric):
             The computed binary metric
 
         """
-        if self.invert:
+        if self.positive_label == 0:
             pred = ~pred
             target = ~target
 
@@ -238,5 +242,5 @@ class BinaryRecall(BinaryMetric):
 
     def __str__(self) -> str:
         """Return the name of the Metric (for use in logging)."""
-        invert_label = "Negative" if self.invert else "Positive"
+        invert_label = "Negative" if self.positive_label == 0 else "Positive"
         return f"{invert_label}{self.__class__.__name__}"

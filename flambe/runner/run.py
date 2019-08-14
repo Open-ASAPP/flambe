@@ -75,7 +75,7 @@ def main(args: argparse.Namespace) -> None:
                     new_extensions = cluster.send_local_content(extensions,
                                                                 destiny, all_hosts=True)
 
-                    new_secrets = cluster.send_secrets(whitelist=["GITHUB", "PIP"])
+                    new_secrets = cluster.send_secrets()
 
                     # Installing the extensions is crutial as flambe
                     # will execute without '-i' flag and therefore

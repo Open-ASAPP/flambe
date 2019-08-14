@@ -184,7 +184,7 @@ def download_manager(path: str):
                     download_s3_folder(path, tmpdir)
                     yield tmpdir
 
-        if url.scheme == 'http' or url.scheme == 'https':
+        elif url.scheme == 'http' or url.scheme == 'https':
             if not http_exists(path):
                 raise ValueError(f"URL {path} not available")
 

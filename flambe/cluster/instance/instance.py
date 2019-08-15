@@ -1182,6 +1182,9 @@ class OrchestratorInstance(Instance):
 
         ret = self._run_cmd(cmd)
 
+        # Sometimes tmux command returns failure (because of some
+        # timeout) but flambe is running.
+        # Adding this extra check in that case.
         if ret.success or self.is_flambe_running():
             logger.info(cl.GR("Running flambe in Orchestrator"))
         else:

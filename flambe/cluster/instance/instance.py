@@ -1042,7 +1042,7 @@ class OrchestratorInstance(Instance):
         # Sometimes tmux command returns failure (because of some
         # timeout) but website is running.
         # Adding this extra check in that case.
-        if res.success and self.is_report_site_running():
+        if res.success or self.is_report_site_running():
             logger.info(cl.BL(f"Report site at http://{self.host}:{port}"))
         else:
             raise errors.RemoteCommandError(f"Report site failed to run. {res.msg}")

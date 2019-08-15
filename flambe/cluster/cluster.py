@@ -916,5 +916,7 @@ class Cluster(Runnable):
             key=f"{self.orchestrator.get_home_path()}/{const.PRIVATE_KEY}",
             orchestrator_ip=self.orchestrator.private_host,
             factories_ips=[f.private_host for f in self.factories],
-            user=self.orchestrator.username
+            user=self.orchestrator.username,
+            public_orchestrator_ip=self.orchestrator.host,
+            public_factories_ips=[f.host for f in self.factories]
         )

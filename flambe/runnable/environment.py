@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 from flambe.compile import Registrable
 
 
@@ -24,19 +24,28 @@ class RemoteEnvironment(Registrable):
     user: str
         The username of all machines. This implementations assumes
         same usename for all machines
+    public_orchestrator_ip: Optional[str]
+        The public orchestrator IP, if available.
+    public_factories_ips: Optional[List[str]]
+        The public factories IPs, if available.
 
     """
 
     def __init__(self,
                  key: str,
-                 orchestrator_ip: str,
+                 public_orchestrator_ip: str,
                  factories_ips: List[str],
                  user: str,
+                 orchestrator_ip: Optional[str] = None,
+                 public_factories_ips: Optional[List[str]] = None,
                  **kwargs) -> None:
         self.key = key
         self.orchestrator_ip = orchestrator_ip
         self.factories_ips = factories_ips
         self.user = user
+
+        self.public_orchestrator_ip = public_orchestrator_ip
+        self.public_factories_ips = public_factories_ips
 
     @classmethod
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
@@ -44,6 +53,8 @@ class RemoteEnvironment(Registrable):
         kwargs = {'key': node.key,
                   'orchestrator_ip': node.orchestrator_ip,
                   'factories_ips': node.factories_ips,
+                  'public_orchestrator_ip': node.public_orchestrator_ip,
+                  'public_factories_ips': node.public_factories_ips,
                   'user': node.user}
         return representer.represent_mapping(tag, kwargs)
 

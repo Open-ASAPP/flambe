@@ -1182,7 +1182,7 @@ class OrchestratorInstance(Instance):
 
         ret = self._run_cmd(cmd)
 
-        if ret.success:
+        if ret.success or self.is_flambe_running():
             logger.info(cl.GR("Running flambe in Orchestrator"))
         else:
             raise errors.RemoteCommandError(f"Not able to run flambe. {ret.msg}")

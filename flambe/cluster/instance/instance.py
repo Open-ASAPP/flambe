@@ -733,7 +733,7 @@ class Instance(object):
         bool
 
         """
-        cmd = "ps -e | grep -P ^flambe$"  # -w flag for exact string match
+        cmd = "ps axco command | grep -P ^flambe$"
         ret = self._run_cmd(cmd)
         return ret.success
 
@@ -1068,7 +1068,7 @@ class OrchestratorInstance(Instance):
         bool
 
         """
-        cmd = "ps -e | grep flambe-site"
+        cmd = "ps axco command | grep -P ^flambe-site$"
         ret = self._run_cmd(cmd)
         return ret.success
 

@@ -33,10 +33,10 @@ class RemoteEnvironment(Registrable):
 
     def __init__(self,
                  key: str,
-                 public_orchestrator_ip: str,
+                 orchestrator_ip: str,
                  factories_ips: List[str],
                  user: str,
-                 orchestrator_ip: Optional[str] = None,
+                 public_orchestrator_ip: Optional[str] = None,
                  public_factories_ips: Optional[List[str]] = None,
                  **kwargs) -> None:
         self.key = key

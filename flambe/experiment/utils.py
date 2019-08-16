@@ -490,3 +490,34 @@ def rel_to_abs_paths(d: Dict[str, str]) -> Dict[str, str]:
         if os.path.exists(v) and not os.path.isabs(v):
             ret[k] = os.path.abspath(v)
     return ret
+
+
+def shutdown_ray_node() -> int:
+    """Call 'ray stop' locally to terminate
+    the ray node.
+
+    """
+    return os.system("bash -lc 'ray stop'")
+
+
+def shutdown_remote_ray_node(host: str,
+                             user: str,
+                             key: str) -> int:
+    """Execute 'ray stop' on a remote machine through ssh to
+    terminate the ray node.
+
+    IMPORTANT: this method is intended to be run in the cluster.
+
+    Parameters
+    ----------
+    host: str
+        The Orchestrator's IP that is visible by the factories
+        (usually the private IP)
+    user: str
+        The username for that machine.
+    key: str
+        The key that communicate with the machine.
+
+    """
+    cmd = f"ssh -i {key} -o StrictHostKeyChecking=no {user}@{host} \"bash -lc 'ray stop'\""
+    return os.system(cmd)

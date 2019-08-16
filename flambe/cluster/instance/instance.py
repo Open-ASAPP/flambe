@@ -873,7 +873,7 @@ class CPUFactoryInstance(Instance):
         self.install_flambe()
 
     def launch_node(self, redis_address: str) -> None:
-        """Launche the ray worker node.
+        """Launch the ray worker node.
 
         Parameters
         ----------

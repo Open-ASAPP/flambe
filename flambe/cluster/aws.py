@@ -130,6 +130,7 @@ class AWSCluster(Cluster):
         self.factories_type = factories_type
         self.orchestrator_type = orchestrator_type
 
+        self.region_name = region_name
         self.sess = self._get_boto_session(region_name)
 
         self.ec2_resource = self.sess.resource('ec2')
@@ -724,7 +725,7 @@ class AWSCluster(Cluster):
                 if f_id:
                     mins = fact_t * 60 if fact_t > 0 else 5
                     self._create_cloudwatch_event(f_id, mins=mins, cpu_thresh=0.5)
-                    logger.info(cl.YE(f"{f.host} timeout of {mins} set"))
+                    logger.info(cl.YE(f"{f.host} timeout of {mins} mins set"))
         else:
             logger.info(cl.YE(f"Factories have no timeout"))
 
@@ -785,7 +786,7 @@ class AWSCluster(Cluster):
                 Threshold=cpu_thresh,
                 ActionsEnabled=True,
                 AlarmActions=[
-                    'arn:aws:automate:us-east-1:ec2:terminate'
+                    f'arn:aws:automate:{self.region_name}:ec2:terminate'
                 ],
                 AlarmDescription=f'Terminate when CPU < {cpu_thresh}%',
                 Dimensions=[

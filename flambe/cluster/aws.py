@@ -368,13 +368,12 @@ class AWSCluster(Cluster):
         if not self.orchestrator:
             raise errors.ClusterError("Orchestrator instance was not loaded.")
 
-        if self.tags:
-            tags = self._get_all_tags()
+        tags = self._get_all_tags()
 
-            self._update_tags(self._get_boto_instance_by_host(self.orchestrator.host), tags)
+        self._update_tags(self._get_boto_instance_by_host(self.orchestrator.host), tags)
 
-            for i, f in enumerate(self.factories):
-                self._update_tags(self._get_boto_instance_by_host(f.host), tags)
+        for i, f in enumerate(self.factories):
+            self._update_tags(self._get_boto_instance_by_host(f.host), tags)
 
     def _update_tags(
             self,

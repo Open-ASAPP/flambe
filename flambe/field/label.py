@@ -52,6 +52,6 @@ class LabelField(TextField):
 
         if self.one_hot:
             n = [int(i in n) for i in range(len(self.vocab))]
-            n = torch.tensor(n)  # Back to Tensor
+            n = torch.tensor(n).long()  # Back to Tensor
 
         return n

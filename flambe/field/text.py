@@ -218,4 +218,4 @@ class TextField(Field):
             numerical = self.vocab[token]  # type: ignore
             numericals.append(numerical)
 
-        return torch.tensor(numericals)
+        return torch.tensor(numericals).long()

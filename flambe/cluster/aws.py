@@ -280,7 +280,8 @@ class AWSCluster(Cluster):
 
         return orchestrator, factories
 
-    def _get_tags(self, boto_instance: "boto3.resources.factory.ec2.Instance") -> Dict[str, str]:
+    def _get_existing_tags(self,
+                           boto_instance: "boto3.resources.factory.ec2.Instance") -> Dict[str, str]:
         """Gets the tags of a EC2 instances
 
         Parameters
@@ -317,7 +318,7 @@ class AWSCluster(Cluster):
             Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
 
         for ins in boto_instances:
-            tags = self._get_tags(ins)
+            tags = self._get_existing_tags(ins)
             if all((
                     "creator" in tags and tags["creator"] == self.creator,
                     "Purpose" in tags and tags["Purpose"] == "flambe",
@@ -338,6 +339,23 @@ class AWSCluster(Cluster):
             self.name_instance(self._get_boto_instance_by_host(f.host),
                                f"{self.get_factory_basename()}_{i+1}")
 
+    def _get_all_tags(self) -> Dict[str, str]:
+        """Get user tags + default tags to add to the instances and
+        volumes.
+
+        """
+        ret = {
+            "creator": self.creator,
+            "Purpose": "flambe",
+            "Cluster-Name": self.name,
+        }
+
+        if self.tags:
+            for k, v in self.tags.items():
+                ret[k] = v
+
+        return ret
+
     def update_tags(self) -> None:
         """Update user provided tags to all hosts.
 
@@ -351,19 +369,22 @@ class AWSCluster(Cluster):
         if not self.orchestrator:
             raise errors.ClusterError("Orchestrator instance was not loaded.")
 
-        if self.tags:
-            self._update_tags(self._get_boto_instance_by_host(self.orchestrator.host),
-                              self.tags)
+        tags = self._get_all_tags()
 
-            for i, f in enumerate(self.factories):
-                self._update_tags(self._get_boto_instance_by_host(f.host),
-                                  self.tags)
+        orch_tags = tags.copy()
+        orch_tags['Role'] = 'Orchestrator'
+        self._update_tags(self._get_boto_instance_by_host(self.orchestrator.host), orch_tags)
+
+        factory_tags = tags.copy()
+        factory_tags['Role'] = 'Factory'
+        for i, f in enumerate(self.factories):
+            self._update_tags(self._get_boto_instance_by_host(f.host), factory_tags)
 
     def _update_tags(
             self,
             boto_instance: 'boto3.resources.factory.ec2.Instance',
             tags: Dict[str, str]) -> None:
-        """Create/Overwrite tags on an EC2 instance
+        """Create/Overwrite tags on an EC2 instance and its volumes.
 
         Parameters
         ----------
@@ -373,8 +394,11 @@ class AWSCluster(Cluster):
             The tags to create/overwrite
 
         """
-        ins_tags = [{"Key": k, "Value": v} for k, v in tags.items()]
-        boto_instance.create_tags(Tags=ins_tags)
+        boto_tags = [{"Key": k, "Value": v} for k, v in tags.items()]
+
+        boto_instance.create_tags(Tags=boto_tags)
+        for v in boto_instance.volumes.all():
+            v.create_tags(Tags=boto_tags)
 
     def name_instance(
             self,
@@ -390,7 +414,11 @@ class AWSCluster(Cluster):
             The new name
 
         """
-        boto_instance.create_tags(Tags=[{"Key": "Name", "Value": "{}".format(name)}])
+        name_tag = [{"Key": "Name", "Value": name}]
+        boto_instance.create_tags(Tags=name_tag)
+
+        for v in boto_instance.volumes.all():
+            v.create_tags(Tags=name_tag)
 
     def _create_orchestrator(self) -> instance.OrchestratorInstance:
         """Create a new EC2 instance to be the Orchestrator instance.
@@ -481,14 +509,10 @@ class AWSCluster(Cluster):
 
         """
         # Set the tags based on the users + custom flambe tags.
-        tags: List[Dict[str, str]] = []
-        if self.tags:
-            tags.extend([{'Key': k, 'Value': v} for k, v in self.tags.items()])
+        tags = self._get_all_tags()
+        tags['Role'] = role
 
-        tags.append({'Key': 'creator', 'Value': self.creator})
-        tags.append({'Key': 'Purpose', 'Value': 'flambe'})
-        tags.append({'Key': 'Cluster-Name', 'Value': self.name})
-        tags.append({'Key': 'Role', 'Value': role})
+        boto_tags: List[Dict[str, str]] = [{'Key': k, 'Value': v} for k, v in tags.items()]
 
         bdm = [
             {
@@ -504,7 +528,11 @@ class AWSCluster(Cluster):
         tags_param = [
             {
                 'ResourceType': 'instance',
-                'Tags': tags
+                'Tags': boto_tags
+            },
+            {
+                'ResourceType': 'volume',
+                'Tags': boto_tags
             },
         ]
         placement = {

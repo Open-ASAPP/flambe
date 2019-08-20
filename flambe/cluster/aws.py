@@ -505,6 +505,10 @@ class AWSCluster(Cluster):
                 'ResourceType': 'instance',
                 'Tags': tags
             },
+            {
+                'ResourceType': 'volume',
+                'Tags': tags
+            },
         ]
         placement = {
             'Tenancy': 'dedicated' if self.dedicated else 'default',

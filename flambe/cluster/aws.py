@@ -5,6 +5,7 @@
 import boto3
 import botocore
 import logging
+from datetime import datetime, timedelta
 
 from typing import Generator, Dict, Tuple, List, TypeVar, Type, Any, Optional
 
@@ -780,6 +781,44 @@ class AWSCluster(Cluster):
 
         except botocore.exceptions.ParamValidationError:
             raise errors.ClusterError(f"Could not delete alarm for {instance_id}")
+
+    def _put_fake_cloudwatch_data(self, instance_id: str) -> None:
+        """Put fake CPU Usage metric in an instance.
+
+        This method is useful to avoid triggering alarms when they are
+        created. For example, is an instance was idle for 10 hours and
+        an termination alarm is set for 5 hours, it will be triggered
+        immediately. Adding a fake point will allow the alarms to start
+        the timer from the current moment.
+
+        Parameters
+        ----------
+        instance_id: str
+            The ID of the EC2 instance
+
+        """
+        try:
+            for i in range(10):
+                self.cloudwatch.put_metric_data(
+                    Namespace='AWS/EC2',
+                    MetricData=[
+                        {
+                            'MetricName': 'CPUUtilization',
+                            'Dimensions': [
+                                {
+                                    'Name': 'InstanceId',
+                                    'Value': instance_id
+                                },
+                            ],
+                            'Timestamp': datetime.now() - timedelta(minutes=i),
+                            'Value': 100,
+                            'Unit': 'Percent',
+                        },
+                    ]
+                )
+            logger.debug(f"Added fake CPU usage for {instance_id}")
+        except botocore.exceptions.ParamValidationError:
+            raise errors.ClusterError(f"Could not put metric data for {instance_id}")
 
     def _create_cloudwatch_event(self, instance_id: str, mins: int = 60,
                                  cpu_thresh: float = 0.1) -> None:

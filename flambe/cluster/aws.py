@@ -810,7 +810,7 @@ class AWSCluster(Cluster):
                                     'Value': instance_id
                                 },
                             ],
-                            'Timestamp': datetime.now() - timedelta(minutes=i),
+                            'Timestamp': datetime.utcnow() - timedelta(minutes=i),
                             'Value': 100,
                             'Unit': 'Percent',
                         },

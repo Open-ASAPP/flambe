@@ -370,10 +370,14 @@ class AWSCluster(Cluster):
 
         tags = self._get_all_tags()
 
-        self._update_tags(self._get_boto_instance_by_host(self.orchestrator.host), tags)
+        orch_tags = tags.copy()
+        orch_tags['Role'] = 'Orchestrator'
+        self._update_tags(self._get_boto_instance_by_host(self.orchestrator.host), orch_tags)
 
+        factory_tags = tags.copy()
+        factory_tags['Role'] = 'Factory'
         for i, f in enumerate(self.factories):
-            self._update_tags(self._get_boto_instance_by_host(f.host), tags)
+            self._update_tags(self._get_boto_instance_by_host(f.host), factory_tags)
 
     def _update_tags(
             self,
@@ -392,7 +396,6 @@ class AWSCluster(Cluster):
         boto_tags = [{"Key": k, "Value": v} for k, v in tags.items()]
 
         boto_instance.create_tags(Tags=boto_tags)
-
         for v in boto_instance.volumes.all():
             v.create_tags(Tags=boto_tags)
 

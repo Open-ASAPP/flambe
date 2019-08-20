@@ -753,6 +753,10 @@ class AWSCluster(Cluster):
                 f_id = self._get_instance_id_by_host(f.host)
                 if f_id:
                     mins = fact_t * 60 if fact_t > 0 else 5
+                    # Adding fake data for CPU usage to avoid the alarm
+                    # triggering immediately in case the machine was
+                    # already idle
+                    self._put_fake_cloudwatch_data(f_id, value=100, points=10)
                     self._create_cloudwatch_event(f_id, mins=mins, cpu_thresh=0.5)
                     logger.info(cl.YE(f"{f.host} timeout of {mins} mins set"))
         else:
@@ -764,6 +768,10 @@ class AWSCluster(Cluster):
             orch_t = self.orchestrator_timeout
             if orch_t >= 0:
                 mins = orch_t * 60 if orch_t > 0 else 5
+                # Adding fake data for CPU usage to avoid the alarm
+                # triggering immediately in case the machine was already
+                # idle
+                self._put_fake_cloudwatch_data(orch_id, value=100, points=10)
                 self._create_cloudwatch_event(orch_id, mins=mins, cpu_thresh=4)
                 logger.info(cl.YE(f"{self.orchestrator.host} timeout of {mins} set"))
             else:
@@ -782,7 +790,10 @@ class AWSCluster(Cluster):
         except botocore.exceptions.ParamValidationError:
             raise errors.ClusterError(f"Could not delete alarm for {instance_id}")
 
-    def _put_fake_cloudwatch_data(self, instance_id: str) -> None:
+    def _put_fake_cloudwatch_data(self,
+                                  instance_id: str,
+                                  value: int = 100,
+                                  points: int = 10) -> None:
         """Put fake CPU Usage metric in an instance.
 
         This method is useful to avoid triggering alarms when they are
@@ -795,6 +806,13 @@ class AWSCluster(Cluster):
         ----------
         instance_id: str
             The ID of the EC2 instance
+        value: int
+            The CPU percent value to use. Defaults to 100
+        points: int
+            The amount of past minutes from the current time
+            to generate metric points. For example, if points is 10,
+            then 10 data metrics will be generated for the past 10
+            minutes, one per minute.
 
         """
         try:

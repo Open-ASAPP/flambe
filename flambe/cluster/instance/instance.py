@@ -413,7 +413,7 @@ class Instance(object):
                 raise errors.RemoteCommandError(f"Error executing {s} in {self.host}. " +
                                                 f"{ret.msg}")
 
-    def send_rsync(self, host_path: str, remote_path: str) -> None:
+    def send_rsync(self, host_path: str, remote_path: str, filter_param: str = "") -> None:
         """Send a local file or folder to a remote instance with rsync.
 
         Parameters
@@ -438,12 +438,11 @@ class Instance(object):
 
         _to = f"{self.username}@{self.host if self.use_public else self.private_host}:{remote_path}"
 
-        cmd = ["rsync", "-ae",
-               f"ssh -i {self.key} -o StrictHostKeyChecking=no",
-               _from, _to]
+        cmd = f'rsync {filter_param} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no" {_from} {_to}'
         try:
             subprocess.check_call(cmd, stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
+                                  stderr=subprocess.DEVNULL,
+                                  shell=True)
             logger.debug(f"rsync {host_path} -> {remote_path} successful")
         except subprocess.CalledProcessError as e:
             raise errors.RemoteFileTransferError(e)
@@ -623,8 +622,13 @@ class Instance(object):
 
         else:
             origin = get_flambe_repo_location()
+            # Avoid rsyncing resources from gitignore
+            filter_param = ""
+            if os.path.exists(os.path.join(origin, ".gitignore")):
+                filter_param = f"--filter=':- {os.path.join(origin, '.gitignore')}'"
+
             destiny = os.path.join(self.get_home_path(), "extensions", "flambe")
-            self.send_rsync(origin, destiny)
+            self.send_rsync(origin, destiny, filter_param)
             logger.debug(f"Sent flambe {origin} -> {destiny}")
             pip_destiny = destiny if not self.contains_gpu() else f"{destiny}[cuda]"
             ret = self._run_cmd(

@@ -442,7 +442,7 @@ class Instance(object):
         _to = f"{self.username}@{self.host if self.use_public else self.private_host}:{remote_path}"
 
         cmd = (
-            f'rsync {filter_param} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no"'
+            f'rsync {filter_param} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no" '
             f'{_from} {_to}'
         )
         try:

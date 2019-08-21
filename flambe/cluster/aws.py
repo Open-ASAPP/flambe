@@ -57,6 +57,12 @@ class AWSCluster(Cluster):
     key: str
         The path to the ssh key used to communicate to all instances.
         IMPORTANT: all instances must be accessible with the same key.
+    volume_type: str
+        The type of volume in AWS to use. Only 'gp2' and 'io1' are
+        currently available. If 'io1' is used, then IOPS will be
+        fixed to 5000. IMPORTANT: 'io1' volumes are significantly
+        more expensive than 'gp2' volumes.
+        Defaults to 'gp2'.
     region_name: Optional[str]
         The region name to use. If not specified, it uses the locally
         configured region name or 'us-east-1' in case it's not
@@ -116,6 +122,7 @@ class AWSCluster(Cluster):
                  subnet_id: str,
                  creator: str,
                  key: str,
+                 volume_type: str = 'gp2',
                  region_name: Optional[str] = None,
                  username: str = "ubuntu",
                  tags: Dict[str, str] = None,
@@ -156,6 +163,11 @@ class AWSCluster(Cluster):
         self.factories_timeout = factories_timeout
 
         self.created_instances_ids: List[str] = []
+
+        if volume_type not in ['gp2', 'io1']:
+            raise ValueError("Only gp2 and io1 drives available.")
+
+        self.volume_type = volume_type
 
     def _get_boto_session(self, region_name: Optional[str]) -> boto3.Session:
         """Get the boto3 Session from which the resources
@@ -515,15 +527,18 @@ class AWSCluster(Cluster):
 
         boto_tags: List[Dict[str, str]] = [{'Key': k, 'Value': v} for k, v in tags.items()]
 
+        ebs = {
+            'VolumeSize': self.volume_size,
+            'DeleteOnTermination': True,
+            'VolumeType': self.volume_type,
+        }
+        if self.volume_type == 'io1':
+            ebs['Iops'] = 5000
+
         bdm = [
             {
                 'DeviceName': '/dev/sda1',
-                'Ebs': {
-                    'VolumeSize': self.volume_size,
-                    'DeleteOnTermination': True,
-                    'VolumeType': 'io1',
-                    'Iops': 50 * self.volume_size
-                }
+                'Ebs': ebs,
             }
         ]
         tags_param = [

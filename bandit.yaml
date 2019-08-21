@@ -1,5 +1,5 @@
 ### profile may optionally select or skip tests
 
-skips: ['B301','B311','B403','B404','B603','B605','B601','B607','B307', 'B110']
+skips: ['B301','B311','B403','B404','B603','B605','B601','B607','B307', 'B110', 'B602']
 
 # See bandit --help for details on each skip

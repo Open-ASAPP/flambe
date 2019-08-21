@@ -149,7 +149,9 @@ def test_install_flambe_gpu(mock_contains_gpu, mock_run_cmd, get_instance):
 @mock.patch('flambe.cluster.instance.instance.Instance.get_home_path')
 @mock.patch('flambe.cluster.instance.instance.Instance.send_rsync')
 @mock.patch('flambe.cluster.instance.instance.Instance._run_cmd')
-def test_install_flambe_debug(mock_run_cmd, mock_rsync, mock_get_home_path, mock_flambe_loc, get_instance):
+@mock.patch('os.path.exists')
+def test_install_flambe_debug(mock_os_exists, mock_run_cmd, mock_rsync, mock_get_home_path, mock_flambe_loc, get_instance):
+    mock_os_exists.return_value = False
     mock_flambe_loc.return_value = "/home/user/flambe"
 
     mock_get_home_path.return_value = "/home/ubuntu"
@@ -165,7 +167,32 @@ def test_install_flambe_debug(mock_run_cmd, mock_rsync, mock_get_home_path, mock
     mock_flambe_loc.assert_called_once()
 
     mock_get_home_path.assert_called_once()
-    mock_rsync.assert_called_once_with("/home/user/flambe", "/home/ubuntu/extensions/flambe")
+    mock_rsync.assert_called_once_with("/home/user/flambe", "/home/ubuntu/extensions/flambe", "")
+
+
+@mock.patch('flambe.cluster.instance.instance.get_flambe_repo_location')
+@mock.patch('flambe.cluster.instance.instance.Instance.get_home_path')
+@mock.patch('flambe.cluster.instance.instance.Instance.send_rsync')
+@mock.patch('flambe.cluster.instance.instance.Instance._run_cmd')
+@mock.patch('os.path.exists')
+def test_install_flambe_debug_2(mock_os_exists, mock_run_cmd, mock_rsync, mock_get_home_path, mock_flambe_loc, get_instance):
+    mock_os_exists.return_value = True
+    mock_flambe_loc.return_value = "/home/user/flambe"
+
+    mock_get_home_path.return_value = "/home/ubuntu"
+    mock_run_cmd.return_value = RemoteCommand(True, b"")
+
+    ins = get_instance(debug=True)
+
+    ins.install_flambe()
+
+    cmd = f'python3 -m pip install --user --upgrade  /home/ubuntu/extensions/flambe'
+    mock_run_cmd.assert_called_with(cmd, retries=3)
+
+    mock_flambe_loc.assert_called_once()
+
+    mock_get_home_path.assert_called_once()
+    mock_rsync.assert_called_once_with("/home/user/flambe", "/home/ubuntu/extensions/flambe", "--filter=':- /home/user/flambe/.gitignore'")
 
 
 @mock.patch('flambe.cluster.instance.instance.Instance._run_cmd')

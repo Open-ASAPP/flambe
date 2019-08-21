@@ -422,6 +422,9 @@ class Instance(object):
             The local filename or folder
         remote_path : str
             The remote filename or folder to use
+        filter_param : str
+            The filter parameter to be passed to rsync.
+            For example, "--filter=':- .gitignore'"
 
         Raises
         ------
@@ -438,7 +441,10 @@ class Instance(object):
 
         _to = f"{self.username}@{self.host if self.use_public else self.private_host}:{remote_path}"
 
-        cmd = f'rsync {filter_param} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no" {_from} {_to}'
+        cmd = (
+            f'rsync {filter_param} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no"'
+            f'{_from} {_to}'
+        )
         try:
             subprocess.check_call(cmd, stdout=subprocess.DEVNULL,
                                   stderr=subprocess.DEVNULL,

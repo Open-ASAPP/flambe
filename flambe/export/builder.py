@@ -86,6 +86,10 @@ class Builder(Runnable):
     def run(self, force: bool = False, **kwargs) -> None:
         """Run the Builder."""
 
+        # Add information about the extensions. This ensures
+        # the compiled component has the extensions information
+        self.component.add_extensions_metadata(self.extensions)
+
         self.compiled_component = self.component()  # Compile Schema
 
         if self.storage == 'local':

@@ -454,6 +454,10 @@ def load(path: str,
 
             # Reload with extensions' module imported (and registered)
             schema = list(yaml.load_all(yaml_config))[1]
+
+            # Set the extensions to the schema so that they are
+            # passed when compiling the component.
+            schema.add_extensions_metadata(extensions)
         else:
             schema = yamls[1]
     elif len(yamls) == 1:
@@ -467,9 +471,11 @@ def load(path: str,
                         " for any of the following reasons:\n - The object was not created from a"
                         "config or with compile method\n - The object originally linked to other"
                         "objects that cannot be represented in YAML")
+
     _update_link_refs(schema)
     # TODO: maybe replace with instance check if solution to circular
     # dependency with component is found
+
     try:
         instance = schema(stash)
     except TypeError:

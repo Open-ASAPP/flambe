@@ -9,9 +9,11 @@ import mock
 from ruamel.yaml.compat import StringIO
 from ruamel.yaml import YAML
 
+from typing import Mapping
+
 # from flambe.compile import yaml
 from flambe import Component, save_state_to_file, load_state_from_file, load, save
-from flambe.compile import Registrable, yaml, make_component
+from flambe.compile import Registrable, yaml, make_component, Schema
 from flambe.compile.serialization import _extract_prefix
 
 
@@ -202,7 +204,7 @@ def schema_builder():
     return obj
 
 
-def complex_builder(from_config):
+def complex_builder(from_config, schema=False):
     if from_config:
         config = """
 !ComposableTorchStateful
@@ -222,7 +224,9 @@ c: !torch.Linear
   in_features: 2
   out_features: 2
 """
-        obj = yaml.load(config)()
+        obj = yaml.load(config)
+        if not schema:
+            obj = obj()
         return obj
     else:
         a1 = BasicStateful()
@@ -238,7 +242,7 @@ c: !torch.Linear
         return obj
 
 
-def complex_builder_nontorch_root(from_config):
+def complex_builder_nontorch_root(from_config, schema=False):
     if from_config:
         config = """
 !ComposableContainer
@@ -260,7 +264,9 @@ item:
     in_features: 2
     out_features: 2
 """
-        obj = yaml.load(config)()
+        obj = yaml.load(config)
+        if not schema:
+            obj = obj()
         return obj
     else:
         a1 = BasicStateful()
@@ -683,3 +689,70 @@ class TestSerializationExtensions:
 
         schema_obj.add_extensions_metadata(TestSerializationExtensions.EXTENSIONS)
         assert schema_obj._extensions == {}
+
+
+    def test_add_extensions_metadata_2(self):
+        """Test that add_extensions_metadata doesn't add extensions that are not used.
+
+        In this case we will use a config containing torch, but we will make_component
+        on torch so that it can be compiled. After that, we add_extensions_metadata with
+        torch, which is a valid extensions for the config (redundant, but valid).
+        
+        """
+        TORCH_TAG_PREFIX = "torch"
+        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+
+        config = """
+        !torch.Linear
+          in_features: 2
+          out_features: 2
+        """
+
+        schema = yaml.load(config)
+        schema.add_extensions_metadata({"torch": "torch"})
+        assert schema._extensions == {"torch": "torch"}
+
+        mixed_ext = TestSerializationExtensions.EXTENSIONS.copy()
+        mixed_ext.update({"torch": "torch"})
+        schema.add_extensions_metadata(mixed_ext)
+        assert schema._extensions == {"torch": "torch"}
+
+
+    def test_add_extensions_metadata_3(self, complex_multi_layered_nontorch_root):
+        """Test that add_extensions_metadata doesn't add extensions that are not used
+
+        In this case we will use a config containing torch, but we will make_component
+        on torch so that it can be compiled. After that, we add_extensions_metadata with
+        torch, which is a valid extensions for the config (redundant, but valid).
+        
+        """
+        TORCH_TAG_PREFIX = "torch"
+        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+
+        schema = complex_multi_layered_nontorch_root(from_config=True, schema=True)
+        schema.add_extensions_metadata({"torch": "torch"})
+
+        # This method asserts recursively that torch is added to extensions when
+        # there is a subcomponent that uses torch.
+        # It returns if at least one component with torch was found, that should
+        # always happen based on the complex_multi_layered_nontorch_root.
+        def helper(data):
+            found = False
+            if isinstance(data, Schema):
+                if data.component_subclass.__module__.startswith("torch."):
+                    found = True
+                    assert data._extensions == {"torch": "torch"}
+
+                for val in data.keywords.values():
+                    f = helper(val)
+                    if f:
+                        found = f
+
+            elif isinstance(data, Mapping):
+                for val in data.values():
+                    f = helper(val)
+                    if f:
+                        found = f
+            return found
+
+        assert helper(schema)

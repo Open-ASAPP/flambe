@@ -642,6 +642,8 @@ class TestSerializationExtensions:
             self, mock_add_extensions,
             mock_import_module, mock_installed_module,
             compress_save_file, pickle_only, schema):
+        """Test that extensions are saved to the output config.yaml
+        and they are also added when loading back the object."""
 
         mock_installed_module.return_value = True
 
@@ -672,3 +674,12 @@ class TestSerializationExtensions:
             _ = Basic.load_from_path(path)
             mock_add_extensions.assert_called_once_with(TestSerializationExtensions.EXTENSIONS)
 
+
+    def test_add_extensions_metadata(self, schema):
+        """Test that add_extensions_metadata doesn't add extensions that are not used"""
+
+        schema_obj = schema()
+        assert schema_obj._extensions == {}
+
+        schema_obj.add_extensions_metadata(TestSerializationExtensions.EXTENSIONS)
+        assert schema_obj._extensions == {}

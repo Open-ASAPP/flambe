@@ -13,7 +13,6 @@ class Field(Component):
     A field processes raw examples and produces Tensors.
 
     """
-    @abstractmethod
     def setup(self, *data: np.ndarray) -> None:
         """Setup the field.
 

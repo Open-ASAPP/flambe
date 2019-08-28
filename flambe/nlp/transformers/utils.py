@@ -1,7 +1,6 @@
 from typing import Optional, Type, Any
 
 import torch
-import numpy as np
 import pytorch_transformers as pt
 
 from flambe.field import Field
@@ -30,17 +29,6 @@ class TransformerTextField(Field):
         """
         self._tokenizer = self._cls.from_pretrained(alias, cache_dir=cache_dir, **kwargs)
         self.max_len_truncate = max_len_truncate
-
-    def setup(self, *data: np.ndarray) -> None:
-        """Build the vocabulary and sets embeddings.
-
-        Parameters
-        ----------
-        data : Iterable[str]
-            List of input strings.
-
-        """
-        pass
 
     @property
     def padding_idx(self) -> int:

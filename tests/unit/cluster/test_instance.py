@@ -167,7 +167,7 @@ def test_install_flambe_debug(mock_os_exists, mock_run_cmd, mock_rsync, mock_get
     mock_flambe_loc.assert_called_once()
 
     mock_get_home_path.assert_called_once()
-    mock_rsync.assert_called_once_with("/home/user/flambe", "/home/ubuntu/extensions/flambe", "")
+    mock_rsync.assert_called_once_with('/home/user/flambe', '/home/ubuntu/extensions/flambe', params=["--exclude='.*'", "--exclude='docs/*'"])
 
 
 @mock.patch('flambe.cluster.instance.instance.get_flambe_repo_location')
@@ -192,7 +192,7 @@ def test_install_flambe_debug_2(mock_os_exists, mock_run_cmd, mock_rsync, mock_g
     mock_flambe_loc.assert_called_once()
 
     mock_get_home_path.assert_called_once()
-    mock_rsync.assert_called_once_with("/home/user/flambe", "/home/ubuntu/extensions/flambe", "--filter=':- /home/user/flambe/.gitignore'")
+    mock_rsync.assert_called_once_with('/home/user/flambe', '/home/ubuntu/extensions/flambe', params=["--exclude='.*'", "--exclude='docs/*'"])
 
 
 @mock.patch('flambe.cluster.instance.instance.Instance._run_cmd')

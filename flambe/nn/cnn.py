@@ -17,6 +17,9 @@ def conv_block(conv_mod: nn.Module,
 
     mods = [conv_mod]
 
+    if pooling:
+        mods.append(pooling)
+
     if batch_norm is None:
         mods.append(batch_norm)
 
@@ -73,7 +76,7 @@ class CNNEncoder(Module):
            Defaults to nn.ReLU
         pooling: nn.Module, optional
             The pooling function to use after all layers.
-            Defaults to size 2 Max Pooling.
+            Defaults to None
         dropout: float, optional
             Amount of dropout to use between CNN layers, defaults to 0
         batch_norm: bool, optional
@@ -105,7 +108,6 @@ class CNNEncoder(Module):
 
         conv, bn, pool = dim2mod[conv_dim]
         activation = activation or nn.ReLU()
-        pooling = pooling or pool(2)
 
         layers = []
 

@@ -413,7 +413,7 @@ class Instance(object):
                 raise errors.RemoteCommandError(f"Error executing {s} in {self.host}. " +
                                                 f"{ret.msg}")
 
-    def send_rsync(self, host_path: str, remote_path: str, filter_param: str = "") -> None:
+    def send_rsync(self, host_path: str, remote_path: str, params: List[str] = None) -> None:
         """Send a local file or folder to a remote instance with rsync.
 
         Parameters
@@ -422,9 +422,9 @@ class Instance(object):
             The local filename or folder
         remote_path : str
             The remote filename or folder to use
-        filter_param : str
-            The filter parameter to be passed to rsync.
-            For example, "--filter=':- .gitignore'"
+        params : List[str], optional
+            Extra parameters to be passed to rsync.
+            For example, ["--filter=':- .gitignore'"]
 
         Raises
         ------
@@ -441,8 +441,11 @@ class Instance(object):
 
         _to = f"{self.username}@{self.host if self.use_public else self.private_host}:{remote_path}"
 
+        rsync_params = ""
+        if params:
+            rsync_params = " ".join(params)
         cmd = (
-            f'rsync {filter_param} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no" '
+            f'rsync {rsync_params} -ae "ssh -i {self.key} -o StrictHostKeyChecking=no" '
             f'{_from} {_to}'
         )
         try:
@@ -628,17 +631,13 @@ class Instance(object):
 
         else:
             origin = get_flambe_repo_location()
-            # Avoid rsyncing resources from gitignore
-            filter_param = ""
-            if os.path.exists(os.path.join(origin, ".gitignore")):
-                filter_param = f"--filter=':- {os.path.join(origin, '.gitignore')}'"
+            destination = os.path.join(self.get_home_path(), "extensions", "flambe")
 
-            destiny = os.path.join(self.get_home_path(), "extensions", "flambe")
-            self.send_rsync(origin, destiny, filter_param)
-            logger.debug(f"Sent flambe {origin} -> {destiny}")
-            pip_destiny = destiny if not self.contains_gpu() else f"{destiny}[cuda]"
+            self.send_rsync(origin, destination, params=["--exclude='.*'", "--exclude='docs/*'"])
+            logger.debug(f"Sent flambe {origin} -> {destination}")
+            pip_destination = destination if not self.contains_gpu() else f"{destination}[cuda]"
             ret = self._run_cmd(
-                f"python3 -m pip install --user --upgrade {' '.join(flags)} {pip_destiny}",
+                f"python3 -m pip install --user --upgrade {' '.join(flags)} {pip_destination}",
                 retries=3
             )
 

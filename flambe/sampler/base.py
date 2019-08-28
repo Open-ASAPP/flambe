@@ -205,7 +205,7 @@ class BaseSampler(Sampler):
                  pad_index: Union[int, Sequence[int]] = 0,
                  n_workers: int = 0,
                  pin_memory: bool = False,
-                 batch_first: bool = True,
+                 batch_first: bool = False,
                  seed: Optional[int] = None,
                  downsample: Optional[float] = None,
                  downsample_seed: Optional[int] = None,
@@ -230,8 +230,9 @@ class BaseSampler(Sampler):
         n_workers : int, optional
             Number of workers to pass to the DataLoader
             (the default is 0, which means the main process)
-        device : Union[str, int], optional
-            The device to move the data to, (the default is 'cpu')
+        batch_first: bool, optional
+            Whether to return sequential data batch first, defaults to
+            False, meaning the sequence length is first.
         pin_memory : bool, optional
             Pin the memory when using cuda (the default is False)
         seed: int, optional

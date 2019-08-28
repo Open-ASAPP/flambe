@@ -1,0 +1,41 @@
+!Experiment
+
+name: transformer
+
+pipeline:
+
+  train: !Trainer
+    dataset: !SSTDataset
+      transform:
+        text: !TextField
+          lower: True
+        label: !LabelField
+    model: !TextClassifier
+      embedder: !Embedder
+        embedding: !Embeddings
+          num_embeddings: !@ train.dataset.text.vocab_size
+          embedding_dim: 300
+          positional_encoding: True
+          positional_learned: True
+        embedding_dropout: 0.2
+        encoder: !TransformerEncoder
+          d_model: 300
+          num_layers: 4
+          nhead: 1
+          dim_feedforward: 300
+          dropout: 0.2
+        pooling: !LastPooling
+      output_layer: !SoftmaxLayer
+        take_log: True
+        input_size: 300
+        output_size: !@ train.dataset.label.vocab_size 
+    train_sampler: !BaseSampler
+      shuffle: True
+    val_sampler: !BaseSampler
+      shuffle: False
+    loss_fn: !torch.NLLLoss
+    metric_fn: !Accuracy
+    optimizer: !torch.Adam
+      params: !@ train.model.trainable_params
+    max_steps: 1
+    iter_per_step: 1

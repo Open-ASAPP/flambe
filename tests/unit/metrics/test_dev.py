@@ -39,7 +39,7 @@ def test_auc_threshold():
 
     metric_test_case(y_pred, y_true, AUC(max_fpr=1.), sklearn.metrics.roc_auc_score(y_true, y_pred))
     metric_test_case(y_pred, y_true, AUC(max_fpr=0.500001), 0.5)
-    metric_test_case(y_pred, y_true, AUC(max_fpr=0.1), 0)
+    metric_test_case(y_pred, y_true, AUC(max_fpr=0.1), 0.5)
 
 
 def test_auc_empty():

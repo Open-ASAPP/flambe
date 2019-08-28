@@ -19,5 +19,5 @@ class WarmupLinearSchedule(Component, pt.WarmupLinearSchedule):
     pass
 
 
-class AdamW(Component, pt.optimization.Optimizer):
+class AdamW(Component, pt.AdamW):
     pass

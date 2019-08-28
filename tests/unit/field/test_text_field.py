@@ -17,7 +17,7 @@ def test_word_tokenizer():
     tokenizer = WordTokenizer()
 
     dummy = "justo. Praesent luctus."
-    assert tokenizer(dummy) == ["justo.", "Praesent", "luctus."]
+    assert tokenizer(dummy) == ['justo', '.', 'Praesent', 'luctus', '.']
     dummy = ""
     assert tokenizer(dummy) == []
 
@@ -25,7 +25,7 @@ def test_ngram_tokenizer():
     tokenizer = NGramsTokenizer(2)
 
     dummy = "justo. Praesent luctus."
-    assert tokenizer(dummy) == ["justo. Praesent", "Praesent luctus."]
+    assert tokenizer(dummy) == ['justo .', '. Praesent', 'Praesent luctus', 'luctus .']
     dummy = ""
     assert tokenizer(dummy) == []
 
@@ -43,6 +43,24 @@ def test_ngram_tokenizer_equivalence_2():
         ret.extend(NGramsTokenizer(i)(example))
 
     assert t(example) == ret
+
+
+def test_ngram_tokenizer_stopwords():
+    tokenizer = NGramsTokenizer(2, exclude_stopwords=True)
+
+    dummy = "justo. Praesent the luctus."
+    assert tokenizer(dummy) == ['justo .', '. Praesent', 'Praesent luctus', 'luctus .']
+
+    tokenizer = NGramsTokenizer(1, exclude_stopwords=True)
+
+    dummy = "justo. Praesent the luctus."
+    assert tokenizer(dummy) == ['justo', '.', 'Praesent', 'luctus', '.']
+
+    tokenizer = NGramsTokenizer(2, exclude_stopwords=True, stop_words=["Praesent", "the"])
+
+    dummy = "justo. Praesent the luctus."
+    assert tokenizer(dummy) == ['justo .', '. luctus', 'luctus .']
+
 
 def test_char_tokenizer():
     tokenizer = CharTokenizer()

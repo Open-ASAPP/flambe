@@ -81,8 +81,8 @@ class Experiment(ClusterRunnable):
         Contains remote information about the cluster. This object will
         be received in case this Experiment is running remotely.
     max_failures: int
-        number of times to retry running the pipeline if it hits some
-        type of failure, defaults to retrying twice
+        Number of times to retry running the pipeline if it hits some
+        type of failure, defaults to one.
     merge_plot: bool
         Display all tensorboard logs in the same plot (per block type).
         Defaults to True.
@@ -101,7 +101,7 @@ class Experiment(ClusterRunnable):
                  schedulers: OptionalTrialSchedulers = None,
                  reduce: Optional[Dict[str, int]] = None,
                  env: RemoteEnvironment = None,
-                 max_failures: int = 2,
+                 max_failures: int = 1,
                  merge_plot: bool = True) -> None:
         super().__init__(env)
         self.name = name

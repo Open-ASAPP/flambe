@@ -122,7 +122,10 @@ class EpisodicSampler(Sampler):
                 if len(support_target.size()) == 2:
                     support_target = support_target.squeeze()
 
-                yield (query_source, query_target, support_source, support_target)
+                yield (query_source.long(),
+                       query_target.long(),
+                       support_source.long(),
+                       support_target.long())
 
     def length(self, data: Sequence[Sequence[torch.Tensor]]) -> int:
         """Return the number of batches in the sampler.

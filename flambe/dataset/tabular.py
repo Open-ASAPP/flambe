@@ -333,28 +333,32 @@ class TabularDataset(Dataset):
 
     @registrable_factory
     @classmethod
-    def autogen_val_test(cls,
-                         data_path: str,
-                         seed: Optional[int] = None,
-                         test_ratio: Optional[float] = 0.2,
-                         val_ratio: Optional[float] = 0.2,
-                         sep: Optional[str] = '\t',
-                         header: Optional[str] = 'infer',
-                         columns: Optional[Union[List[str], List[int]]] = None,
-                         encoding: Optional[str] = 'utf-8',
-                         transform: Dict[str, Union[Field, Dict]] = None) -> 'TabularDataset':
+    def autogen(cls,
+                data_path: str,
+                test_path: Optional[str] = None,
+                seed: Optional[int] = None,
+                test_ratio: Optional[float] = 0.2,
+                val_ratio: Optional[float] = 0.2,
+                sep: Optional[str] = '\t',
+                header: Optional[str] = 'infer',
+                columns: Optional[Union[List[str], List[int]]] = None,
+                encoding: Optional[str] = 'utf-8',
+                transform: Dict[str, Union[Field, Dict]] = None) -> 'TabularDataset':
         """Generate a test and validation set from the given file
         paths, then load a TabularDataset.
 
         Parameters
         ----------
-        data_path : str
+        data_path: str
             The path to the data
+        test_path: Optional[str]
+            The path to the test data
         seed: Optional[int]
             Random seed to be used in test/val generation
         test_ratio: Optional[float]
             The ratio of the test dataset in relation to
-            the whole dataset
+            the whole dataset. If `test_path` is specified, this field
+            has no effect.
         val_ratio: Optional[float]
             The ratio of the validation dataset in relation to
             the training dataset (whole - test)
@@ -386,8 +390,18 @@ class TabularDataset(Dataset):
                                     columns=columns,
                                     encoding=encoding)
 
-        train_val, test = train_test_split(data, test_size=test_ratio, random_state=seed)
-        train, val = train_test_split(train_val, test_size=val_ratio, random_state=seed)
+        train, val, test = None, None, None
+        if test_path is not None:
+            train, val = train_test_split(data, test_size=val_ratio, random_state=seed)
+            test, _ = cls._load_file(test_path,
+                                     sep=sep,
+                                     header=header,
+                                     columns=columns,
+                                     encoding=encoding)
+        else:
+            train_val, test = train_test_split(data, test_size=test_ratio, random_state=seed)
+            train, val = train_test_split(train_val, test_size=val_ratio, random_state=seed)
+
         return cls(train=train, val=val, test=test, transform=transform, named_columns=cols)
 
     @classmethod

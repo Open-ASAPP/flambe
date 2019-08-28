@@ -45,6 +45,13 @@ class AUC(Metric):
 
         # Compute the area under the curve using trapezoidal rule
         max_index = np.searchsorted(fpr, [self.max_fpr], side='right').item()
-        area = np.trapz(tpr[:max_index], fpr[:max_index])
+
+        # Ensure we integrate up to max_fpr
+        fpr, tpr = fpr.tolist(), tpr.tolist()
+        fpr, tpr = fpr[:max_index], tpr[:max_index]
+        fpr.append(self.max_fpr)
+        tpr.append(max(tpr))
+
+        area = np.trapz(tpr, fpr)
 
         return torch.tensor(area / self.max_fpr).float()

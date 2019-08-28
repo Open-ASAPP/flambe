@@ -1,4 +1,5 @@
 from typing import Optional, Tuple, cast
+import warnings
 
 import torch
 from torch import nn
@@ -96,45 +97,42 @@ class RNNEncoder(Module):
     def forward(self,
                 data: Tensor,
                 state: Optional[Tensor] = None,
-                mask: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
+                padding_mask: Optional[Tensor] = None) -> Tuple[Tensor, Tensor]:
         """Performs a forward pass through the network.
 
         Parameters
         ----------
         data : Tensor
-            The input data, as a float tensor
+            The input data, as a float tensor of shape [S x B x E]
+        state: Tensor
+            An optional previous state of shape [L x B x H]
+        padding_mask: Tensor, optional
+            The padding mask of shape [S x B]
 
         Returns
         -------
         Tensor
-            The encoded output, as a float tensor
+            The encoded output, as a float tensor of shape [S x B x H]
         Tensor
-            The encoded state, as a float tensor
+            The encoded state, as a float tensor of shape [L x B x H]
 
         """
-        # batch_size x seq_len -> seq_len x batch_size
-        data_t = data.transpose(0, 1)
-
-        if mask is None:
+        if padding_mask is None:
             # Default RNN behavior
-            output, state = self.rnn(data_t, state)
+            output, state = self.rnn(data, state)
         elif self.rnn_type == 'sru':
             # SRU takes a mask instead of PackedSequence objects
-            mask_t = mask.transpose(0, 1)
             # Write (1 - mask_t) in weird way for type checking to work
-            output, state = self.rnn(data_t, state, mask_pad=(-mask_t + 1).byte())
+            output, state = self.rnn(data, state, mask_pad=(-padding_mask + 1).byte())
         else:
             # Deal with variable length sequences
-            mask_t = mask.transpose(0, 1)
-            lengths = mask_t.long().sum(dim=0)
+            lengths = padding_mask.long().sum(dim=0)
             # Pass through the RNN
-            packed = nn.utils.rnn.pack_padded_sequence(data_t, lengths,
+            packed = nn.utils.rnn.pack_padded_sequence(data, lengths,
                                                        enforce_sorted=self.enforce_sorted)
             output, state = self.rnn(packed, state)
             output, _ = nn.utils.rnn.pad_packed_sequence(output)
 
-        # Revert back to batch first
-        output = output.transpose(0, 1).contiguous()
         # TODO investigate why PyTorch returns type Any for output
         return output, state  # type: ignore
 
@@ -194,6 +192,9 @@ class PooledRNNEncoder(Module):
         """
         super().__init__()
 
+        warnings.warn("PooledRNNEncoder is deprecated, please use the Pooling \
+                       module in the Embedder object", DeprecationWarning)
+
         self.pooling = pooling
         self.rnn = RNNEncoder(input_size,
                               hidden_size,
@@ -208,34 +209,42 @@ class PooledRNNEncoder(Module):
     def forward(self,
                 data: Tensor,
                 state: Optional[Tensor] = None,
-                mask: Optional[Tensor] = None) -> Tensor:
+                padding_mask: Optional[Tensor] = None) -> Tensor:
         """Perform a forward pass through the network.
 
         Parameters
         ----------
         data : torch.Tensor
-            The input data, as a float tensor
+            The input data, as a float tensor of shape [S x B x E]
+        state: Tensor
+            An optional previous state of shape [L x B x H]
+        padding_mask: Tensor, optional
+            The padding mask of shape [S x B]
 
         Returns
         -------
         torch.Tensor
-            The encoded output, as a float tensor
+            The encoded output, as a float tensor of shape [B x H]
 
         """
-        output, _ = self.rnn(data, state=state, mask=mask)
+        output, _ = self.rnn(data, state=state, padding_mask=padding_mask)
 
         # Apply pooling
-        if mask is None:
-            mask = torch.ones_like(output)
-        cast(torch.Tensor, mask)
+        if padding_mask is None:
+            padding_mask = torch.ones_like(output)
+
+        # Make batch first
+        output = output.transpose(0, 1)
+        cast(torch.Tensor, padding_mask)
+        padding_mask = padding_mask.transpose(0, 1).float()
 
         if self.pooling == 'average':
-            output = (output * mask.unsqueeze(2)).sum(dim=1)
-            output = output / mask.sum(dim=1)
+            output = (output * padding_mask.unsqueeze(2)).sum(dim=1)
+            output = output / padding_mask.sum(dim=1)
         elif self.pooling == 'sum':
-            output = (output * mask.unsqueeze(2)).sum(dim=1)
+            output = (output * padding_mask.unsqueeze(2)).sum(dim=1)
         elif self.pooling == 'last':
-            lengths = mask.long().sum(dim=1)
+            lengths = padding_mask.long().sum(dim=1)
             output = output[torch.arange(output.size(0)).long(), lengths - 1, :]
         elif self.pooling == 'first':
             output = output[torch.arange(output.size(0)).long(), 0, :]

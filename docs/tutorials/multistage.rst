@@ -22,7 +22,7 @@ First step: BERT fine-tuning
 We start by taking a pretrained BERT encoder, and we fine-tune it on the :class:`~flambe.nlp.classification.SSTDataset`
 by adding a linear output layer on top of the encoder. We start with the dataset, and
 apply a special TextField object which can load the pretrained vocabulary learned by
-BERT. 
+BERT.
 
 The :class:`~flambe.nlp.classification.SSTDataset` below inherits from our :class:`~flambe.dataset.TabularDataset`
 component. This object takes as input a ``transform`` dictionary, where you can specify
@@ -35,17 +35,16 @@ any number of features.
           :class:`~flambe.dataset.Dataset`.
 
 
-In this example, we apply a :class:`~flambe.nlp.transformers.bert.BERTTextField`
-and a :class:`~flambe.field.LabelField`. 
+In this example, we apply a :class:`~flambe.nlp.transformers.bert.BertTextField`
+and a :class:`~flambe.field.LabelField`.
 
 
 .. code-block:: yaml
 
     dataset: !SSTDataset
         transform:
-            text: !BERTTextField.from_alias
+            text: !BertTextField
                 alias: 'bert-base-uncased'
-                lower: true
             label: !LabelField
 
 .. tip::
@@ -57,33 +56,28 @@ and a :class:`~flambe.field.LabelField`.
         transform:
             text:
                 columns: 0
-                field: !BERTTextField.from_alias
+                field: !BertTextField
                     alias: 'bert-base-uncased'
-                    lower: true
             label:
                 columns: 1
                 field: !LabelField
 
 Next we define our model. We use the :class:`~flambe.nlp.classification.TextClassifier`
-object, which takes an :class:`~flambe.nn.Embedder`, and an output layer:
+object, which takes an :class:`~flambe.nn.Embedder`, and an output layer. Here,
+we use the :class:`~flambe.nlp.transformer.BertEmbedder` 
 
 .. code-block:: yaml
 
     teacher: !TextClassifier
 
-      embedder: !Embedder
-        embedding: !BERTEmbeddings.from_alias
-          path: 'bert-base-uncased'
-          embedding_freeze: True
-        encoder: !BERTEncoder.from_alias
-          path: 'bert-base-uncased'
-          pool_last: True
+      embedder: !BertEmbedder
+        pool: True
 
       output_layer: !SoftmaxLayer
-        input_size: !@ model.embedder.encoder.config.hidden_size
+        input_size: !@ model.embedder.hidden_size
         output_size: !@ dataset.label.vocab_size  # We link the to size of the label space
-    
-Finally we put all of this in a :class:`~flambe.learn.Trainer` object, which will execute training. 
+
+Finally we put all of this in a :class:`~flambe.learn.Trainer` object, which will execute training.
 
 .. tip:: Any component can be specified at the top level in the pipeline or be an argument
         to another :class:`~flambe.compile.Component` objects. A :class:`~flambe.compile.Component`
@@ -117,14 +111,15 @@ We now introduce a second model, which we will call the student model:
     student: !TextClassifier
 
       embedder: !Embedder
-        embedding: !BERTEmbeddings.from_alias
-          path: 'bert-base-uncased'
-          embedding_freeze: True
+        embedding: !Embeddings
+          num_embeddings: !@dataset.text.vocab_size
+          embedding_dim: 300
         encoder: !PooledRNNEncoder
+          input_size: 300
           rnn_type: sru
           n_layers: 2
           hidden_size: 256
-          pooling: last
+        pooling: !LastPooling
       output_layer: !SoftmaxLayer
         input_size: !@ student.embedder.encoder.hidden_size
         output_size: !@ dataset.label.vocab_size
@@ -132,7 +127,7 @@ We now introduce a second model, which we will call the student model:
 .. attention::
     Note how this new model is way less complex than the original layer, being more appropriate
     for productions systems.
-    
+
 In the above example, we decided to reuse the same embedding layer, which
 allows us not to have to provide a new :class:`~flambe.field.Field` to the dataset. However, you
 may also decide to perform different preprocessing for the student model:
@@ -174,7 +169,7 @@ The key here is to link to the teacher model that was obtained in the ``finetune
       alpha_kl: 0.5
       temperature: 1
 
-.. attention:: 
+.. attention::
     Linking to the teacher model directly would use the model pre-finetuning, so we link to
     the model inside the ``finetune`` stage. Note that for these links to work, it's important
     for the :class:`~flambe.learn.Trainer` object to have the ``model`` as instance attribute.
@@ -188,39 +183,39 @@ Full configuration
 
 .. code-block:: yaml
 
+  !Experiment
+
+  name: fine-tune-bert-then-distill
+  pipeline:
+
     dataset: !SSTDataset
         transform:
-            text: !BERTTextField.from_alias
+            text: !BertTextField
                 alias: 'bert-base-uncased'
-                lower: true
             label: !LabelField
-    
+
     teacher: !TextClassifier
-      embedder: !Embedder
-        embedding: !BERTEmbeddings.from_alias
-          path: 'bert-base-uncased'
-          embedding_freeze: True
-        encoder: !BERTEncoder.from_alias
-          path: 'bert-base-uncased'
-          pool_last: True
+      embedder: !BertEmbedder
+        pool: True
       output_layer: !SoftmaxLayer
-        input_size: !@ model.embedder.encoder.config.hidden_size
+        input_size: !@ teacher.embedder.hidden_size
         output_size: !@ dataset.label.vocab_size  # We link the to size of the label space
 
     student: !TextClassifier
       embedder: !Embedder
-        embedding: !BERTEmbeddings.from_alias
-          path: 'bert-base-uncased'
-          embedding_freeze: True
+        embedding: !Embeddings
+          num_embeddings: !@ dataset.text.vocab_size
+          embedding_dim: 300
         encoder: !PooledRNNEncoder
+          input_size: 300
           rnn_type: sru
           n_layers: 2
           hidden_size: 256
-          pooling: last
+        pooling: last
       output_layer: !SoftmaxLayer
         input_size: !@ student.embedder.encoder.hidden_size
         output_size: !@ dataset.label.vocab_size
-    
+
     finetune: !Trainer
       dataset: !@ dataset
       train_sampler: !BaseSampler
@@ -233,7 +228,7 @@ Full configuration
       optimizer: !AdamW
         params: !@ finetune.model.trainable_params
         lr: 0.00005
-    
+
     distill: !DistillationTrainer
       dataset: !@ dataset
       train_sampler: !BaseSampler

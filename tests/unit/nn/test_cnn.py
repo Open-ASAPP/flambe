@@ -1,5 +1,6 @@
 import pytest
 from flambe.nn import CNNEncoder
+import torch
 import random
 
 
@@ -135,3 +136,38 @@ def test_kernel_sizes5():
     for i, b in enumerate(cnn_enc.cnn):
         conv = b[0]
         assert conv.kernel_size == kernels[i]
+
+
+def test_forward_passes():
+    channels = [8, 16, 32]
+    batch_size = 32
+
+    cnn_enc = CNNEncoder(
+        input_channels=3,
+        channels=channels,
+        kernel_size=3,
+        conv_dim=2,
+        pooling=torch.nn.MaxPool2d(2),
+        stride=1,
+        padding=1,
+    )
+
+    _in = torch.rand((batch_size, 3, 32, 32))
+    out = cnn_enc(_in)
+
+    assert out.shape == torch.Size([batch_size, channels[-1], 4, 4])
+
+    cnn_enc = CNNEncoder(
+        input_channels=3,
+        channels=channels,
+        kernel_size=3,
+        conv_dim=2,
+        pooling=None,
+        stride=1,
+        padding=1,
+    )
+
+    _in = torch.rand((batch_size, 3, 32, 32))
+    out = cnn_enc(_in)
+
+    assert out.shape == torch.Size([batch_size, channels[-1], 32, 32])

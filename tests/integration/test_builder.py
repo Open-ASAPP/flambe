@@ -93,9 +93,15 @@ component: !flambe_inference.DummyInferenceEngine
         assert type(eng1) is DummyInferenceEngine
         assert type(eng1.model) is TextClassifier
 
+        extension_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tests/data/dummy_extensions/inference")
+        assert eng1._extensions == {"flambe_inference": extension_path}
+
         eng2 = DummyInferenceEngine.load_from_path(d2)
 
         assert type(eng2) is DummyInferenceEngine
         assert type(eng2.model) is TextClassifier
 
+        assert eng2._extensions == {"flambe_inference": extension_path}
+
         assert module_equals(eng1.model, eng2.model)
+

@@ -6,6 +6,7 @@ import pprint
 
 import torch
 import dill
+import mock
 from ruamel.yaml.compat import StringIO
 from ruamel.yaml import YAML
 
@@ -194,6 +195,14 @@ def alternating_nn_module_with_state():
     return create_factory(RootTorch)
 
 
+def schema_builder():
+    config = """
+!Basic
+"""
+    obj = yaml.load(config)
+    return obj
+
+
 def complex_builder(from_config):
     if from_config:
         config = """
@@ -278,6 +287,9 @@ def complex_multi_layered():
 def complex_multi_layered_nontorch_root():
     return complex_builder_nontorch_root
 
+@pytest.fixture
+def schema():
+    return schema_builder
 
 class TestHelpers:
 
@@ -615,3 +627,54 @@ two: !A
             loaded_c = load(path)
         assert loaded_c.one.akw2 is loaded_c.two.akw2
         assert loaded_c.one.akw2.bkw1 == loaded_c.two.akw2.bkw1
+
+
+class TestSerializationExtensions:
+
+    EXTENSIONS = {
+        "ext1": "my_extension_1",
+        "ext2": "my_extension_2",
+        "ext3": "my_extension_3",
+    }
+
+    @pytest.mark.parametrize("pickle_only", [True, False])
+    @pytest.mark.parametrize("compress_save_file", [True, False])
+    @mock.patch('flambe.compile.serialization.is_installed_module')
+    @mock.patch('flambe.compile.serialization.import_modules')
+    @mock.patch('flambe.compile.component.Schema.add_extensions_metadata')
+    def test_save_to_file_and_load_from_file_with_extensions(
+            self, mock_add_extensions,
+            mock_import_module, mock_installed_module,
+            compress_save_file, pickle_only, schema):
+
+        mock_installed_module.return_value = True
+
+        schema_obj = schema()
+
+        # Add extensions manually because if we use add_extensions_metadata
+        # then no extensions will be added as the schema doesn't container_folder
+        # any prefix.
+        schema_obj._extensions = TestSerializationExtensions.EXTENSIONS
+
+        obj = schema_obj()
+        state = obj.get_state()
+
+        with tempfile.TemporaryDirectory() as root_path:
+            path = os.path.join(root_path, 'savefile.flambe')
+            save_state_to_file(state, path, compress_save_file, pickle_only)
+
+            os.system(f"cat {path}/config.yaml")
+
+            list_files(path)
+            if pickle_only:
+                path += '.pkl'
+            if compress_save_file:
+                path += '.tar.gz'
+            state_loaded = load_state_from_file(path)
+
+            check_mapping_equivalence(state, state_loaded)
+            check_mapping_equivalence(state._metadata, state_loaded._metadata)
+
+            _ = Basic.load_from_path(path)
+            mock_add_extensions.assert_called_once_with(TestSerializationExtensions.EXTENSIONS)
+

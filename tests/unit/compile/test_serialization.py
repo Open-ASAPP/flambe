@@ -2,7 +2,6 @@ import pytest
 import tempfile
 from collections import abc, OrderedDict
 import os
-import pprint
 
 import torch
 import dill
@@ -535,14 +534,11 @@ class TestSerializationIntegration:
             path = os.path.join(root_path, 'savefile.flambe')
             save_state_to_file(state, path, compress_save_file, pickle_only)
             list_files(path)
-            print("\n\nHello world\n\n")
             if pickle_only:
                 path += '.pkl'
             if compress_save_file:
                 path += '.tar.gz'
             state_loaded = load_state_from_file(path)
-            print("original state: ", state)
-            print("loaded state: ", state_loaded)
             check_mapping_equivalence(state, state_loaded)
             check_mapping_equivalence(state._metadata, state_loaded._metadata)
         new_obj = complex_multi_layered_nontorch_root(from_config=True)
@@ -662,8 +658,6 @@ class TestSerializationExtensions:
         with tempfile.TemporaryDirectory() as root_path:
             path = os.path.join(root_path, 'savefile.flambe')
             save_state_to_file(state, path, compress_save_file, pickle_only)
-
-            os.system(f"cat {path}/config.yaml")
 
             list_files(path)
             if pickle_only:

@@ -177,7 +177,7 @@ def collate_fn(data: List[Tuple[torch.Tensor, ...]],
             sizes = [tensor.size() for tensor in tensors]
 
             if all(s == sizes[0] for s in sizes):
-                stacked_tensors = torch.stack(tensors).squeeze(1)
+                stacked_tensors = torch.stack(tensors)
                 batch.append(stacked_tensors)
             else:
                 # Variable length sequences

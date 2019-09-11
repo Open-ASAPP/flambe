@@ -57,7 +57,8 @@ class MLPEncoder(Module):
 
             # Add the first hidden layer
             layers.append(nn.Linear(input_size, hidden_size))
-            layers.append(hidden_activation)
+            if hidden_activation is not None:
+                layers.append(hidden_activation)
 
             for _ in range(1, n_layers - 1):
                 layers.append(nn.Linear(hidden_size, hidden_size))

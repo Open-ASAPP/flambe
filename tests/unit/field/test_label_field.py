@@ -45,9 +45,9 @@ def test_label_process():
     field.setup(dummy)
 
     assert len(field.vocab) == 3
-    assert list(field.process('LABEL1')) == [0]
-    assert list(field.process('LABEL2')) == [2]
-    assert list(field.process('LABEL3')) == [1]
+    assert int(field.process('LABEL1')) == 0
+    assert int(field.process('LABEL2')) == 2
+    assert int(field.process('LABEL3')) == 1
 
 
 def test_label_process_multilabel():
@@ -64,8 +64,8 @@ def test_label_process_multilabel():
 
     assert list(field.process('LABEL1,LABEL2')) == [0, 1]
     assert list(field.process('LABEL2,LABEL1')) == [1, 0]
-    assert list(field.process('LABEL2')) == [1]
-    assert list(field.process('LABEL3')) == [2]
+    assert int(field.process('LABEL2')) == 1
+    assert int(field.process('LABEL3')) == 2
 
 
 def test_label_process_one_hot():
@@ -205,15 +205,15 @@ def test_pass_bool_labels():
     field.setup(dummy)
 
     assert len(field.vocab) == 2
-    assert list(field.process(False)) == [0]
-    assert list(field.process(True)) == [1]
+    assert int(field.process(False)) == 0
+    assert int(field.process(True)) == 1
 
     field = LabelField(labels=[True, False])
     field.setup(dummy)
 
     assert len(field.vocab) == 2
-    assert list(field.process(False)) == [1]
-    assert list(field.process(True)) == [0]
+    assert int(field.process(False)) == 1
+    assert int(field.process(True)) == 0
 
 
 def test_pass_labels():
@@ -224,17 +224,17 @@ def test_pass_labels():
     field.setup(dummy)
 
     assert len(field.vocab) == 3
-    assert list(field.process('LABEL1')) == [0]
-    assert list(field.process('LABEL2')) == [1]
-    assert list(field.process('LABEL3')) == [2]
+    assert int(field.process('LABEL1')) == 0
+    assert int(field.process('LABEL2')) == 1
+    assert int(field.process('LABEL3')) == 2
 
     field = LabelField(labels=['LABEL3', 'LABEL1', 'LABEL2'])
     field.setup(dummy)
 
     assert len(field.vocab) == 3
-    assert list(field.process('LABEL1')) == [1]
-    assert list(field.process('LABEL2')) == [2]
-    assert list(field.process('LABEL3')) == [0]
+    assert int(field.process('LABEL1')) == 1
+    assert int(field.process('LABEL2')) == 2
+    assert int(field.process('LABEL3')) == 0
 
 
 def test_pass_labels_with_unkown_1():

@@ -109,7 +109,7 @@ class LabelField(Field):
             out = [int(i in out) for i in range(len(self.vocab))]
             out = torch.tensor(out).long()  # Back to Tensor
 
-        return out
+        return out.squeeze()
 
     @property
     def vocab_size(self) -> int:

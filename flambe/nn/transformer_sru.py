@@ -12,6 +12,7 @@ class TransformerSRU(Module):
     """A Transformer with an SRU replacing the FFN."""
 
     def __init__(self,
+                 input_size: int = 512,
                  d_model: int = 512,
                  nhead: int = 8,
                  num_encoder_layers: int = 6,
@@ -25,6 +26,10 @@ class TransformerSRU(Module):
 
         Parameters
         ----------
+        input_size : int, optional
+            dimension of embeddings (default=512). if different from
+            d_model, then a linear layer is added to project from
+            input_size to d_model.
         d_model : int, optional
             the number of expected features in the
             encoder/decoder inputs (default=512).
@@ -54,7 +59,8 @@ class TransformerSRU(Module):
         """
         super().__init__()
 
-        self.encoder = TransformerSRUEncoder(d_model,
+        self.encoder = TransformerSRUEncoder(input_size,
+                                             d_model,
                                              nhead,
                                              dim_feedforward,
                                              num_encoder_layers,
@@ -63,7 +69,8 @@ class TransformerSRU(Module):
                                              bidrectional,
                                              **kwargs)
 
-        self.decoder = TransformerSRUDecoder(d_model,
+        self.decoder = TransformerSRUDecoder(input_size,
+                                             d_model,
                                              nhead,
                                              dim_feedforward,
                                              num_encoder_layers,
@@ -157,6 +164,7 @@ class TransformerSRUEncoder(Module):
     """A TransformerSRUEncoder with an SRU replacing the FFN."""
 
     def __init__(self,
+                 input_size: int = 512,
                  d_model: int = 512,
                  nhead: int = 8,
                  num_layers: int = 6,
@@ -169,6 +177,9 @@ class TransformerSRUEncoder(Module):
 
         Parameters
         ---------
+        input_size : int
+            The embedding dimension of the model.  If different from
+            d_model, a linear projection layer is added.
         d_model : int
             the number of expected features in encoder/decoder inputs.
             Default ``512``.
@@ -193,6 +204,12 @@ class TransformerSRUEncoder(Module):
 
         """
         super().__init__()
+
+        self.input_size = input_size
+        self.d_model = d_model
+
+        if input_size != d_model:
+            self.proj = nn.Linear(input_size, d_model)
 
         layer = TransformerSRUEncoderLayer(d_model,
                                            nhead,
@@ -231,6 +248,9 @@ class TransformerSRUEncoder(Module):
         """
         output = src
 
+        if self.input_size != self.d_model:
+            output = self.proj(output)
+
         new_states = []
         for i in range(self.num_layers):
             input_state = state[i] if state is not None else None
@@ -254,6 +274,7 @@ class TransformerSRUDecoder(Module):
     """A TransformerSRUDecoderwith an SRU replacing the FFN."""
 
     def __init__(self,
+                 input_size: int = 512,
                  d_model: int = 512,
                  nhead: int = 8,
                  num_layers: int = 6,
@@ -265,6 +286,9 @@ class TransformerSRUDecoder(Module):
 
         Parameters
         ---------
+        input_size : int
+            The embedding dimension of the model.  If different from
+            d_model, a linear projection layer is added.
         d_model : int
             the number of expected features in encoder/decoder inputs.
             Default ``512``.
@@ -286,6 +310,12 @@ class TransformerSRUDecoder(Module):
 
         """
         super().__init__()
+
+        self.input_size = input_size
+        self.d_model = d_model
+
+        if input_size != d_model:
+            self.proj = nn.Linear(input_size, d_model)
 
         layer = TransformerSRUDecoderLayer(d_model,
                                            nhead,
@@ -336,6 +366,9 @@ class TransformerSRUDecoder(Module):
         """
         output = tgt
         state = state or [None] * self.num_layers
+
+        if self.input_size != self.d_model:
+            output = self.proj(output)
 
         for i in range(self.num_layers):
             output = self.layers[i](output,

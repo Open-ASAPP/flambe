@@ -26,6 +26,7 @@ class Transformer(Module):
     """
 
     def __init__(self,
+                 input_size: int = 512,
                  d_model: int = 512,
                  nhead: int = 8,
                  num_encoder_layers: int = 6,
@@ -36,6 +37,10 @@ class Transformer(Module):
 
         Parameters
         ----------
+        input_size : int, optional
+            dimension of embeddings (default=512). if different from
+            d_model, then a linear layer is added to project from
+            input_size to d_model.
         d_model : int, optional
             the number of expected features in the
             encoder/decoder inputs (default=512).
@@ -57,13 +62,15 @@ class Transformer(Module):
         """
         super().__init__()
 
-        self.encoder = TransformerEncoder(d_model,
+        self.encoder = TransformerEncoder(input_size,
+                                          d_model,
                                           nhead,
                                           dim_feedforward,
                                           num_encoder_layers,
                                           dropout)
 
-        self.decoder = TransformerDecoder(d_model,
+        self.decoder = TransformerDecoder(input_size,
+                                          d_model,
                                           nhead,
                                           dim_feedforward,
                                           num_encoder_layers,
@@ -154,6 +161,7 @@ class TransformerEncoder(Module):
     """TransformerEncoder is a stack of N encoder layers."""
 
     def __init__(self,
+                 input_size: int = 512,
                  d_model: int = 512,
                  nhead: int = 8,
                  num_layers: int = 6,
@@ -163,6 +171,9 @@ class TransformerEncoder(Module):
 
         Parameters
         ---------
+        input_size : int
+            The embedding dimension of the model.  If different from
+            d_model, a linear projection layer is added.
         d_model : int
             the number of expected features in encoder/decoder inputs.
             Default ``512``.
@@ -179,6 +190,12 @@ class TransformerEncoder(Module):
 
         """
         super().__init__()
+
+        self.input_size = input_size
+        self.d_model = d_model
+
+        if input_size != d_model:
+            self.proj = nn.Linear(input_size, d_model)
 
         layer = TransformerEncoderLayer(d_model,
                                         nhead,
@@ -213,6 +230,9 @@ class TransformerEncoder(Module):
         """
         output = src
 
+        if self.input_size != self.d_model:
+            output = self.proj(output)
+
         for i in range(self.num_layers):
             output = self.layers[i](output,
                                     memory=memory,
@@ -232,6 +252,7 @@ class TransformerDecoder(Module):
     """TransformerDecoder is a stack of N decoder layers"""
 
     def __init__(self,
+                 input_size: int,
                  d_model: int,
                  nhead: int,
                  num_layers: int,
@@ -241,6 +262,9 @@ class TransformerDecoder(Module):
 
         Parameters
         ---------
+        input_size : int
+            The embedding dimension of the model.  If different from
+            d_model, a linear projection layer is added.
         d_model : int
             The number of expected features in encoder/decoder inputs.
         nhead : int, optional
@@ -254,6 +278,12 @@ class TransformerDecoder(Module):
 
         """
         super().__init__()
+
+        self.input_size = input_size
+        self.d_model = d_model
+
+        if input_size != d_model:
+            self.proj = nn.Linear(input_size, d_model)
 
         layer = TransformerDecoderLayer(d_model,
                                         nhead,
@@ -297,6 +327,9 @@ class TransformerDecoder(Module):
 
         """
         output = tgt
+
+        if self.input_size != self.d_model:
+            output = self.proj(output)
 
         for i in range(self.num_layers):
             output = self.layers[i](output,
@@ -347,7 +380,6 @@ class TransformerEncoderLayer(Module):
 
         """
         super().__init__()
-
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
 
         self.dropout = nn.Dropout(dropout)

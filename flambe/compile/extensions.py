@@ -289,11 +289,12 @@ def import_modules(modules: Iterable[str]) -> None:
 
 def setup_default_modules():
     from flambe.compile.utils import make_component
+    from flambe.optim import LRScheduler
     import torch
     import ray
     make_component(torch.nn.Module, only_module='torch.nn')
     make_component(torch.optim.Optimizer, only_module='torch.optim')
     make_component(torch.optim.lr_scheduler._LRScheduler,
-                   only_module='torch.optim.lr_scheduler')
+                   only_module='torch.optim.lr_scheduler', parent_component_class=LRScheduler)
     make_component(ray.tune.schedulers.TrialScheduler)
     make_component(ray.tune.suggest.SearchAlgorithm)

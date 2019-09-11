@@ -14,8 +14,6 @@ from flambe.compile.extensions import import_modules, is_installed_module, insta
     setup_default_modules
 
 # Constants used for state representation & serialization
-# Duplicated here temporarily while we find the best place for them;
-#  need to avoid circular dependency with Component
 from flambe.compile.const import STATE_DICT_DELIMETER, FLAMBE_SOURCE_KEY, FLAMBE_CLASS_KEY, \
     FLAMBE_CONFIG_KEY, FLAMBE_DIRECTORIES_KEY, VERSION_KEY, \
     HIGHEST_SERIALIZATION_PROTOCOL_VERSION, DEFAULT_SERIALIZATION_PROTOCOL_VERSION, \
@@ -62,8 +60,13 @@ def _convert_to_tree(metadata: Dict[str, Any]) -> SaveTreeNode:
             continue
         current_dict = tree
         component_keys = compound_key.split(STATE_DICT_DELIMETER)
+        last_node_i = 0
         for i in range(len(component_keys)):
-            key = component_keys[i]
+            key = STATE_DICT_DELIMETER.join(component_keys[last_node_i:i + 1])
+            if STATE_DICT_DELIMETER.join(component_keys[:i + 1]) \
+                    not in metadata[FLAMBE_DIRECTORIES_KEY]:
+                continue
+            last_node_i += 1
             prefix = STATE_DICT_DELIMETER.join(component_keys[:i + 1])
             current_value = current_dict.children.get(key)
             if key not in current_dict.children:
@@ -92,14 +95,12 @@ def _convert_to_tree(metadata: Dict[str, Any]) -> SaveTreeNode:
 def _update_save_tree(save_tree: SaveTreeNode, key: Sequence[str], value: Any) -> None:
     current = save_tree
     last_i = 0
-    for i, step in enumerate(key):
-        if step in current.children:
-            current = current.children[step]  # type: ignore
-        else:
-            last_i = i
-            break
-    internal_key = STATE_DICT_DELIMETER.join(key[last_i:])
-    current.state[internal_key] = value
+    for i, _ in enumerate(key):
+        current_key = STATE_DICT_DELIMETER.join(key[last_i:i + 1])
+        if current_key in current.children:
+            current = current.children[current_key]  # type: ignore
+            last_i += 1
+    current.state[current_key] = value
 
 
 def _traverse_all_nodes(save_tree: SaveTreeNode,

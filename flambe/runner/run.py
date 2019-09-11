@@ -11,6 +11,7 @@ import os
 from flambe.const import FLAMBE_GLOBAL_FOLDER
 from flambe.compile import make_component
 from flambe.compile.extensions import download_extensions
+from flambe.optim import LRScheduler
 from flambe.runnable.utils import is_dev_mode, get_flambe_repo_location
 from flambe.logging import setup_global_logging
 from flambe.logging import coloredlogs as cl
@@ -43,7 +44,7 @@ def main(args: argparse.Namespace) -> None:
     make_component(torch.optim.Optimizer,  # type: ignore
                    only_module='torch.optim')
     make_component(torch.optim.lr_scheduler._LRScheduler,
-                   only_module='torch.optim.lr_scheduler')
+                   only_module='torch.optim.lr_scheduler', parent_component_class=LRScheduler)
     make_component(ray.tune.schedulers.TrialScheduler)
     make_component(ray.tune.suggest.SearchAlgorithm)
 

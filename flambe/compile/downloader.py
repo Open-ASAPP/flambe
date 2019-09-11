@@ -37,7 +37,7 @@ def s3_exists(url: ParseResult) -> bool:
 
 
 def s3_remote_file(url: ParseResult) -> bool:
-    """Check if an S3 hosted artifact is a file or a folder.
+    """Check if an existing S3 hosted artifact is a file or a folder.
 
     Parameters
     ----------
@@ -166,14 +166,20 @@ def download_manager(path: str):
         The new local path
 
     """
-    if os.path.exists(path):
-        yield path
+    url = urlparse(path)
+
+    if not url.scheme:
+        # 'path' is a local path
+        if os.path.exists(os.path.expanduser(path)):
+            yield path
+        else:
+            raise ValueError(f"Path: '{path}' does not exist locally.")
 
     else:
-        url = urlparse(path)
+        # 'path' is a remote URL
         if url.scheme == 's3':
             if not s3_exists(url):
-                raise ValueError(f"URL {path} not available")
+                raise ValueError(f"S3 url: '{path}' is not available")
 
             if s3_remote_file(url):
                 with tempfile.NamedTemporaryFile() as tmpfile:
@@ -186,11 +192,13 @@ def download_manager(path: str):
 
         elif url.scheme == 'http' or url.scheme == 'https':
             if not http_exists(path):
-                raise ValueError(f"URL {path} not available")
+                raise ValueError(f"HTTP url: '{path}' is not available")
 
             with tempfile.NamedTemporaryFile('wb') as tmpfile:
                 download_http_file(path, tmpfile.name)
                 yield tmpfile.name
 
         else:
-            raise ValueError("Currently only S3 and http/https URLs are supported")
+            raise ValueError(
+                f"'{path}' is not a valid remote URL. Only S3 and http/https URLs are supported."
+            )

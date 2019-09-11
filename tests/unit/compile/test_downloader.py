@@ -1,6 +1,7 @@
 from moto import mock_s3
 
 import pytest
+import os
 import boto3
 import responses
 import tempfile
@@ -28,6 +29,7 @@ def test_s3_file():
 
     assert downloader.s3_remote_file(urlparse("s3://mybucket/some_file.txt")) is True
     assert downloader.s3_remote_file(urlparse("s3://mybucket/some_folder")) is False
+    assert downloader.s3_remote_file(urlparse("s3://mybucket/some_folder/")) is False
 
 
 def test_s3_existing():
@@ -41,6 +43,20 @@ def test_s3_existing():
     assert downloader.s3_exists(urlparse("s3://other/some_file.txt")) is False
     assert downloader.s3_exists(urlparse("s3://some_file.txt")) is False
 
+    s3.put_object(Bucket='mybucket', Key="some_folder/some_file.txt", Body="CONTENT")
+    assert downloader.s3_exists(urlparse("s3://mybucket/some_folder/some_file.txt")) is True
+    assert downloader.s3_exists(urlparse("s3://mybucket/some_folder/")) is True
+
+
+def test_edge_cases():
+    with pytest.raises(TypeError):
+        with downloader.download_manager(None) as _:
+            pass
+
+    with pytest.raises(ValueError):
+        with downloader.download_manager('') as _:
+            pass
+
 
 def test_local_file():
     path = __file__
@@ -48,16 +64,31 @@ def test_local_file():
         assert path == p
 
 
+def test_invalid_local_file():
+    path = "/some/unexistent/path/!@#$%RVMCDOCMSxxxxoemdow"
+
+    if not os.path.exists(path):
+        with pytest.raises(ValueError) as excinfo:
+            with downloader.download_manager(path) as p:
+                assert path == p
+
+        assert 'does not exist locally.' in str(excinfo.value)
+
+
 def test_invalid_protocol():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as excinfo:
         with downloader.download_manager("sftp://something") as p:
             _ = p
+    assert 'Only S3 and http/https URLs are supported.' in str(excinfo.value)
 
 
 def test_s3_inexistent_path():
-    with pytest.raises(ValueError):
-        with downloader.download_manager("s3://inexistent_bucket/file.txt") as p:
+    path = "s3://inexistent_bucket/file.txt"
+    with pytest.raises(ValueError) as excinfo:
+        with downloader.download_manager(path) as p:
             _ = p
+
+    assert f"S3 url: '{path}' is not available" in str(excinfo.value)
 
 
 @responses.activate

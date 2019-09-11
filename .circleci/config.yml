@@ -5,11 +5,24 @@ jobs:
         - image: python:3.6
       steps:
         - checkout
+        - restore_cache:
+            keys:
+              # when lock file changes, use increasingly general patterns to restore cache
+              - flambe-cache-{{ .Branch }}
+              - flambe-cache-
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
             command: python3 -m tox -- -m "not end2end" -v
             no_output_timeout: 30m
+        - save_cache:
+            paths:
+              - ~/.cache/pip
+            key: flambe-cache-{{ .Branch }}
+        - store_test_results:
+            path: test_results
+        - store_artifacts:
+            path: test_results
   end2end:
       docker:
         - image: python:3.6

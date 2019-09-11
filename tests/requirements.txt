@@ -12,3 +12,4 @@ moto>=1.3.8
 safety>=1.8.5
 bandit>=1.6.2
 responses>=0.10.6
+flake8-formatter-junit-xml==0.0.6

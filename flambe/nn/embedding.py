@@ -296,15 +296,17 @@ class Embedder(Module):
         embedded = self.embedding(data)
         embedded = self.dropout(embedded)
 
+        padding_mask: Optional[Tensor]
         if self.padding_idx is not None:
             padding_mask = (data != self.padding_idx).byte()
             encoding = self.encoder(embedded, padding_mask=padding_mask)
         else:
+            padding_mask = None
             encoding = self.encoder(embedded)
 
         if self.pooling is not None:
             # Ignore states from encoders such as RNN or TransformerSRU
             encoding = encoding[0] if isinstance(encoding, tuple) else encoding
-            encoding = self.pooling(encoding)
+            encoding = self.pooling(encoding, padding_mask)
 
         return encoding

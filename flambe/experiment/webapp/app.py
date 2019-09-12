@@ -18,6 +18,7 @@ import os
 from flask import Flask, render_template, send_file, jsonify
 
 import shutil
+import html
 
 import pickle
 import subprocess
@@ -101,12 +102,21 @@ def stream():
         return None
 
     def generate():
-        with open(app.config['output_log']) as f:
-            while True:
-                yield f.read()
+        p = 0
+        while True:
+            with open(app.config['output_log'], 'r') as f:
+                f.seek(p)
+                content = f.read()
+                p = f.tell()
+                # Attention: if this content is used as direct HTML
+                # it needs to be escaped. For example, using
+                # html.escape(content)
+                # Not escaping could have undesired effects, like
+                # commenting out the content (if case an '<' is present)
+                yield content
                 sleep(1)
 
-    return app.response_class(generate(), mimetype='text/plain')
+    return app.response_class(generate(), mimetype='text/event-stream')
 
 
 @app.route('/state')

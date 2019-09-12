@@ -77,8 +77,12 @@
         xhr.send();
 
         setInterval(function() {
+            // textContent is more performant than innerHTML
+            // it allows for example to select the text freely
+            // when there are no changes in the content.
+            // Also, it is not treated as HTML so escaping is not needed.
             output.textContent = xhr.responseText;
-        }, 100);
+        }, 2000);
     </script>
 
 

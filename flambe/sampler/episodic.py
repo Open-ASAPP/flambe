@@ -112,12 +112,12 @@ class EpisodicSampler(Sampler):
                 support_source, support_target = list(zip(*supports))
 
                 query_source = pad_sequence(query_source,
-                                            batch_first=False,
+                                            batch_first=True,
                                             padding_value=self.pad)
                 query_target = torch.tensor(query_target)
 
                 support_source = pad_sequence(support_source,
-                                              batch_first=False,
+                                              batch_first=True,
                                               padding_value=self.pad)
                 support_target = torch.tensor(support_target)
 

@@ -117,9 +117,9 @@ class RNNEncoder(Module):
             The encoded state, as a float tensor of shape [L x B x H]
 
         """
-        data = data.transpose(0, 1)
+        data = data.t()
         if padding_mask is not None:
-            padding_mask = padding_mask.transpose(0, 1)
+            padding_mask = padding_mask.t()
 
         if padding_mask is None:
             # Default RNN behavior
@@ -138,7 +138,7 @@ class RNNEncoder(Module):
             output, _ = nn.utils.rnn.pad_packed_sequence(output)
 
         # TODO investigate why PyTorch returns type Any for output
-        return output.transpose(0, 1), state  # type: ignore
+        return output.t(), state  # type: ignore
 
 
 class PooledRNNEncoder(Module):
@@ -238,9 +238,9 @@ class PooledRNNEncoder(Module):
             padding_mask = torch.ones_like(output)
 
         # Make batch first
-        output = output.transpose(0, 1)
+        output = output.t()
         cast(torch.Tensor, padding_mask)
-        padding_mask = padding_mask.transpose(0, 1).float()
+        padding_mask = padding_mask.t().float()
 
         if self.pooling == 'average':
             output = (output * padding_mask.unsqueeze(2)).sum(dim=1)

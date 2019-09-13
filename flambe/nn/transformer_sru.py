@@ -471,7 +471,7 @@ class TransformerSRUEncoderLayer(Module):
         # Transpose and reverse
         reversed_mask = None
         if padding_mask is not None:
-            reversed_mask = (-padding_mask + 1).t()
+            reversed_mask = (-padding_mask + 1)
 
         src2 = self.self_attn(src, src, src, attn_mask=src_mask,
                               key_padding_mask=reversed_mask)[0]
@@ -571,7 +571,7 @@ class TransformerSRUDecoderLayer(Module):
         # Transpose and reverse
         reversed_mask = None
         if padding_mask is not None:
-            reversed_mask = (-padding_mask + 1).t()
+            reversed_mask = (-padding_mask + 1)
 
         tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask,
                               key_padding_mask=reversed_mask)[0]

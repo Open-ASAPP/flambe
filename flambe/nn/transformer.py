@@ -514,7 +514,7 @@ class TransformerDecoderLayer(Module):
         """
         # Transpose anr reverse
         if padding_mask is not None:
-            padding_mask = (-padding_mask + 1).t()
+            padding_mask = (-padding_mask + 1)
 
         tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask,
                               key_padding_mask=padding_mask)[0]
@@ -537,6 +537,6 @@ def generate_square_subsequent_mask(self, sz):
     The masked positions are filled with float('-inf').
     Unmasked positions are filled with float(0.0).
     """
-    mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+    mask = (torch.triu(torch.ones(sz, sz)) == 1).t()
     mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
     return mask

@@ -42,22 +42,21 @@ def test_compose_padded_batches_from_nested_seq():
     sampler = BaseSampler(
         batch_size=bs,
         shuffle=False,
-        pad_index=0,
-        batch_first=False
+        pad_index=0
     )
     sampler = sampler.sample(data)
 
     batch = next(sampler)
     a, b, c = batch
-    assert a.size() == (2, bs)  # In first batch, first col: largest element has length 2
-    assert b.size() == (5, 4, bs)  # In first batch, second col: largest child has length 5; largest seq. of children has length 4
-    assert c.size() == (8, 3, bs)  # In first batch, third col: largest child has length 8; largest seq. of children has length 3
+    assert a.size() == (bs, 2)  # In first batch, first col: largest element has length 2
+    assert b.size() == (bs, 4, 5)  # In first batch, second col: largest child has length 5; largest seq. of children has length 4
+    assert c.size() == (bs, 3, 8)  # In first batch, third col: largest child has length 8; largest seq. of children has length 3
 
     batch = next(sampler)
     a, b, c = batch
-    assert a.size() == (4, bs) # In second batch, first col: largest element has length 4
-    assert b.size() == (6, 2, bs)  # In first batch, second col: largest child has length 6; largest seq. of children has length 2
-    assert c.size() == (7, 1, bs)  # In first batch, third col: largest child has length 7; largest seq. of children has length 1
+    assert a.size() == (bs, 4) # In second batch, first col: largest element has length 4
+    assert b.size() == (bs, 2, 6)  # In first batch, second col: largest child has length 6; largest seq. of children has length 2
+    assert c.size() == (bs, 1, 7)  # In first batch, third col: largest child has length 7; largest seq. of children has length 1
 
 
 def test_column_specific_pad_indexes():
@@ -89,8 +88,7 @@ def test_column_specific_pad_indexes():
     sampler = BaseSampler(
         batch_size=bs,
         shuffle=False,
-        pad_index=(-2, -1, 0),
-        batch_first=False
+        pad_index=(-2, -1, 0)
     )
     sampler = sampler.sample(data)
     batch = next(sampler)
@@ -132,8 +130,7 @@ def test_incorrect_num_column_specific_pad_indexes_raises_error():
     sampler = BaseSampler(
         batch_size=bs,
         shuffle=False,
-        pad_index=(num_cols + 99) * (0,),
-        batch_first=False
+        pad_index=(num_cols + 99) * (0,)
     )
     sampler = sampler.sample(data)
     with pytest.raises(Exception):

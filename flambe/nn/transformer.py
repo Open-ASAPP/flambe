@@ -228,7 +228,7 @@ class TransformerEncoder(Module):
             for padding tokens.
 
         """
-        output = src.t()
+        output = src.transpose(0, 1)
 
         if self.input_size != self.d_model:
             output = self.proj(output)
@@ -239,7 +239,7 @@ class TransformerEncoder(Module):
                                     src_mask=mask,
                                     padding_mask=padding_mask)
 
-        return output.t()
+        return output.transpose(0, 1)
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""
@@ -326,7 +326,7 @@ class TransformerDecoder(Module):
         torch.Tensor
 
         """
-        output = tgt.t()
+        output = tgt.transpose(0, 1)
 
         if self.input_size != self.d_model:
             output = self.proj(output)
@@ -339,7 +339,7 @@ class TransformerDecoder(Module):
                                     padding_mask=padding_mask,
                                     memory_key_padding_mask=memory_key_padding_mask)
 
-        return output.t()
+        return output.transpose(0, 1)
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""

@@ -246,7 +246,7 @@ class TransformerSRUEncoder(Module):
             for padding tokens.
 
         """
-        output = src.t()
+        output = src.transpose(0, 1)
 
         if self.input_size != self.d_model:
             output = self.proj(output)
@@ -261,7 +261,7 @@ class TransformerSRUEncoder(Module):
             new_states.append(new_state)
 
         new_states = torch.stack(new_states, dim=0)
-        return output.t(), new_states
+        return output.transpose(0, 1), new_states
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""
@@ -364,7 +364,7 @@ class TransformerSRUDecoder(Module):
         torch.Tensor
 
         """
-        output = tgt.t()
+        output = tgt.transpose(0, 1)
         state = state or [None] * self.num_layers
 
         if self.input_size != self.d_model:
@@ -379,7 +379,7 @@ class TransformerSRUDecoder(Module):
                                     padding_mask=padding_mask,
                                     memory_key_padding_mask=memory_key_padding_mask)
 
-        return output.t()
+        return output.transpose(0, 1)
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""

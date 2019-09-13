@@ -8,7 +8,11 @@ from flambe.sampler import Sampler
 
 
 class EpisodicSampler(Sampler):
-    """Implements an EpisodicSample object."""
+    """Implement an EpisodicSample object.
+
+    Currently only supports sequence inputs.
+
+    """
 
     def __init__(self,
                  n_support: int,
@@ -16,8 +20,7 @@ class EpisodicSampler(Sampler):
                  n_episodes: int,
                  n_classes: int = None,
                  pad_index: int = 0,
-                 balance_query: bool = False,
-                 batch_first: bool = False) -> None:
+                 balance_query: bool = False) -> None:
         """Initialize the EpisodicSampler.
 
         Parameters
@@ -38,9 +41,6 @@ class EpisodicSampler(Sampler):
             If True, the same number of query points are sampled per
             class, otherwise query points are sampled uniformly
             from the input data
-        batch_first: bool, optional
-            Whether to return sequential data batch first, defaults to
-            False, meaning the sequence length is first.
 
         """
         self.pad = pad_index
@@ -51,7 +51,6 @@ class EpisodicSampler(Sampler):
         self.n_episodes = n_episodes
 
         self.balance_query = balance_query
-        self.batch_first = batch_first
 
     def sample(self,
                data: Sequence[Sequence[torch.Tensor]],
@@ -113,12 +112,12 @@ class EpisodicSampler(Sampler):
                 support_source, support_target = list(zip(*supports))
 
                 query_source = pad_sequence(query_source,
-                                            batch_first=self.batch_first,
+                                            batch_first=False,
                                             padding_value=self.pad)
                 query_target = torch.tensor(query_target)
 
                 support_source = pad_sequence(support_source,
-                                              batch_first=self.batch_first,
+                                              batch_first=False,
                                               padding_value=self.pad)
                 support_target = torch.tensor(support_target)
 

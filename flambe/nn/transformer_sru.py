@@ -93,10 +93,10 @@ class TransformerSRU(Module):
         ----------
         src: torch.Tensor
             the sequence to the encoder (required).
-            shape: :math:`(S, N, E)`.
+            shape: :math:`(N, S, E)`.
         tgt: torch.Tensor
             the sequence to the decoder (required).
-            shape: :math:`(T, N, E)`.
+            shape: :math:`(N, T, E)`.
         src_mask: torch.Tensor, optional
             the additive mask for the src sequence (optional).
             shape: :math:`(S, S)`.
@@ -246,7 +246,7 @@ class TransformerSRUEncoder(Module):
             for padding tokens.
 
         """
-        output = src
+        output = src.t()
 
         if self.input_size != self.d_model:
             output = self.proj(output)
@@ -261,7 +261,7 @@ class TransformerSRUEncoder(Module):
             new_states.append(new_state)
 
         new_states = torch.stack(new_states, dim=0)
-        return output, new_states
+        return output.t(), new_states
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""
@@ -364,7 +364,7 @@ class TransformerSRUDecoder(Module):
         torch.Tensor
 
         """
-        output = tgt
+        output = tgt.t()
         state = state or [None] * self.num_layers
 
         if self.input_size != self.d_model:
@@ -379,7 +379,7 @@ class TransformerSRUDecoder(Module):
                                     padding_mask=padding_mask,
                                     memory_key_padding_mask=memory_key_padding_mask)
 
-        return output
+        return output.t()
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""

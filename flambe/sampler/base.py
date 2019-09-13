@@ -55,7 +55,7 @@ def _bfs(obs: List, obs_idx: int) -> Tuple[Dict[int, List], Set[Tuple[int, ...]]
     return lens, paths
 
 
-def _batch_from_nested_col(col: Tuple, pad: int, batch_first: bool) -> torch.Tensor:
+def _batch_from_nested_col(col: Tuple, pad: int) -> torch.Tensor:
     """Compose a batch padded to the max-size along each dimension.
 
     Parameters
@@ -119,17 +119,10 @@ def _batch_from_nested_col(col: Tuple, pad: int, batch_first: bool) -> torch.Ten
         el = torch.cat((el, pad_tens))  # type: ignore
         batch.index_put_(indices=[torch.tensor([i]) for i in p], values=el)  # type: ignore
 
-    if not batch_first:
-        # Flip all indices
-        dims = range(len(batch.size()))
-        return batch.permute(*reversed(dims))
-    else:
-        return batch
+    return batch
 
 
-def collate_fn(data: List[Tuple[torch.Tensor, ...]],
-               pad: int,
-               batch_first: bool) -> Tuple[torch.Tensor, ...]:
+def collate_fn(data: List[Tuple[torch.Tensor, ...]], pad: int) -> Tuple[torch.Tensor, ...]:
     """Turn a list of examples into a mini-batch.
 
     Handles padding on the fly on simple sequences, as well as
@@ -143,8 +136,6 @@ def collate_fn(data: List[Tuple[torch.Tensor, ...]],
         column from the original dataset
     pad: int
         The padding index
-    batch_first: bool
-        Whether to place the batch dimension first
 
     Returns
     -------
@@ -170,7 +161,7 @@ def collate_fn(data: List[Tuple[torch.Tensor, ...]],
         is_nested = any([isinstance(example, (list, tuple)) for example in column])
         if is_nested:
             # Column contains nested observations
-            nested_tensors = _batch_from_nested_col(column, pad, batch_first)
+            nested_tensors = _batch_from_nested_col(column, pad)
             batch.append(nested_tensors)
         else:
             tensors = [torch.tensor(example) for example in column]
@@ -182,7 +173,7 @@ def collate_fn(data: List[Tuple[torch.Tensor, ...]],
             else:
                 # Variable length sequences
                 padded_tensors = pad_sequence(tensors,
-                                              batch_first=batch_first,
+                                              batch_first=True,
                                               padding_value=pad)
                 batch.append(padded_tensors)
 
@@ -205,7 +196,6 @@ class BaseSampler(Sampler):
                  pad_index: Union[int, Sequence[int]] = 0,
                  n_workers: int = 0,
                  pin_memory: bool = False,
-                 batch_first: bool = False,
                  seed: Optional[int] = None,
                  downsample: Optional[float] = None,
                  downsample_seed: Optional[int] = None,
@@ -230,9 +220,6 @@ class BaseSampler(Sampler):
         n_workers : int, optional
             Number of workers to pass to the DataLoader
             (the default is 0, which means the main process)
-        batch_first: bool, optional
-            Whether to return sequential data batch first, defaults to
-            False, meaning the sequence length is first.
         pin_memory : bool, optional
             Pin the memory when using cuda (the default is False)
         seed: int, optional
@@ -250,7 +237,6 @@ class BaseSampler(Sampler):
         self.pad = pad_index
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.batch_first = batch_first
         self.drop_last = drop_last
         self.n_workers = n_workers
         self.pin_memory = pin_memory
@@ -290,7 +276,7 @@ class BaseSampler(Sampler):
             random_indices = downsample_generator.permutation(len(data))
             data = [data[i] for i in random_indices[:int(self.downsample * len(data))]]
 
-        collate_fn_p = partial(collate_fn, pad=self.pad, batch_first=self.batch_first)
+        collate_fn_p = partial(collate_fn, pad=self.pad)
         # TODO investigate dataset typing in PyTorch; sequence should
         # be fine
         loader = DataLoader(dataset=data,  # type: ignore

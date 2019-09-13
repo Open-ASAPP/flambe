@@ -103,20 +103,24 @@ class RNNEncoder(Module):
         Parameters
         ----------
         data : Tensor
-            The input data, as a float tensor of shape [S x B x E]
+            The input data, as a float tensor of shape [B x S x E]
         state: Tensor
             An optional previous state of shape [L x B x H]
         padding_mask: Tensor, optional
-            The padding mask of shape [S x B]
+            The padding mask of shape [B x S]
 
         Returns
         -------
         Tensor
-            The encoded output, as a float tensor of shape [S x B x H]
+            The encoded output, as a float tensor of shape [B x S x H]
         Tensor
             The encoded state, as a float tensor of shape [L x B x H]
 
         """
+        data = data.transpose(0, 1)
+        if padding_mask is not None:
+            padding_mask = padding_mask.transpose(0, 1)
+
         if padding_mask is None:
             # Default RNN behavior
             output, state = self.rnn(data, state)
@@ -134,7 +138,7 @@ class RNNEncoder(Module):
             output, _ = nn.utils.rnn.pad_packed_sequence(output)
 
         # TODO investigate why PyTorch returns type Any for output
-        return output, state  # type: ignore
+        return output.transpose(0, 1), state  # type: ignore
 
 
 class PooledRNNEncoder(Module):

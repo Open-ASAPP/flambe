@@ -91,10 +91,10 @@ class Transformer(Module):
         ----------
         src: torch.Tensor
             the sequence to the encoder (required).
-            shape: :math:`(S, N, E)`.
+            shape: :math:`(N, S, E)`.
         tgt: torch.Tensor
             the sequence to the decoder (required).
-            shape: :math:`(T, N, E)`.
+            shape: :math:`(N, T, E)`.
         src_mask: torch.Tensor, optional
             the additive mask for the src sequence (optional).
             shape: :math:`(S, S)`.
@@ -117,7 +117,7 @@ class Transformer(Module):
         Returns
         -------
         output: torch.Tensor
-            The output sequence, shape: :math:`(T, N, E)`.
+            The output sequence, shape: :math:`(N, T, E)`.
 
         Note: [src/tgt/memory]_mask should be filled with
             float('-inf') for the masked positions and float(0.0) else.
@@ -217,7 +217,7 @@ class TransformerEncoder(Module):
         Parameters
         ----------
         src: torch.Tensor
-            The sequnce to the encoder (required).
+            The sequence to the encoder (required).
         memory: torch.Tensor, optional
             Optional memory, unused by default.
         mask: torch.Tensor, optional
@@ -228,7 +228,7 @@ class TransformerEncoder(Module):
             for padding tokens.
 
         """
-        output = src
+        output = src.t()
 
         if self.input_size != self.d_model:
             output = self.proj(output)
@@ -239,7 +239,7 @@ class TransformerEncoder(Module):
                                     src_mask=mask,
                                     padding_mask=padding_mask)
 
-        return output
+        return output.t()
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""
@@ -326,7 +326,7 @@ class TransformerDecoder(Module):
         torch.Tensor
 
         """
-        output = tgt
+        output = tgt.t()
 
         if self.input_size != self.d_model:
             output = self.proj(output)
@@ -339,7 +339,7 @@ class TransformerDecoder(Module):
                                     padding_mask=padding_mask,
                                     memory_key_padding_mask=memory_key_padding_mask)
 
-        return output
+        return output.t()
 
     def _reset_parameters(self):
         """Initiate parameters in the transformer model."""
@@ -414,12 +414,12 @@ class TransformerEncoderLayer(Module):
         Returns
         -------
         torch.Tensor
-            Output tensor of shape [S x B x H]
+            Output tensor of shape [B x S x H]
 
         """
-        # Transpose anr reverse
+        # Transpose and reverse
         if padding_mask is not None:
-            padding_mask = (-padding_mask + 1).t()
+            padding_mask = (-padding_mask + 1)
 
         src2 = self.self_attn(src, src, src, attn_mask=src_mask,
                               key_padding_mask=padding_mask)[0]

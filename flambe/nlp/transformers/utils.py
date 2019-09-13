@@ -14,7 +14,8 @@ class TransformerTextField(Field):
     def __init__(self,
                  alias: str,
                  cache_dir: Optional[str] = None,
-                 max_len_truncate: Optional[int] = None, **kwargs) -> None:
+                 max_len_truncate: Optional[int] = None,
+                 add_special_tokens: bool = True, **kwargs) -> None:
         """Initialize from a pretrained tokenizer.
 
         Parameters
@@ -29,6 +30,7 @@ class TransformerTextField(Field):
         """
         self._tokenizer = self._cls.from_pretrained(alias, cache_dir=cache_dir, **kwargs)
         self.max_len_truncate = max_len_truncate
+        self.add_special_tokens = add_special_tokens
 
     @property
     def padding_idx(self) -> int:
@@ -69,7 +71,7 @@ class TransformerTextField(Field):
             The processed example, tokenized and numericalized
 
         """
-        tokens = self._tokenizer.encode(example)
+        tokens = self._tokenizer.encode(example, add_special_tokens=self.add_special_tokens)
 
         if self.max_len_truncate is not None:
             tokens = tokens[:self.max_len_truncate]
@@ -124,19 +126,19 @@ class TransformerEmbedder(Module):
         Parameters
         ----------
         data : torch.Tensor
-            The input data of shape [S x B]
+            The input data of shape [B x S]
         token_type_ids : Optional[torch.Tensor], optional
             Segment token indices to indicate first and second portions
             of the inputs. Indices are selected in ``[0, 1]``: ``0``
             corresponds to a `sentence A` token, ``1``
-            corresponds to a `sentence B` token. Has shape [S x B]
+            corresponds to a `sentence B` token. Has shape [B x S]
         attention_mask : Optional[torch.Tensor], optional
-            FloatTensor of shape [S x B]. Masked values should
+            FloatTensor of shape [B x S]. Masked values should
             be 0 for padding tokens, 1 otherwise.
         position_ids : Optional[torch.Tensor], optional
             Indices of positions of each input sequence tokens
             in the position embedding. Defaults to the order given
-            in the input. Has shape [S x B].
+            in the input. Has shape [B x S].
         head_mask : Optional[torch.Tensor], optional
             Mask to nullify selected heads of the self-attention
             modules. Should be 0 for heads to mask, 1 otherwise.
@@ -147,19 +149,10 @@ class TransformerEmbedder(Module):
         torch.Tensor
             If pool is True, returns a tneosr of shape [B x H],
             else returns an encoding for each token in the sequence
-            of shape [S x B x H].
+            of shape [B x S x H].
 
         """
-        data = data.t()
-
-        if token_type_ids is not None:
-            token_type_ids = token_type_ids.t()
-        if position_ids is not None:
-            position_ids = position_ids.t()
-
-        if attention_mask is not None:
-            attention_mask = attention_mask.t()
-        elif attention_mask is None and self.padding_idx is not None:
+        if attention_mask is None and self.padding_idx is not None:
             attention_mask = (data != self.padding_idx).float()
 
         outputs = self._embedder(data,
@@ -168,7 +161,7 @@ class TransformerEmbedder(Module):
                                  position_ids=position_ids,
                                  head_mask=head_mask)
 
-        output = outputs[0].t(0, 1) if not self.pool else outputs[1]
+        output = outputs[0] if not self.pool else outputs[1]
         return output
 
     def __getattr__(self, name: str) -> Any:

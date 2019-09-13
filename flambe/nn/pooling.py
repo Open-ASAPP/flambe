@@ -26,7 +26,7 @@ class FirstPooling(Module):
             The output data, as a tensor of shape [B x H]
 
         """
-        return data[0, :, :]
+        return data[:, 0, :]
 
 
 class LastPooling(Module):
@@ -54,9 +54,9 @@ class LastPooling(Module):
         if padding_mask is None:
             lengths = torch.tensor([data.size(0)] * data.size(1)).long()
         else:
-            lengths = padding_mask.long().sum(dim=0)
+            lengths = padding_mask.long().sum(dim=1)
 
-        return data[lengths - 1, torch.arange(data.size(1)).long(), :]
+        return data[torch.arange(data.size(1)).long(), lengths - 1, :]
 
 
 class SumPooling(Module):
@@ -70,9 +70,9 @@ class SumPooling(Module):
         Parameters
         ----------
         data : torch.Tensor
-            The input data, as a tensor of shape [S x B x H]
+            The input data, as a tensor of shape [B x S x H]
         padding_mask: torch.Tensor
-            The input mask, as a tensor of shape [S X B]
+            The input mask, as a tensor of shape [B X S]
 
         Returns
         ----------
@@ -84,7 +84,7 @@ class SumPooling(Module):
         if padding_mask is None:
             padding_mask = torch.ones((data.size(0), data.size(1))).to(data)
 
-        return (data * padding_mask.unsqueeze(2)).sum(dim=0)
+        return (data * padding_mask.unsqueeze(2)).sum(dim=1)
 
 
 class AvgPooling(Module):
@@ -98,9 +98,9 @@ class AvgPooling(Module):
         Parameters
         ----------
         data : torch.Tensor
-            The input data, as a tensor of shape [S x B x H]
+            The input data, as a tensor of shape [B x S x H]
         padding_mask: torch.Tensor
-            The input mask, as a tensor of shape [S X B]
+            The input mask, as a tensor of shape [B X S]
 
         Returns
         ----------
@@ -112,5 +112,5 @@ class AvgPooling(Module):
         if padding_mask is None:
             padding_mask = torch.ones((data.size(0), data.size(1))).to(data)
 
-        data = (data * padding_mask.unsqueeze(2)).sum(dim=0)
-        return data / padding_mask.sum(dim=0)
+        data = (data * padding_mask.unsqueeze(2)).sum(dim=1)
+        return data / padding_mask.sum(dim=1)

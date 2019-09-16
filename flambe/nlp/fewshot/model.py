@@ -49,10 +49,6 @@ class PrototypicalTextClassifier(Module):
         self.detach_mean = detach_mean
         self.prototypes = None
 
-        # prototypes will be also serialized in case another
-        # Component sets prototypes externally.
-        self.register_attrs('prototypes')
-
     def compute_prototypes(self, support: Tensor, label: Tensor) -> Tensor:
         """Set the current prototypes used for classification.
 

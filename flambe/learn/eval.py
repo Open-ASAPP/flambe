@@ -6,7 +6,7 @@ from flambe.compile import Component
 from flambe.dataset import Dataset
 from flambe.nn import Module
 from flambe.metric import Metric
-from flambe.sampler import Sampler
+from flambe.sampler import Sampler, BaseSampler
 from flambe.logging import log
 
 
@@ -20,9 +20,9 @@ class Evaluator(Component):
 
     def __init__(self,
                  dataset: Dataset,
-                 eval_sampler: Sampler,
                  model: Module,
                  metric_fn: Metric,
+                 eval_sampler: Sampler = None,
                  eval_data: str = 'test',
                  device: Optional[str] = None) -> None:
         """Initialize the evaluator.
@@ -43,7 +43,7 @@ class Evaluator(Component):
             The device to use in the computation.
 
         """
-        self.eval_sampler = eval_sampler
+        self.eval_sampler = eval_sampler or BaseSampler(batch_size=16, shuffle=False)
         self.model = model
         self.metric_fn = metric_fn
         self.eval_metric = None

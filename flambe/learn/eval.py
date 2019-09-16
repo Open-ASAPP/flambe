@@ -22,7 +22,7 @@ class Evaluator(Component):
                  dataset: Dataset,
                  model: Module,
                  metric_fn: Metric,
-                 eval_sampler: Sampler = None,
+                 eval_sampler: Optional[Sampler] = None,
                  eval_data: str = 'test',
                  device: Optional[str] = None) -> None:
         """Initialize the evaluator.
@@ -31,12 +31,14 @@ class Evaluator(Component):
         ----------
         dataset : Dataset
             The dataset to run evaluation on
-        eval_sampler : Sampler
-            The sampler to use over validation examples
         model : Module
             The model to train
         metric_fn: Metric
             The metric to use for evaluation
+        eval_sampler : Optional[Sampler]
+            The sampler to use over validation examples. By default
+            it will use `BaseSampler` with batch size 16 and without
+            shuffling.
         eval_data: str
             The data split to evaluate on: one of train, val or test
         device: str, optional

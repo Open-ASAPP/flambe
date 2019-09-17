@@ -236,7 +236,7 @@ def save_state_to_file(state: State,
             with open(os.path.join(current_path, PROTOCOL_VERSION_FILE_NAME), 'w') as f_proto:
                 f_proto.write(str(DEFAULT_SERIALIZATION_PROTOCOL_VERSION))
             with open(os.path.join(current_path, STASH_FILE_NAME), 'wb') as f_stash:
-                pickle_module.dump(node.object_stash, f_stash, protocol=pickle_protocol)
+                torch.save(node.object_stash, f_stash, pickle_module, pickle_protocol)
     if compress:
         compressed_file_name = path + '.tar.gz'
         with tarfile.open(name=compressed_file_name, mode='w:gz') as tar_gz:
@@ -348,7 +348,7 @@ def load_state_from_file(path: str,
                     with open(os.path.join(current_dir, CONFIG_FILE_NAME)) as f_config:
                         config = f_config.read()
                     with open(os.path.join(current_dir, STASH_FILE_NAME), 'rb') as f_stash:
-                        stash = pickle_module.load(f_stash)
+                        stash = torch.load(f_stash, map_location, pickle_module, **pickle_load_args)
                     local_metadata = {VERSION_KEY: version, FLAMBE_CLASS_KEY: class_name,
                                       FLAMBE_SOURCE_KEY: source, FLAMBE_CONFIG_KEY: config}
                     if len(stash) > 0:

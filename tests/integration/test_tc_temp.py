@@ -10,7 +10,7 @@ def test_text_classification_config():
 !Experiment
 
 name: text_classification
-save_path: .
+save_path: {}
 
 pipeline:
   b1: !Trainer

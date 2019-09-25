@@ -9,7 +9,7 @@ def test_image_classification_config():
 !Experiment
 
 name: image_classification
-save_path: .
+save_path: {}
 
 pipeline:
   model: !ImageClassifier

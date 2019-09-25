@@ -1,15 +1,7 @@
-import pytest
-import tempfile
-import subprocess
-
-
-@pytest.mark.integration
-def test_image_classification_config():
-    config = """
 !Experiment
 
 name: image_classification
-save_path: {}
+save_path: .
 
 pipeline:
   model: !ImageClassifier
@@ -36,11 +28,3 @@ pipeline:
       params: !@ train[model].trainable_params
     max_steps: 1
     iter_per_step: 1
-"""
-
-    with tempfile.TemporaryDirectory() as d, tempfile.NamedTemporaryFile(mode="w", suffix=".yaml") as f:
-        exp = config.format(d)
-        f.write(exp)
-        f.flush()
-        ret = subprocess.run(['flambe', f.name])
-        assert ret.returncode == 0

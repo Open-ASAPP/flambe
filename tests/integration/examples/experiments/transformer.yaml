@@ -19,6 +19,7 @@ pipeline:
           positional_learned: True
         embedding_dropout: 0.2
         encoder: !TransformerEncoder
+          input_size: 300
           d_model: 300
           num_layers: 4
           nhead: 1

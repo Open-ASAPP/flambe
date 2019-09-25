@@ -26,7 +26,7 @@ class Transformer(Module):
     """
 
     def __init__(self,
-                 input_size: int = 512,
+                 input_size,
                  d_model: int = 512,
                  nhead: int = 8,
                  num_encoder_layers: int = 6,
@@ -38,7 +38,7 @@ class Transformer(Module):
         Parameters
         ----------
         input_size : int, optional
-            dimension of embeddings (default=512). if different from
+            dimension of embeddings. If different from
             d_model, then a linear layer is added to project from
             input_size to d_model.
         d_model : int, optional

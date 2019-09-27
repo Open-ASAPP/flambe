@@ -10,7 +10,7 @@ users to:
 * Run experiments remotely over many workers, including full AWS integration.
 * Easily share experiment configurations, results and model weights with others.
 
-Visit the github repo: https://github.com/Open-ASAPP/flambe
+Visit the github repo: https://github.com/asappresearch/flambe
 
 **A simple Text Classification experiment**
 

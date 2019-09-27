@@ -19,7 +19,7 @@ Filing an Issue (Bug or Enhancement)
 
 Please create an issue on Github_.
 
-.. _Github: http://github.com/Open-ASAPP/flambe
+.. _Github: http://github.com/asappresearch/flambe
 
 Please follow the templates shown when you click on “Create Issue.”
 

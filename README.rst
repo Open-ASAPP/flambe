@@ -10,8 +10,8 @@
 
 |
 
-.. image:: https://circleci.com/gh/Open-ASAPP/flambe.svg?style=svg
-    :target: https://circleci.com/gh/Open-ASAPP/flambe
+.. image:: https://circleci.com/gh/asappresearch/flambe.svg?style=svg
+    :target: https://circleci.com/gh/asappresearch/flambe
 
 .. image:: https://readthedocs.org/projects/flambe/badge/?version=latest
     :target: https://flambe.ai/en/latest/?badge=latest
@@ -41,7 +41,7 @@ Installation
 
 .. code-block:: bash
 
-    git clone git@github.com:Open-ASAPP/flambe.git
+    git clone git@github.com:asappresearch/flambe.git
     cd flambe
     pip install .
 

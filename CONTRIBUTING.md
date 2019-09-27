@@ -4,7 +4,7 @@ We aim to foster a healthy, inclusive, organized and efficient community around 
 
 ### Filing an issue (Bug or Enhancement)
 
-Please create an issue on [GitHub](https://github.com/Open-ASAPP/flambe/issues).
+Please create an issue on [GitHub](https://github.com/asappresearch/flambe/issues).
 
 Please follow the templates shown when you click on “New Issue.”
 

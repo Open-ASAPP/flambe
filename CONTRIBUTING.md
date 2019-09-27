@@ -6,7 +6,7 @@ We aim to foster a healthy, inclusive, organized and efficient community around 
 
 In order to accept your pull request, we need you to submit a CLA. Once you complete your CLA, then it is valid for all future contributions you make to this repository.
 
-Complete your CLA here: https://bit.ly/2lHXALh
+Complete your CLA here: https://docs.google.com/forms/d/e/1FAIpQLScMjmYVAnjRDks-n925KKyWqvsMbn_NBEWXZ4LvyOBtq1QTDQ/viewform
 
 ### Filing an issue (Bug or Enhancement)
 

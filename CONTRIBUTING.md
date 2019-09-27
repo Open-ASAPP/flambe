@@ -2,6 +2,12 @@
 
 We aim to foster a healthy, inclusive, organized and efficient community around the Flambé project. We believe prioritizing responsiveness, thoroughness and helping others along with following best practices in GitFlow, GitHub issue tracking, and our own state of the art model tracking will help us achieve the shared goal of making Flambé as helpful as possible to the research community. Below we outline what’s involved in different aspects of contribution.
 
+### Contributor License Agreement ("CLA")
+
+In order to accept your pull request, we need you to submit a CLA. Once you complete your CLA, then it is valid for all future contributions you make to this repository.
+
+Complete your CLA here: https://bit.ly/2lHXALh
+
 ### Filing an issue (Bug or Enhancement)
 
 Please create an issue on [GitHub](https://github.com/asappresearch/flambe/issues).

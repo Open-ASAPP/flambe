@@ -489,7 +489,8 @@ class Experiment(ClusterRunnable):
         if local_resources:
             new_resources['local'] = cluster.send_local_content(
                 local_resources,
-                os.path.join(cluster.orchestrator.get_home_path(), self.name, "resources")
+                os.path.join(cluster.orchestrator.get_home_path(), self.name, "resources"),
+                all_hosts=True
             )
         else:
             new_resources['local'] = dict()

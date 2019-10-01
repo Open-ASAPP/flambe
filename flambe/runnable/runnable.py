@@ -27,6 +27,19 @@ class Runnable(MappedRegistrable):
     def __init__(self, **kwargs) -> None:
         self.config = configparser.ConfigParser()
         self.extensions: Dict[str, str] = {}
+        self.content = None
+
+    def inject_content(self, content: str) -> None:
+        """Inject the original YAML string that was used
+        to generate this Runnable instance.
+
+        Parameters
+        ----------
+        content: str
+            The YAML, as a string
+
+        """
+        self.content = content
 
     def inject_secrets(self, secrets: str) -> None:
         """Inject the secrets once the Runnable

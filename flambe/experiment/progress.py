@@ -6,8 +6,10 @@ import json
 
 class ProgressState:
 
-    def __init__(self, name, save_path, dependency_dag, factories_num=0):
+    def __init__(self, name, save_path, dependency_dag, config, factories_num=0):
         self.fname = "state.pkl"
+
+        self.config = config
 
         self.name = name
         self.save_path = save_path

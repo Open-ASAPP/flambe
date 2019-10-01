@@ -232,4 +232,5 @@ class SafeExecutionContext:
         if not isinstance(ret, Runnable):
             raise ValueError("Tried to run a non-Runnable")
         cast(Runnable, ret)
+        ret.inject_content(content)
         return ret

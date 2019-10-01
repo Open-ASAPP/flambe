@@ -271,9 +271,9 @@ class Experiment(ClusterRunnable):
 
         if self.env:
             self.progress_state = ProgressState(
-                self.name, full_save_path, dependency_dag, len(self.env.factories_ips))
+                self.name, full_save_path, dependency_dag, self.content, len(self.env.factories_ips))
         else:
-            self.progress_state = ProgressState(self.name, full_save_path, dependency_dag)
+            self.progress_state = ProgressState(self.name, full_save_path, dependency_dag, self.content)
 
         for block_id, schema_block in tqdm(self.pipeline.items()):
             schema_block.add_extensions_metadata(self.extensions)

@@ -139,7 +139,10 @@ class TextField(Field):
                 model = KeyedVectors.load_fasttext_format(self.embeddings,
                                                           binary=self.embeddings_binary)
             elif self.embeddings_format == 'gensim':
-                model = api.load(self.embeddings)
+                try:
+                    model = KeyedVectors.load(self.embeddings)
+                except FileNotFoundError:
+                    model = api.load(self.embeddings)
             else:
                 raise ValueError("Only formats supported are word2vec, fasttext and gensim")
 

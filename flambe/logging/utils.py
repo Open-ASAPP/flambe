@@ -36,7 +36,7 @@ def _get_context_logger() -> logging.Logger:
     """
     frame = inspect.stack()[1]
     module = inspect.getmodule(frame[0])
-    logger = logging.getLogger(module.__name__)
+    logger = logging.getLogger(module.__name__)  # type: ignore
     return logger
 
 

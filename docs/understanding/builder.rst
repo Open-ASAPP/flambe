@@ -6,7 +6,7 @@ A :class:`~flambe.export.Builder` is a simple :class:`~flambe.runnable.Runnable`
 any :class:`~flambe.compile.Component` post- :class:`~flambe.experiment.Experiment`, and export it to a local or remote location.
 
 ``Builders`` decouple the inference logic with the experimentation logic, allowing users
-to iterate through inference contracts independantly without the need of rerunning an
+to iterate through inference contracts independently without needing to rerun an
 :class:`~flambe.experiment.Experiment`.
 
 .. hint::

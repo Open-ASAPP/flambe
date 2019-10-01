@@ -12,7 +12,7 @@ import subprocess
 
 import importlib
 import importlib.util
-from typing import Dict, Optional, Iterable
+from typing import Dict, Optional, Iterable, Union
 from flambe.logging import coloredlogs as cl
 from flambe.compile.utils import _is_url
 
@@ -214,6 +214,7 @@ def install_extensions(extensions: Dict[str, str],
 
             curr_cmd.append(resource)
 
+            output: Union[bytes, str]
             output = subprocess.check_output(
                 curr_cmd,
                 stderr=subprocess.DEVNULL

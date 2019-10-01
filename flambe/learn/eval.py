@@ -89,7 +89,7 @@ class Evaluator(Component):
             tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
 
             log(f'{tb_prefix}Eval {self.metric_fn}',  # type: ignore
-                self.eval_metric, global_step=0)
+                self.eval_metric, global_step=0)  # type: ignore
 
         continue_ = False  # Single step so don't continue
         return continue_

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import configparser
-from typing import Dict
+from typing import Dict, Optional
 
 from flambe.compile import MappedRegistrable
 
@@ -27,7 +27,7 @@ class Runnable(MappedRegistrable):
     def __init__(self, **kwargs) -> None:
         self.config = configparser.ConfigParser()
         self.extensions: Dict[str, str] = {}
-        self.content = None
+        self.content: Optional[str] = None
 
     def inject_content(self, content: str) -> None:
         """Inject the original YAML string that was used

@@ -1,4 +1,4 @@
-from typing import Type, TypeVar, Callable, Mapping, Dict, List, Any, Optional, Set
+from typing import Type, TypeVar, Callable, Mapping, Dict, List, Any, Optional, Set, NamedTuple, Sequence, Iterable, Union
 from abc import abstractmethod, ABC
 from collections import defaultdict
 from warnings import warn
@@ -8,221 +8,163 @@ import inspect
 
 from ruamel.yaml import YAML, ScalarNode
 
+from flambe.compile.common import Singleton
 
-logger = logging.getLogger(__name__)
 
-yaml = YAML()
+ROOT_NAMESPACE = ''
 
-_reg_prefix: Optional[str] = None
 
-R = TypeVar('R', bound='Registrable')
-A = TypeVar('A')
-RT = TypeVar('RT', bound=Type['Registrable'])
+class RegistryEntry(NamedTuple):
+    """Entry in the registry representing a class, tags, factories"""
+
+    callable: Callable
+    default_tag: str
+    aliases: List[str]
+    factories: List[str]
+    from_yaml: Callable  # TODO tighten interface
+    to_yaml: Callable
 
 
 class RegistrationError(Exception):
-    """Error thrown when acessing yaml tag on a non-registered class
-
-    Thrown when trying to access the default yaml tag for a class
-    typically occurs when called on an abstract class
-    """
+    """Thrown when invalid input is being registered"""
 
     pass
 
 
-def make_from_yaml_with_metadata(from_yaml_fn: Callable[..., Any],
-                                 tag: str,
-                                 factory_name: Optional[str] = None) -> Callable[..., Any]:
-    @functools.wraps(from_yaml_fn)
-    def wrapped(constructor: Any, node: Any) -> Any:
-        obj = from_yaml_fn(constructor, node, factory_name=factory_name)
-        # Access dict directly because obj may be a Schema, and have
-        # special dot notation access behavior
-        obj.__dict__['_created_with_tag'] = tag
-        return obj
-    return wrapped
+# Maps from class to registry entry, which contains the tags, aliases,
+# and factory methods
+SubRegistry = Dict[Type, RegistryEntry]
 
 
-def make_to_yaml_with_metadata(to_yaml_fn: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(to_yaml_fn)
-    def wrapped(representer: Any, node: Any) -> Any:
-        if hasattr(node, '_created_with_tag'):
-            tag = node._created_with_tag
-        else:
-            tag = Registrable.get_default_tag(type(node))
-        return to_yaml_fn(representer, node, tag=tag)
-    return wrapped
+class Registry(metaclass=Singleton):
 
+    def __init__(self):
+        self.namespaces: Dict[str, SubRegistry] = defaultdict(SubRegistry)
+        self.callable_to_namespaces: Dict[type, Sequence[str]] = defaultdict(list)
 
-class registration_context:
+    def create(self,
+               callable: Callable,
+               namespace: str = ROOT_NAMESPACE,
+               tags: Optional[Union[str, List[str]]] = None,
+               factories: Optional[Sequence[str]] = None,
+               from_yaml: Optional[Callable] = None,
+               to_yaml: Optional[Callable] = None):
+        if callable in self.callable_to_namespaces and \
+                namespace in self.callable_to_namespaces[callable]:
+            raise RegistrationError(f"Can't create entry for existing callable {callable.__name__}"
+                                    f"in namespace {namespace}. Try updating instead")
+        if tags is not None and isinstance(tags, list) and len(tags) < 1:
+            raise ValueError('At least one tag must be specified. If the default (class name) '
+                             'desired, pass in nothing or None.')
+        if factories is not None and len(factories) < 1:
+            raise ValueError('At least one factory must be specified if any are given.')
+        try:
+            tags = tags or [callable.__name__]
+        except AttributeError:
+            raise ValueError(f'Tags argument not given and callable argument {callable} '
+                             'has no __name__ property.')
+        missing_methods_err = (f'Missing `from_yaml` and or `to_yaml` and given callable '
+                               f'{callable} is not a Class with these methods')
+        try:
+            if not isinstance(callable, type):
+                raise ValueError(missing_methods_err)
+            from_yaml = from_yaml or callable.from_yaml
+            to_yaml = to_yaml or callable.to_yaml
+        except AttributeError:
+            raise ValueError(missing_methods_err)
+        tags = [tags] if isinstance(tags, str) else tags
+        default_tag = tags[0]
+        factories = factories or []
+        new_entry = RegistryEntry(callable, default_tag, tags, factories, from_yaml, to_yaml)
+        self.namespaces[namespace][callable] = new_entry
+        self.callable_to_namespaces[callable].append(namespace)
 
-    def __init__(self, namespace: str) -> None:
-        self._namespace = namespace
-
-    def __enter__(self) -> None:
-        global _reg_prefix
-        self._prev_reg_prefix = _reg_prefix
-        _reg_prefix = self._namespace
-
-    def __exit__(self, *args: Any) -> int:
-        global _reg_prefix
-        _reg_prefix = self._prev_reg_prefix
-        return False
-
-    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
-        @functools.wraps(func)
-        def decorate_reg_context(*args: Any, **kwargs: Any) -> Any:
-            with self:
-                return func(*args, **kwargs)
-        return decorate_reg_context
-
-
-class Registrable(ABC):
-    """Subclasses automatically registered as yaml tags
-
-    Automatically registers subclasses with the yaml loader by
-    adding a constructor and representer which can be overridden
-    """
-
-    _yaml_tags: Dict[Any, List[str]] = defaultdict(list)
-    _yaml_tag_namespace: Dict[Type, str] = defaultdict(str)
-    _yaml_registered_factories: Set[str] = set()
-
-    def __init_subclass__(cls: Type[R],
-                          should_register: Optional[bool] = True,
-                          tag_override: Optional[str] = None,
-                          tag_namespace: Optional[str] = None,
-                          **kwargs: Mapping[str, Any]) -> None:
-        super().__init_subclass__(**kwargs)  # type: ignore
-        # Copy parent set so that factories are inherited
-        # But not shared across cousin classes
-        cls._yaml_registered_factories = set(cls._yaml_registered_factories)
-        if should_register:
-            default_tag = cls.__name__ if tag_override is None else tag_override
-            # NOTE: abstract classes are registered too. This allows us
-            # to raise an exception if you actually try to use one,
-            # in case you think a class should be concrete but is
-            # actually still abstract
-            Registrable.register_tag(cls, default_tag, tag_namespace)
-
-    @staticmethod
-    def register_tag(class_: RT, tag: str, tag_namespace: Optional[str] = None) -> None:
-        modules = class_.__module__.split('.')
-        top_level_module_name = modules[0] if len(modules) > 0 else None
-        global _reg_prefix
-        if _reg_prefix is not None:
-            tag_namespace = _reg_prefix
-        elif tag_namespace is not None:
-            tag_namespace = tag_namespace
-        elif (tag_namespace is None and top_level_module_name is not None) and \
-                (top_level_module_name != 'flambe' and top_level_module_name != 'tests'):
-            tag_namespace = top_level_module_name
-        else:
-            tag_namespace = None
-        # Create a tag that includes namespace e.g. `!torch.Adam`
-        if tag_namespace is not None:
-            full_tag = f"!{tag_namespace}.{tag}"
-        else:
-            full_tag = f"!{tag}"
-        # full_tag = f"!{tag_namespace}.{tag}" if tag_namespace is
-        # not None else f"!{tag}"
-        if class_ in class_._yaml_tag_namespace:
-            if tag_namespace != class_._yaml_tag_namespace[class_]:
-                # Don't register anything not matching the already set
-                # namespace
-                # Helps limit chance of tag collisions
-                msg = (f"You are trying to register class {class_} with namespace "
-                       f"{tag_namespace} != {class_._yaml_tag_namespace[class_]} "
-                       "so ignoring")
-                warn(msg)
-                return
-        elif tag_namespace is not None:
-            # Set namespace so that the above branch can catch
-            # accidentally forgetting namespace
-            class_._yaml_tag_namespace[class_] = tag_namespace
-        # Ensure all tags are only associated with that specific class,
-        # NOT any subclasses
-        class_._yaml_tags[class_].append(full_tag)
-        # Code based on the ruamel.yaml yaml_object decorator
-        # Look for to_yaml and from_yaml methods -- if not present
-        # default to built in default flow style
-
-        def registration_helper(factory_name: Optional[str] = None) -> None:
-            from_yaml_tag = full_tag if factory_name is None else full_tag + "." + factory_name
-            logger.debug(f"Registering tag: {from_yaml_tag}")
-            try:
-                to_yaml = class_.to_yaml
-            except AttributeError:
-                def t_y(representer: Any, node: Any, tag: str) -> Any:
-                    return representer.represent_yaml_object(
-                        tag, node, class_, flow_style=representer.default_flow_style
-                    )
-                to_yaml = t_y
-            finally:
-                yaml.representer.add_representer(class_, make_to_yaml_with_metadata(to_yaml))
-            try:
-                from_yaml = class_.from_yaml
-            except AttributeError:
-                def f_y(constructor: Any, node: Any, factory_name: str) -> Any:
-                    return constructor.construct_yaml_object(node, class_)
-                from_yaml = f_y
-            finally:
-                yaml.constructor.add_constructor(
-                    from_yaml_tag,
-                    make_from_yaml_with_metadata(from_yaml, from_yaml_tag, factory_name)
-                )
-
-        registration_helper()
-        for factory_name in class_._yaml_registered_factories:
-            # Add factory tag to registry
-            factory_full_tag = f'{full_tag}.{factory_name}'
-            class_._yaml_tags[(class_, factory_name)] = [factory_full_tag]
-            # Every time we register a new tag, make sure that you can
-            # use each factory with that new tag
-            registration_helper(factory_name)
-
-    @staticmethod
-    def get_default_tag(class_: RT, factory_name: Optional[str] = None) -> str:
-        """Retrieve default yaml tag for class `cls`
-
-        Retrieve the default tag (aka the last one, which will
-        be the only one, or the alias if it exists) for use in
-        yaml representation
-        """
-        if class_ in class_._yaml_tags:
-            tag = class_._yaml_tags[class_][-1]
-            if (factory_name is not None) and \
-                    (factory_name not in class_._yaml_registered_factories):
-                raise RegistrationError(f"This class has no factory {factory_name}")
-            elif factory_name is not None:
-                tag = tag + '.' + factory_name
-            return tag
-        raise RegistrationError("This class has no registered tags")
-
-    @classmethod
-    @abstractmethod
-    def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
-        """Use representer to create yaml representation of node
-
-        See Component class, and experiment/options for examples
-
-        """
+    def read(self):
         pass
 
-    @classmethod
-    @abstractmethod
-    def from_yaml(cls, constructor: Any, node: Any, factory_name: str) -> Any:
-        """Use constructor to create an instance of cls
+    def add_tag(self,
+                class_: Type,
+                tag: str,
+                namespace: str = ROOT_NAMESPACE):
+        try:
+            self.namespaces[namespace][class_].tags.append(tag)
+        except KeyError:
+            pass
 
-        See Component class, and experiment/options for examples
+    def add_factory(self,
+                    class_: Type,
+                    factory: str,
+                    namespace: str = ROOT_NAMESPACE):
+        try:
+            self.namespaces[namespace][class_].factories.append(factory)
+        except KeyError:
+            pass
 
-        """
-        pass
+    def delete(self, callable: Callable, namespace: Optional[str] = None) -> bool:
+        if namespace is not None:
+            if callable not in self.class_to_namespaces:
+                return False
+            if namespace not in self.namespaces:
+                return False
+            if namespace not in self.class_to_namespaces[callable]:
+                return False
+            try:
+                del self.namespaces[namespace][callable]
+            except KeyError:
+                raise RegistrationError('Invalid registry state')
+            del self.class_to_namespace[callable]
+            return True
+        else:
+            count = 0
+            for sub_registry in self.namespaces.values():
+                if callable in sub_registry:
+                    del sub_registry[callable]
+                    count += 1
+            if count == 0:
+                return False
+            if count >= 1:
+                if callable not in self.class_to_namespaces:
+                    raise RegistrationError('Invalid registry state')
+                del self.class_to_namespace[callable]
+                return True
+
+    def __iter__(self) -> Iterable[RegistryEntry]:
+        for class_, namespace in self.class_to_namespace.items():
+            yield self.namespaces[namespace][class_]
 
 
-def alias(tag: str,
-          tag_namespace: Optional[str] = None) -> Callable[[RT], RT]:
-    """Decorate a Registrable subclass with a new tag
+def get_registry():
+    return Registry()
+
+
+A = TypeVar('A')
+
+
+def get_class_namespace(class_: Type):
+    modules = class_.__module__.split('.')
+    top_level_module_name = modules[0] if len(modules) > 0 else None
+    if top_level_module_name is not None and \
+            (top_level_module_name != 'flambe' and top_level_module_name != 'tests'):
+        return top_level_module_name
+    else:
+        return ROOT_NAMESPACE
+
+
+def register(cls: Type[A],
+             tag: str,
+             from_yaml: Optional[Callable] = None,
+             to_yaml: Optional[Callable] = None) -> Type[A]:
+    """Safely register a new tag for a class"""
+    tag_namespace = get_class_namespace(cls)
+    get_registry().create(cls, tag_namespace, tag, from_yaml=from_yaml, to_yaml=to_yaml)
+    return cls
+
+
+RT = TypeVar('RT', bound=Type['Registrable'])
+
+
+def alias(tag: str) -> Callable[[RT], RT]:
+    """Decorate a registered class with a new tag
 
     Can be added multiple times to give a class multiple aliases,
     however the top most alias tag will be the default tag which means
@@ -231,26 +173,29 @@ def alias(tag: str,
     """
 
     def decorator(cls: RT) -> RT:
-        Registrable.register_tag(cls, tag, tag_namespace)
+        namespace = get_class_namespace(cls)
+        get_registry().add_tag(cls, tag, namespace)
         return cls
 
     return decorator
 
 
-def register(cls: Type[A], tag: str) -> Type[A]:
-    """Safely register a new tag for a class
+class Registrable:
+    """Subclasses automatically registered as yaml tags
 
-    Similar to alias, but it's intended to be used on classes that are
-    not already subclasses of Registrable, and it is NOT a decorator
-
+    Automatically registers subclasses with the yaml loader by
+    adding a constructor and representer which can be overridden
     """
-    if not hasattr(cls, '_yaml_tags'):
-        cls._yaml_tags = defaultdict(list)  # type: ignore
-    if not hasattr(cls, '_yaml_tag_namespace'):
-        cls._yaml_tag_namespace = defaultdict(str)  # type: ignore
-    if not hasattr(cls, '_yaml_registered_factories'):
-        cls._yaml_registered_factories = set()  # type: ignore
-    return alias(tag)(cls)  # type: ignore
+
+    def __init_subclass__(cls: Type['Registrable'],
+                          should_register: Optional[bool] = True,
+                          tag_override: Optional[str] = None,
+                          from_yaml: Optional[Callable] = None,
+                          to_yaml: Optional[Callable] = None,
+                          **kwargs: Mapping[str, Any]) -> None:
+        super().__init_subclass__(**kwargs)  # type: ignore
+        if should_register:
+            register(cls, tag_override, from_yaml, to_yaml)
 
 
 class registrable_factory:
@@ -283,11 +228,11 @@ class registrable_factory:
         self.fn = fn
 
     def __set_name__(self, owner: type, name: str) -> None:
-        if not hasattr(owner, '_yaml_registered_factories'):
-            raise RegistrationError(f"class {owner} doesn't have property "
-                                    f"_yaml_registered_factories; {owner} should subclass "
-                                    "Registrable or Component")
-        owner._yaml_registered_factories.add(name)  # type: ignore
+        namespace = get_class_namespace(owner)
+        try:
+            get_registry().add_factory(owner, name, namespace)
+        except:
+            pass
         setattr(owner, name, self.fn)
 
 
@@ -322,3 +267,64 @@ class MappedRegistrable(Registrable):
         instance = factory_method(**kwargs)
         instance._saved_kwargs = kwargs
         return instance
+
+
+def from_yaml(constructor: Any, node: Any, factory_name: str) -> Any:
+    """Use constructor to create an instance of cls"""
+    pass
+
+
+def to_yaml(representer: Any, node: Any, tag: str) -> Any:
+    """Use representer to create yaml representation of node"""
+    pass
+
+
+def transform_to(to_yaml_fn: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(to_yaml_fn)
+    def wrapped(representer: Any, node: Any) -> Any:
+        if hasattr(node, '_created_with_tag'):
+            tag = node._created_with_tag
+        else:
+            tag = Registrable.get_default_tag(type(node))
+        return to_yaml_fn(representer, node, tag=tag)
+    return wrapped
+
+
+def transform_from(from_yaml_fn: Callable[..., Any],
+                   tag: str,
+                   factory_name: Optional[str] = None) -> Callable[..., Any]:
+    @functools.wraps(from_yaml_fn)
+    def wrapped(constructor: Any, node: Any) -> Any:
+        obj = from_yaml_fn(constructor, node, factory_name=factory_name)
+        # Access dict directly because obj may be a Schema, and have
+        # special dot notation access behavior
+        obj.__dict__['_created_with_tag'] = tag
+        return obj
+    return wrapped
+
+
+def combine(*args):
+    return '!' + '.'.join(args)
+
+
+def sync_registry_with_yaml(yaml, registry):
+    for entry in registry:
+        yaml.representer.add_representer(entry.class_, transform_to(entry.to_yaml))
+        combos = [(tag, factory) for tag in entry.tags for factory in entry.factories]
+        for tag, factory in combos:
+            full_tag = combine(entry.namespace, tag, factory)
+            yaml.constructor.add_constructor(full_tag,
+                                             transform_from(entry.from_yaml, full_tag, factory))
+
+
+def load_config(yaml_config: Union[stream, str]) -> Any:
+    yaml = YAML()
+    sync_registry_with_yaml(yaml, get_registry())
+    result = yaml.load(yaml_config)
+    return result
+
+
+def dump_to_config(obj: Any, stream):
+    yaml = YAML()
+    sync_registry_with_yaml(yaml, get_registry())
+    yaml.dump(obj, stream)

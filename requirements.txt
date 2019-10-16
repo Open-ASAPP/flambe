@@ -1,5 +1,5 @@
 colorama>=0.3.9
-torch>=1.1,<1.2
+torch>=1.1.0
 numpy>=1.15.4
 ruamel.yaml>=0.15.87
 pandas>=0.23.4,<0.25
@@ -12,7 +12,7 @@ requests>=2.21.0
 Flask>=1.0
 tensorboardx-hparams>=1.7
 GitPython>=2.1.11
-sru>=2.1.6
+sru>=2.1.7
 psutil>=5.6.0
 pygments>=2.3.1
 nltk>=3.4.1

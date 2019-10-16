@@ -170,7 +170,7 @@ class TextField(Field):
                     if self.embeddings is not None:
                         if token in model:
                             self.vocab[token] = index = index + 1
-                            embeddings_matrix.append(torch.Tensor(model[token]))
+                            embeddings_matrix.append(torch.tensor(model[token]))
                         else:
                             if self.unk_init_all:
                                 # Give every OOV it's own embedding

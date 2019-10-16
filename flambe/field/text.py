@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Set
 from collections import OrderedDict as odict
 
 import torch
@@ -93,6 +93,8 @@ class TextField(Field):
         self.embedding_matrix: Optional[torch.Tensor] = None
         self.unk_init_all = unk_init_all
 
+        self.unk_numericals: Set[int] = set()
+
         self.vocab: Dict = odict()
         specials = [pad_token, unk_token, sos_token, eos_token]
         self.specials = [special for special in specials if special is not None]
@@ -168,14 +170,17 @@ class TextField(Field):
                     if self.embeddings is not None:
                         if token in model:
                             self.vocab[token] = index = index + 1
-                            embeddings_matrix.append(torch.tensor(model[token]))
-                        elif self.unk_init_all:
-                            # Give every OOV it's own embedding
-                            self.vocab[token] = index = index + 1
-                            embeddings_matrix.append(torch.randn(model.vector_size))
+                            embeddings_matrix.append(torch.Tensor(model[token]))
                         else:
-                            # Collapse all OOV's to the same token id
-                            self.vocab[token] = self.vocab[self.unk]
+                            if self.unk_init_all:
+                                # Give every OOV it's own embedding
+                                self.vocab[token] = index = index + 1
+                                embeddings_matrix.append(torch.randn(model.vector_size))
+                            else:
+                                # Collapse all OOV's to the same token
+                                # id
+                                self.vocab[token] = self.vocab[self.unk]
+                            self.unk_numericals.add(self.vocab[token])
                     else:
                         self.vocab[token] = index = index + 1
 

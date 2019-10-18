@@ -1,11 +1,14 @@
 from typing import Optional, Tuple, cast
 import warnings
+import logging
 
 import torch
 from torch import nn
 from torch import Tensor
 
 from flambe.nn.module import Module
+
+logger = logging.getLogger(__name__)
 
 
 class RNNEncoder(Module):
@@ -34,7 +37,8 @@ class RNNEncoder(Module):
                  layer_norm: bool = False,
                  highway_bias: float = 0,
                  rescale: bool = True,
-                 enforce_sorted: bool = False) -> None:
+                 enforce_sorted: bool = False,
+                 **kwargs) -> None:
         """Initializes the RNNEncoder object.
 
         Parameters
@@ -61,6 +65,9 @@ class RNNEncoder(Module):
         enforce_sorted: bool
             Whether rnn should enforce that sequences are ordered by
             length. Requires True for ONNX support. Defaults to False.
+        kwargs
+            Additional parameters to be passed to SRU when building
+            the rnn.
 
         Raises
         ------
@@ -75,6 +82,11 @@ class RNNEncoder(Module):
         self.hidden_size = hidden_size
         self.enforce_sorted = enforce_sorted
         if rnn_type in ['lstm', 'gru']:
+            if kwargs:
+                logger.warn(f"The following '{kwargs}' will be ignored " +
+                            "as they are only considered when using 'sru' as " +
+                            "'rnn_type'")
+
             rnn_fn = nn.LSTM if rnn_type == 'lstm' else nn.GRU
             self.rnn = rnn_fn(input_size=input_size,
                               hidden_size=hidden_size,
@@ -90,7 +102,8 @@ class RNNEncoder(Module):
                            bidirectional=bidirectional,
                            layer_norm=layer_norm,
                            rescale=rescale,
-                           highway_bias=highway_bias)
+                           highway_bias=highway_bias,
+                           **kwargs)
         else:
             raise ValueError(f"Unkown rnn type: {rnn_type}, use of of: gru, sru, lstm")
 

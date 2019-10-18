@@ -102,7 +102,7 @@ class Experiment(ClusterRunnable):
                  reduce: Optional[Dict[str, int]] = None,
                  env: RemoteEnvironment = None,
                  max_failures: int = 1,
-                 stop_on_failure: bool = False,
+                 stop_on_failure: bool = True,
                  merge_plot: bool = True) -> None:
         super().__init__(env)
         self.name = name
@@ -347,13 +347,15 @@ class Experiment(ClusterRunnable):
                 any_error = False
                 for t in trials:
                     if t.status == t.ERROR:
-                        logger.error(f"{t} ended with ERROR status.")
+                        logger.error(cl.RE(f"Variant {t} of '{block_id}' ended with ERROR status."))
                         success[block_id] = False
                         any_error = True
                 if any_error and self.stop_on_failure:
                     self.teardown()
-                    logger.error(f"Stopping experiment at block '{block_id}' because there was an "
-                                 "error and stop_on_failure == True.")
+                    self.progress_state.checkpoint_end(block_id, success[block_id])
+                    logger.error(cl.RE(f"Stopping experiment at block '{block_id}' "
+                                       "because there was an error and "
+                                       "stop_on_failure == True."))
                     return
 
                 # Save checkpoint location
@@ -401,7 +403,7 @@ class Experiment(ClusterRunnable):
                                           self.env.key,
                                           exclude=["state.pkl"])
 
-            self.progress_state.checkpoint_end(block_id, checkpoints, success[block_id])
+            self.progress_state.checkpoint_end(block_id, success[block_id])
             logger.debug(f"Done running {block_id}")
 
         self.teardown()

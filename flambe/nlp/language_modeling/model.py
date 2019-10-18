@@ -22,7 +22,8 @@ class LanguageModel(Module):
                  output_layer: Module,
                  dropout: float = 0,
                  pad_index: int = 0,
-                 tie_weights: bool = False) -> None:
+                 tie_weights: bool = False,
+                 tie_weight_attr: str = 'embedding') -> None:
         """Initialize the LanguageModel model.
 
         Parameters
@@ -38,6 +39,11 @@ class LanguageModel(Module):
             Index used for padding, defaults to 0
         tie_weights : bool, optional
             If true, the input and output layers share the same weights
+        tie_weight_attr: str, optional
+            The attribute to call on the embedder to get the weight
+            to tie. Only used if tie_weights is ``True``. Defaults
+            to ``embedding``. Multiple attributes can also be called
+            by adding another dot: ``embeddings.word_embedding``.
 
         """
         super().__init__()
@@ -47,10 +53,13 @@ class LanguageModel(Module):
         self.drop = nn.Dropout(dropout)
 
         self.pad_index = pad_index
+        self.tie_weights = tie_weights
 
         if tie_weights:
-            # TODO: fix weight tying
-            self.output_layer.weight = self.embedding.weight.t().contiguous()
+            module = self.embedder
+            for attr in tie_weight_attr.split('.'):
+                module = getattr(module, attr)
+            self.output_layer.weight = module.weight
 
     def forward(self,
                 data: Tensor,

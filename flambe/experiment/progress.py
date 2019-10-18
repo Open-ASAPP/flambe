@@ -69,7 +69,7 @@ class ProgressState:
                             hparams[k] = v
                         self.variants[b].append(hparams)
 
-    def checkpoint_end(self, block_id, checkpoints, block_success):
+    def checkpoint_end(self, block_id, block_success):
         curr_time = time.time()
 
         if self.prev_time:

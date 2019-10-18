@@ -4,7 +4,7 @@ import dill
 import logging
 from reprlib import recursive_repr
 from warnings import warn
-from typing import Type, TypeVar, Any, Mapping, Dict, Optional, List
+from typing import Type, TypeVar, Any, Mapping, Dict, Optional, List, Union
 from typing import Generator, MutableMapping, Callable, Set, Tuple, Sequence
 from functools import WRAPPER_ASSIGNMENTS
 from collections import OrderedDict
@@ -1295,12 +1295,13 @@ class Component(Registrable):
     @classmethod
     def load_from_path(cls,
                        path: str,
+                       map_location: Union[torch.device, str] = None,
                        use_saved_config_defaults: bool = True,
                        **kwargs: Any):
         if use_saved_config_defaults:
-            instance = flambe_load(path)
+            instance = flambe_load(path, map_location=map_location)
         else:
-            loaded_state = load_state_from_file(path)
+            loaded_state = load_state_from_file(path, map_location=map_location)
             instance = cls(**kwargs)
             instance.load_state(loaded_state)
         return instance

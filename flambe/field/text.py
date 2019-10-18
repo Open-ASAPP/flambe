@@ -79,8 +79,8 @@ class TextField(Field):
             given a random embedding from a normal distribution.
             Otherwise, all of them map to the '<unk>' token.
         drop_unknown: bool
-            Whether to drop tokens that don't have embeddings associated.
-            Defaults to True.
+            Whether to drop tokens that don't have embeddings
+            associated. Defaults to True.
             Important: this flag will only work when using embeddings.
 
         """

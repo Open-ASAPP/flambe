@@ -68,8 +68,6 @@ def test_forward_pass(rnn_type):
 
 
 @pytest.mark.parametrize("rnn_type", ['lstm', 'gru', 'sru'])
-# @mock.patch('torch.Tensor.transpose')
-# def test_transpose_on_forward_pass(mock_transpose, rnn_type):
 def test_transpose_on_forward_pass(rnn_type):
     input_size = 300
     output_size = 10

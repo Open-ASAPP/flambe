@@ -26,18 +26,6 @@ def test_sru_kwargs():
         assert i.activation == 'tanh'
 
 
-def test_sru_kwargs():
-    rnn = RNNEncoder(
-        input_size=10,
-        hidden_size=20,
-        rnn_type='sru',
-        use_tanh=True
-    )
-
-    for i in rnn.rnn.rnn_lst:
-        assert i.activation == 'tanh'
-
-
 def test_invalid_sru_kwargs():
     with pytest.raises(ValueError):
         _ = RNNEncoder(

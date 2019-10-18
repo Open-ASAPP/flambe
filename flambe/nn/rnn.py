@@ -95,15 +95,18 @@ class RNNEncoder(Module):
                               bidirectional=bidirectional)
         elif rnn_type == 'sru':
             from sru import SRU
-            self.rnn = SRU(input_size,
-                           hidden_size,
-                           num_layers=n_layers,
-                           dropout=dropout,
-                           bidirectional=bidirectional,
-                           layer_norm=layer_norm,
-                           rescale=rescale,
-                           highway_bias=highway_bias,
-                           **kwargs)
+            try:
+                self.rnn = SRU(input_size,
+                               hidden_size,
+                               num_layers=n_layers,
+                               dropout=dropout,
+                               bidirectional=bidirectional,
+                               layer_norm=layer_norm,
+                               rescale=rescale,
+                               highway_bias=highway_bias,
+                               **kwargs)
+            except TypeError:
+                raise ValueError(f"Unkown kwargs passed to SRU: {kwargs}")
         else:
             raise ValueError(f"Unkown rnn type: {rnn_type}, use of of: gru, sru, lstm")
 

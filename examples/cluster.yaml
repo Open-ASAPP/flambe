@@ -3,7 +3,7 @@
 name: my-cluster  # Make sure to name your cluster
 
 factories_num: 1 # Number of factories to spin up, there is always just 1 orchestrator
-factories_type: g3.4xlarge # The factory type
+factories_type: g3.4xlarge
 orchestrator_type: t3.large
 orchestrator_timeout: -1 # -1 means the orchestrator will have to be killed manually (recommended)
 factories_timeout: -1 # Factories timeout after being unused for these many hours

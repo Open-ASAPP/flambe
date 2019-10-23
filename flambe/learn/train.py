@@ -67,7 +67,8 @@ class Trainer(Component):
         scheduler : torch.optim.lr_scheduler._LRScheduler, optional
             An optional learning rate scheduler to run after each step
         iter_scheduler : torch.optim.lr_scheduler._LRScheduler, optional
-            An optional learning rate scheduler to run after each iter
+            An optional learning rate scheduler to run after each batch
+            (i.e iteration)
         device: str, optional
             The device to use in the computation.
         max_steps : int, optional
@@ -224,7 +225,7 @@ class Trainer(Component):
                     self.iter_scheduler.step()  # type: ignore
 
             # Zero the gradients when exiting a train step
-            self.optimizer.zero_grad()
+                self.optimizer.zero_grad()
 
     def _aggregate_preds(self, data_iterator: Iterator) -> Tuple[torch.Tensor, torch.Tensor]:
         """Aggregate the predicitons and targets for the dataset.

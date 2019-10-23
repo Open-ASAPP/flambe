@@ -66,7 +66,8 @@ class DistillationTrainer(Trainer):
         scheduler : torch.optim.lr_scheduler._LRScheduler, optional
             An optional learning rate scheduler
         iter_scheduler : torch.optim.lr_scheduler._LRScheduler, optional
-            An optional learning rate scheduler to run after each ite
+            An optional learning rate scheduler to run after each batch
+            (i.e iteration)
         device: str, optional
             The device to use in the computation. Only used by compile.
         max_steps : int, optional

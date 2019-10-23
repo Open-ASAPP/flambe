@@ -26,13 +26,7 @@ def required():
         return f.read().splitlines()
 
 
-def cuda_required():
-    with open('requirements-gpu.txt') as f:
-        return f.read().splitlines()
-
-
 # So that we don't import flambe.
-# Same solution as AllenNLP
 VERSION: Dict[str, str] = {}
 with open("flambe/version.py", "r") as version_file:
     exec(version_file.read(), VERSION)
@@ -56,9 +50,6 @@ setup(
         'bin/flambe',
         'bin/flambe-site'
     ],
-    extras_require={
-        'cuda': cuda_required(),
-    },
 
     install_requires=required(),
     include_package_data=True,

@@ -11,9 +11,7 @@ You can install the latest **stable** version of flambé as follows:
 
 .. code:: bash
 
-    pip install flambe  # CPU Version
-    # or
-    pip install flambe[cuda]  # With GPU / CUDA support
+    pip install flambe
 
 
 From source

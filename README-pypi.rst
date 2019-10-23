@@ -26,9 +26,7 @@ Installation
 
 .. code-block:: bash
 
-    pip install flambe  # CPU Version
-    # OR
-    pip install flambe[cuda]  # With GPU / CUDA support
+    pip install flambe
 
 **From source**:
 

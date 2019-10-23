@@ -15,14 +15,14 @@ class NoamScheduler(LambdaLR):
     """
 
     def __init__(self,
-                 optimizer: torch.optim.Optimzer,
+                 optimizer: torch.optim.Optimizer,
                  warmup: int,
                  d_model: int):
         """Initialize the NoamScheduler.
 
         Parameters
         ----------
-        optimizer : torch.optim.Optimzer
+        optimizer : torch.optim.Optimizer
             Wrapped optimizer.
         warmup : int
             The number of linear warmup phases

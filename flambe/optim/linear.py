@@ -11,17 +11,19 @@ class WarmupLinearScheduler(LambdaLR):
     Linearly decreases learning rate from 1. to 0. over
     remaining `n_steps - warmup` steps.
 
+    This scheduler is generally used after every training batch.
+
     """
 
     def __init__(self,
-                 optimizer: torch.optim.Optimzer,
+                 optimizer: torch.optim.Optimizer,
                  warmup: int,
                  n_steps: int):
         """Initialize the WarmupLinearScheduler.
 
         Parameters
         ----------
-        optimizer : torch.optim.Optimzer
+        optimizer : torch.optim.Optimizer
             Wrapped optimizer.
         warmup : int
             The number of linear warmup phases

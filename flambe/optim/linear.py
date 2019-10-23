@@ -31,7 +31,7 @@ class WarmupLinearScheduler(LambdaLR):
         """
         self.warmup = warmup
         self.n_steps = n_steps
-        super().__init__(optimizer, lr_lambda=self.lr_lambda, last_epoch=n_steps)  # type: ignore
+        super().__init__(optimizer, lr_lambda=self.lr_lambda, last_epoch=-1)  # type: ignore
 
     def lr_lambda(self, step: int) -> float:
         """Compue the learning rate factor.

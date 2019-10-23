@@ -30,7 +30,7 @@ class NoamScheduler(LambdaLR):
         """
         self.warmup = warmup
         self.d_model = d_model
-        super().__init__(optimizer, lambda_lr=self.lr_lambda, last_epoch=-1)  # type: ignore
+        super().__init__(optimizer, lr_lambda=self.lr_lambda, last_epoch=-1)  # type: ignore
 
     def lr_lambda(self, step: int) -> float:
         """Compue the learning rate factor.

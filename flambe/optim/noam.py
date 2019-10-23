@@ -1,5 +1,3 @@
-import torch
-
 from flambe.optim.scheduler import LambdaLR
 
 

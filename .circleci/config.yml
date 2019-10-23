@@ -38,6 +38,7 @@ jobs:
           - image: python:3.6
       steps:
         - checkout
+        - run: python3 -m pip install --user twine
         - run: python3 setup.py sdist bdist_wheel
         - run: twine upload --repository-url $PYPI_TEST_URL dist/*
   publish:
@@ -45,6 +46,7 @@ jobs:
           - image: python:3.6
       steps:
         - checkout
+        - run: python3 -m pip install --user twine
         - run: python3 setup.py sdist bdist_wheel
         - run: twine upload --repository-url $PYPI_URL dist/*
 

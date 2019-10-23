@@ -112,7 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--force', action='store_true', default=False,
                         help='Override existing runnables. Be careful ' +
                              'when using this flag as it could have undesired effects.')
-    parser.add_argument('--secrets',
+    parser.add_argument('-s', '--secrets',
                         type=str, default=os.path.join(FLAMBE_GLOBAL_FOLDER, "secrets.ini"))
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose console output')
     args = parser.parse_args()

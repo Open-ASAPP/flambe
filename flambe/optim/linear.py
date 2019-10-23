@@ -16,7 +16,7 @@ class WarmupLinearScheduler(LambdaLR):
     """
 
     def __init__(self,
-                 optimizer: torch.optim.Optimizer,
+                 optimizer,
                  warmup: int,
                  n_steps: int):
         """Initialize the WarmupLinearScheduler.

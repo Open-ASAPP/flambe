@@ -15,7 +15,7 @@ class NoamScheduler(LambdaLR):
     """
 
     def __init__(self,
-                 optimizer: torch.optim.Optimizer,
+                 optimizer,
                  warmup: int,
                  d_model: int):
         """Initialize the NoamScheduler.

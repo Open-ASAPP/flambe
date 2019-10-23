@@ -220,13 +220,7 @@ class Trainer(Component):
                 # Update iter scheduler
                 if self.iter_scheduler is not None:
                     log(f'{tb_prefix}Training/LR', self.iter_scheduler.get_lr()[0], global_step)
-                    if isinstance(self.iter_scheduler, ReduceLROnPlateau):
-                        self.iter_scheduler.step(val_loss)
-                    else:
-                        # torch's _LRScheduler.step DOES have a default value
-                        # so passing in no args is fine; it will automatically
-                        # compute the current epoch
-                        self.iter_scheduler.step()  # type: ignore
+                    self.iter_scheduler.step()  # type: ignore
 
             # Zero the gradients when exiting a train step
             self.optimizer.zero_grad()

@@ -40,7 +40,7 @@ jobs:
         - checkout
         - run: python3 -m pip install --user twine
         - run: python3 setup.py sdist bdist_wheel
-        - run: twine upload --repository-url $PYPI_TEST_URL dist/*
+        - run: twine upload -u $TWINE_TEST_USERNAME -p $TWINE_TEST_PASSWORD --repository-url $PYPI_TEST_URL dist/*
   publish:
       docker:
           - image: python:3.6

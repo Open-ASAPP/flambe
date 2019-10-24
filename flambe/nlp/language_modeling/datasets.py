@@ -16,7 +16,7 @@ class PTBDataset(TabularDataset):
 
     def __init__(self,
                  split_by_sentence: bool = False,
-                 end_of_line_token: Optional[str] = '</s>',
+                 end_of_line_token: Optional[str] = '<eol>',
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
         """Initialize the PTBDataset builtin.
@@ -81,7 +81,7 @@ class Wiki103(TabularDataset):
 
     def __init__(self,  # nosec
                  split_by_sentence: bool = False,
-                 end_of_line_token: Optional[str] = '</s>',
+                 end_of_line_token: Optional[str] = '<eol>',
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
         """Initialize the Wiki103 built-in.

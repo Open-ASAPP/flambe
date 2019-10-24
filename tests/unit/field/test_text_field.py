@@ -1,7 +1,7 @@
 import pytest
 import torch
 from flambe.field import TextField, BoWField
-from flambe.tokenizer import WordTokenizer, CharTokenizer, NGramsTokenizer
+from flambe.tokenizer import WordTokenizer, CharTokenizer, NGramsTokenizer, NLTKWordTokenizer
 
 
 example = (
@@ -12,9 +12,16 @@ example = (
 "non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 )
 
-
 def test_word_tokenizer():
     tokenizer = WordTokenizer()
+
+    dummy = "justo. Praesent luctus."
+    assert tokenizer(dummy) == ['justo.', 'Praesent', 'luctus.']
+    dummy = ""
+    assert tokenizer(dummy) == []
+
+def test_nltk_word_tokenizer():
+    tokenizer = NLTKWordTokenizer()
 
     dummy = "justo. Praesent luctus."
     assert tokenizer(dummy) == ['justo', '.', 'Praesent', 'luctus', '.']
@@ -31,7 +38,7 @@ def test_ngram_tokenizer():
 
 def test_ngram_tokenizer_equivalence():
     t1 = NGramsTokenizer(1)
-    t2 = WordTokenizer()
+    t2 = NLTKWordTokenizer()
 
     assert t1(example) == t2(example)
 

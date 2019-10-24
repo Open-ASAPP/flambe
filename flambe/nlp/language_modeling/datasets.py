@@ -15,13 +15,22 @@ class PTBDataset(TabularDataset):
     PTB_URL = "https://raw.githubusercontent.com/yoonkim/lstm-char-cnn/master/data/ptb/"
 
     def __init__(self,
+                 split_by_sentence: bool = False,
+                 end_of_line_token: Optional[str] = '</s>',
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
         """Initialize the PTBDataset builtin.
         
-        See TabularDataset for arguments.
-        
-        """
+        Parameters
+        ----------
+        split_by_sentence: bool, Optional
+            If true, tokenizes per sentence. Default ``False``.
+        end_of_line_token: str, Optional
+            Token added at the end of every line.
+
+        see TabularDataset for other arguments.
+
+        """ 
         train_path = self.PTB_URL + "train.txt"
         val_path = self.PTB_URL + "valid.txt"
         test_path = self.PTB_URL + "test.txt"
@@ -32,13 +41,13 @@ class PTBDataset(TabularDataset):
 
         super().__init__(train, val, test, cache=cache, transform=transform)
 
-    def _process(self, text: str) -> List[Tuple[str]]:
+    def _process(self, file: bytes) -> List[Tuple[str]]:
         """Process the input file.
 
         Parameters
         ----------
-        text: str
-            The input file, as a string
+        field: str
+            The input file, as bytes
 
         Returns
         -------

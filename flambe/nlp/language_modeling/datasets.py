@@ -38,9 +38,9 @@ class PTBDataset(TabularDataset):
         val_path = self.PTB_URL + "valid.txt"
         test_path = self.PTB_URL + "test.txt"
 
-        train = self._process(requests.get(train_path, stream=True).content)
-        val = self._process(requests.get(val_path, stream=True).content)
-        test = self._process(requests.get(test_path, stream=True).content)
+        train = self._process(requests.get(train_path).content)
+        val = self._process(requests.get(val_path).content)
+        test = self._process(requests.get(test_path).content)
 
         super().__init__(train, val, test, cache=cache, transform=transform)
 

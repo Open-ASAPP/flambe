@@ -17,27 +17,49 @@ class PTBDataset(TabularDataset):
     def __init__(self,
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
-        """Initialize the PTBDataset builtin."""
+        """Initialize the PTBDataset builtin.
+        
+        See TabularDataset for arguments.
+        
+        """
         train_path = self.PTB_URL + "train.txt"
         val_path = self.PTB_URL + "valid.txt"
         test_path = self.PTB_URL + "test.txt"
 
-        train, _ = self._load_file(train_path)
-        val, _ = self._load_file(val_path)
-        test, _ = self._load_file(test_path)
+        train, _ = self._process(requests.get(train_path, stream=True))
+        val, _ = self._process(requests.get(val_path, stream=True))
+        test, _ = self._process(requests.get(test_path, stream=True))
 
         super().__init__(train, val, test, cache=cache, transform=transform)
 
-    @classmethod
-    def _load_file(cls,
-                   path: str,
-                   sep: Optional[str] = '\t',
-                   header: Optional[str] = None,
-                   columns: Optional[Union[List[str], List[int]]] = None,
-                   encoding: Optional[str] = 'utf-8') -> Tuple[List[Tuple], Optional[List[str]]]:
-        """Load data from the given path."""
-        data, named_cols = super()._load_file(path, sep, header, columns)
-        return [(d[0][:],) for d in data], named_cols
+    def _process(self, text: str) -> List[Tuple[str]]:
+        """Process the input file.
+
+        Parameters
+        ----------
+        text: str
+            The input file, as a string
+
+        Returns
+        -------
+        List[Tuple[str]]
+            List of examples, where each example is a single
+            element tuple containing the text.
+
+        """
+        decoded_text = file.decode('utf-8')
+        # Replace end of line tokens
+        if self.eol is not None and not self.split_by_sentence:
+            decoded_text = decoded_text.replace('\n', self.eol)
+
+        # Split by sentence or unroll
+        if self.split_by_sentence:
+            nltk.download('punkt', quiet=True)
+            text = [(sent.strip(),) for sent in nltk.tokenize.sent_tokenize(decoded_text)]
+        else:
+            text = [(decoded_text,)]
+
+        return text
 
 
 class Wiki103(TabularDataset):
@@ -62,8 +84,6 @@ class Wiki103(TabularDataset):
         see TabularDataset for other arguments.
 
         """
-        nltk.download('punkt', quiet=True)
-
         self.split_by_sentence = split_by_sentence
         self.eol = end_of_line_token
         response = requests.get(self.WIKI_URL, stream=True)
@@ -96,6 +116,7 @@ class Wiki103(TabularDataset):
 
         # Split by sentence or unroll
         if self.split_by_sentence:
+            nltk.download('punkt', quiet=True)
             text = [(sent.strip(),) for sent in nltk.tokenize.sent_tokenize(decoded_text)]
         else:
             text = [(decoded_text,)]

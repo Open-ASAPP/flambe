@@ -32,6 +32,7 @@ class DistillationTrainer(Trainer):
                  metric_fn: Metric,
                  optimizer: Optimizer,
                  scheduler: Optional[_LRScheduler] = None,
+                 iter_scheduler: Optional[_LRScheduler] = None,
                  device: Optional[str] = None,
                  max_steps: int = 10,
                  epoch_per_step: float = 1.0,
@@ -64,6 +65,9 @@ class DistillationTrainer(Trainer):
             The optimizer to use
         scheduler : torch.optim.lr_scheduler._LRScheduler, optional
             An optional learning rate scheduler
+        iter_scheduler : torch.optim.lr_scheduler._LRScheduler, optional
+            An optional learning rate scheduler to run after each batch
+            (i.e iteration)
         device: str, optional
             The device to use in the computation. Only used by compile.
         max_steps : int, optional
@@ -110,6 +114,7 @@ class DistillationTrainer(Trainer):
                          metric_fn,
                          optimizer,
                          scheduler,
+                         iter_scheduler,
                          device,
                          max_steps,
                          epoch_per_step,

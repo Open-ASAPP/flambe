@@ -1,7 +1,6 @@
 from typing import Optional
 
 from torch import nn
-from torch import Tensor
 
 from flambe.nn.mlp import MLPEncoder
 from flambe.nn.module import Module
@@ -11,6 +10,9 @@ class SoftmaxLayer(Module):
     """Implement an SoftmaxLayer module.
 
     Can be used to form a classifier out of any encoder.
+    Note: by default takes the log_softmax so that it can be fed to
+    the NLLLoss module. You can disable this behavior through the
+    `take_log` argument.
 
     """
     def __init__(self,
@@ -36,30 +38,14 @@ class SoftmaxLayer(Module):
         mlp_hidden_activation: nn.Module, optional
             Any PyTorch activation layer, defaults to None
         take_log: bool, optional
-            If True, compute the LogSoftmax to be fed in NLLLoss.
-            Defaults to True
+            If ``True``, compute the LogSoftmax to be fed in NLLLoss.
+            Defaults to ``False``.
 
         """
         super().__init__()
 
+        softmax = nn.LogSoftmax(dim=-1) if take_log else nn.Softmax()
         self.mlp = MLPEncoder(input_size=input_size, output_size=output_size,
                               n_layers=mlp_layers, dropout=mlp_dropout,
-                              hidden_activation=mlp_hidden_activation)
-        self.softmax = nn.LogSoftmax(dim=-1) if take_log else nn.Softmax()
-
-    def forward(self, data: Tensor) -> Tensor:
-        """Performs a forward pass through the network.
-
-        Parameters
-        ----------
-        data : torch.Tensor
-            The input data, as a float tensor
-
-        Returns
-        -------
-        torch.Tensor
-            The encoded output, as a float tensor
-
-        """
-        out = self.softmax(self.mlp(data))
-        return out
+                              hidden_activation=mlp_hidden_activation,
+                              output_activation=softmax)

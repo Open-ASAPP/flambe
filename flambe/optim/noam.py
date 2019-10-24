@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import torch
 
+=======
+>>>>>>> master
 from flambe.optim.scheduler import LambdaLR
 
 
@@ -15,14 +18,22 @@ class NoamScheduler(LambdaLR):
     """
 
     def __init__(self,
+<<<<<<< HEAD
                  optimizer: torch.optim.Optimzer,
+=======
+                 optimizer,
+>>>>>>> master
                  warmup: int,
                  d_model: int):
         """Initialize the NoamScheduler.
 
         Parameters
         ----------
+<<<<<<< HEAD
         optimizer : torch.optim.Optimzer
+=======
+        optimizer : torch.optim.Optimizer
+>>>>>>> master
             Wrapped optimizer.
         warmup : int
             The number of linear warmup phases
@@ -32,7 +43,11 @@ class NoamScheduler(LambdaLR):
         """
         self.warmup = warmup
         self.d_model = d_model
+<<<<<<< HEAD
         super().__init__(optimizer, lambda_lr=self.lr_lambda, last_epoch=-1)  # type: ignore
+=======
+        super().__init__(optimizer, lr_lambda=self.lr_lambda, last_epoch=-1)  # type: ignore
+>>>>>>> master
 
     def lr_lambda(self, step: int) -> float:
         """Compue the learning rate factor.

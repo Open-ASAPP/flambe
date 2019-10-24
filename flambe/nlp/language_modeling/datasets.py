@@ -20,7 +20,7 @@ class PTBDataset(TabularDataset):
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
         """Initialize the PTBDataset builtin.
-        
+
         Parameters
         ----------
         split_by_sentence: bool, Optional

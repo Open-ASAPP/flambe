@@ -3,7 +3,7 @@ import torch
 from flambe.metric import Metric
 
 
-class Perplexity(Metric):
+class BPC(Metric):
 
     def __init__(self):
         """Initalizes the Metric."""
@@ -26,4 +26,4 @@ class Perplexity(Metric):
 
         """
         entropy = self.entropy(pred, target).mean()
-        return torch.exp(entropy)
+        return torch.log2(torch.exp(entropy))

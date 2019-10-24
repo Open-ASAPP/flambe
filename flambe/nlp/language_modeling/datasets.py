@@ -143,7 +143,7 @@ class Enwiki8(TabularDataset):
 
     def __init__(self,
                  num_eval_symbols: int = 5000000,
-                 remove_end_of_line: bool = True,
+                 remove_end_of_line: bool = False,
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
         """Initialize the Wiki103 built-in.

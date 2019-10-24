@@ -14,7 +14,7 @@ class PTBDataset(TabularDataset):
 
     PTB_URL = "https://raw.githubusercontent.com/yoonkim/lstm-char-cnn/master/data/ptb/"
 
-    def __init__(self,
+    def __init__(self,  # nosec
                  split_by_sentence: bool = False,
                  end_of_line_token: Optional[str] = '<eol>',  # nosec
                  cache: bool = False,

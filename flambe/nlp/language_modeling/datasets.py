@@ -30,7 +30,10 @@ class PTBDataset(TabularDataset):
 
         see TabularDataset for other arguments.
 
-        """ 
+        """
+        self.split_by_sentence = split_by_sentence
+        self.eol = end_of_line_token
+
         train_path = self.PTB_URL + "train.txt"
         val_path = self.PTB_URL + "valid.txt"
         test_path = self.PTB_URL + "test.txt"

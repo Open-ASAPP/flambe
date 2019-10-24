@@ -4,13 +4,14 @@ from flambe.metric import Metric
 
 
 class BPC(Metric):
+    """Bits per character. Computed as log_2(perplexity)"""
 
     def __init__(self):
         """Initalizes the Metric."""
         self.entropy = torch.nn.CrossEntropyLoss()
 
     def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """Compute the preplexity given the input and target.
+        """Compute the bits per character given the input and target.
 
         Parameters
         ----------

@@ -1,5 +1,6 @@
 from typing import Optional
 
+import torch
 from torch import nn
 
 from flambe.nn.mlp import MLPEncoder
@@ -49,3 +50,19 @@ class SoftmaxLayer(Module):
                               n_layers=mlp_layers, dropout=mlp_dropout,
                               hidden_activation=mlp_hidden_activation,
                               output_activation=softmax)
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """Performs a forward pass through the network.
+
+        Parameters
+        ----------
+        data: torch.Tensor
+            input to the model of shape (*, input_size)
+
+        Returns
+        -------
+        output: torch.Tensor
+            output of the model of shape (*, output_size)
+
+        """
+        return self.mlp(data)

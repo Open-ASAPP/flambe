@@ -2,7 +2,7 @@ import torch
 import sklearn.metrics
 import numpy as np
 
-from flambe.metric import Accuracy, AUC, Perplexity
+from flambe.metric import Accuracy, AUC, Perplexity, BPC
 from flambe.metric import BinaryRecall, BinaryPrecision, BinaryAccuracy
 from pytest import approx
 
@@ -60,6 +60,11 @@ def test_accuracy():
 def test_perplexity():
     """Test perplexity"""
     metric_test_case(torch.tensor([[0.2, 0.8], [0.9, 0.1]]), torch.tensor([0, 0]), Perplexity(), 2.022418975830078)
+
+
+def test_bpc():
+    """Test BPC"""
+    metric_test_case(torch.tensor([[0.2, 0.8], [0.9, 0.1]]), torch.tensor([0, 0]), BPC(), 1.0161)
 
 
 def test_binary_precision():

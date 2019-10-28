@@ -47,15 +47,11 @@ class Evaluator(Component):
         """
         self.eval_sampler = eval_sampler or BaseSampler(batch_size=16, shuffle=False)
         self.model = model
-        self.metric_fn = metric_fn
+        self.metric_fn = adapt_metric(metric_fn)
         self.eval_metric = None
         self.dataset = dataset
 
-        # Select right device
-        if device is not None:
-            self.device = device
-        else:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = select_device(device)
 
         data = getattr(dataset, eval_data)
         self._eval_iterator = self.eval_sampler.sample(data)
@@ -82,17 +78,14 @@ class Evaluator(Component):
                 preds.append(pred.cpu())
                 targets.append(target.cpu())
 
-            preds = torch.cat(preds, dim=0)  # type: ignore
-            targets = torch.cat(targets, dim=0)  # type: ignore
             self.eval_metric = self.metric_fn(preds, targets).item()
 
             tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
 
-            log(f'{tb_prefix}Eval {self.metric_fn}',  # type: ignore
+            log(f'{self.tb_log_prefix}Eval {self.metric_fn}',  # type: ignore
                 self.eval_metric, global_step=0)  # type: ignore
 
-        continue_ = False  # Single step so don't continue
-        return continue_
+        return False
 
     def metric(self) -> Optional[float]:
         """Override this method to enable scheduling.
@@ -104,3 +97,22 @@ class Evaluator(Component):
 
         """
         return self.eval_metric
+
+
+def adapt_metric(metric_fn):
+    """
+    Adapts a Metric_fn to the model's outputs
+    :param metric_fn:
+    :return:
+    """
+    def tensor_sequence_metric(preds, targets):
+        preds = torch.cat(preds, dim=0)  # type: ignore
+        targets = torch.cat(targets, dim=0)  # type: ignore
+        return metric_fn(preds, targets)
+    return tensor_sequence_metric
+
+def select_device(device):
+    if device is not None:
+        return device
+    else:
+        return  "cuda" if torch.cuda.is_available() else "cpu"

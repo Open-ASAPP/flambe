@@ -4,7 +4,6 @@ import pytest
 import mock
 import os
 import boto3
-import subprocess
 import responses
 import tempfile
 

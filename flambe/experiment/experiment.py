@@ -156,7 +156,7 @@ class Experiment(ClusterRunnable):
     def process_resources(
         self,
         resources: Dict[str, Union[str, RemoteResource]],
-        folder: str
+        folder: str = None
     ) -> Dict[str, Union[str, RemoteResource]]:
         """Download resources that are not tagged with '!cluster'
         into a given directory.
@@ -165,9 +165,10 @@ class Experiment(ClusterRunnable):
         ----------
         resources: Dict[str, Union[str, RemoteResource]]
             The resources dict
-        folder: str
+        folder: str, Optional
             The directort where the remote resources
-            will be downloaded
+            will be downloaded. In case of not providing
+            the folder a temporary one will be used.
 
         Returns
         -------
@@ -177,7 +178,8 @@ class Experiment(ClusterRunnable):
             path where the resource was downloaded.
 
         """
-        # Keep the resources temporary dict for later
+        # Keep the resources temporary dict for later cleanup
+        self.tmp_resources_dir = tempfile.TemporaryDirectory()
         ret = {}
         for k, v in resources.items():
             if not isinstance(v, RemoteResource):
@@ -231,12 +233,10 @@ class Experiment(ClusterRunnable):
                 "in the cluster when running remote experiments.")
 
         if not self.env:
-            self.tmp_resources_dir = tempfile.TemporaryDirectory()
-            resources_folder = self.tmp_resources_dir.name
+            resources = self.process_resources(self.resources)
         else:
             resources_folder = self.full_save_path
-
-        resources = self.process_resources(self.resources, resources_folder)
+            resources = self.process_resources(self.resources, resources_folder)
 
         # rsync downloaded resources
         if self.env:
@@ -548,7 +548,6 @@ class Experiment(ClusterRunnable):
             raise man_errors.ClusterError("The orchestrator needs to exist at this point")
 
         cluster.create_dirs([self.name,
-                             f"{self.name}/resources",
                              f"{self.name}/{self.output_folder_name}"])
         logger.info(cl.YE("Created supporting directories"))
 
@@ -568,7 +567,8 @@ class Experiment(ClusterRunnable):
         if local_resources:
             new_resources = cluster.send_local_content(
                 local_resources,
-                os.path.join(cluster.orchestrator.get_home_path(), self.name, "resources"),
+                os.path.join(cluster.orchestrator.get_home_path(), self.name,
+                             self.output_folder_name),
                 all_hosts=True
             )
         else:

@@ -141,8 +141,9 @@ class RemoteResource(Registrable):
 
     @classmethod
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
-        # NOTE: here we are using scalar even considering this is a string.
-        # Other representers are not able to represent correctly this information
+        # NOTE: here we are using scalar even considering this
+        # is a string. Other representers are not able to representer
+        # correctly this information
         return representer.represent_scalar(tag, node.location)
 
     @classmethod

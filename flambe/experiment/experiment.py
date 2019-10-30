@@ -3,7 +3,7 @@ import os
 import re
 import logging
 from copy import deepcopy
-from typing import Dict, Optional, Union, Sequence
+from typing import Dict, Optional, Union, Sequence, cast
 from collections import OrderedDict
 import shutil
 import tempfile
@@ -543,8 +543,11 @@ class Experiment(ClusterRunnable):
 
         local_resources = {k: v for k, v in self.resources.items()
                            if not isinstance(v, RemoteResource)}
+
         # This will download remote resources.
-        local_resources = self.process_resources(local_resources)
+        local_resources = self.process_resources(local_resources)  # type: ignore
+
+        local_resources = cast(Dict[str, str], local_resources)
 
         if local_resources:
             new_resources = cluster.send_local_content(

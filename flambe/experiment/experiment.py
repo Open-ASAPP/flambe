@@ -157,6 +157,24 @@ class Experiment(ClusterRunnable):
         self,
         resources: Dict[str, Union[str, RemoteResource]]
     ) -> Dict[str, Union[str, RemoteResource]]:
+        """Download resources that are not tagged with '!cluster'
+        into a temporary directory that is kept until Experiment
+        is done running.
+
+        Parameters
+        ----------
+        resources: Dict[str, Union[str, RemoteResource]]
+            The resources dict
+
+        Returns
+        -------
+        Dict[str, Union[str, RemoteResource]]
+            The resources dict where the remote urls that
+            don't contain '!cluster' point now to the local
+            path where the resource was downloaded.
+
+        """
+        # Keep the resources temporary dict for later
         self.tmp_resources_dir = tempfile.TemporaryDirectory()
         ret = {}
         for k, v in resources.items():

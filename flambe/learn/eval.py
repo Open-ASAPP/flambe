@@ -48,7 +48,7 @@ class Evaluator(Component):
         """
         self.eval_sampler = eval_sampler or BaseSampler(batch_size=16, shuffle=False)
         self.model = model
-        self.metric_fn = adapt_metric(metric_fn)
+        self.metric_fn = metric_fn
         self.eval_metric = None
         self.dataset = dataset
 
@@ -79,6 +79,8 @@ class Evaluator(Component):
                 preds.append(pred.cpu())
                 targets.append(target.cpu())
 
+            preds = torch.cat(preds, dim=0)  # type: ignore
+            targets = torch.cat(targets, dim=0)  # type: ignore
             self.eval_metric = self.metric_fn(preds, targets).item()
 
             tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
@@ -98,19 +100,3 @@ class Evaluator(Component):
 
         """
         return self.eval_metric
-
-
-def adapt_metric(metric_fn):
-    """
-    Adapts a Metric_fn so that it can take a list
-    of tensors.
-    :param metric_fn: metric to adapt
-    :return: a function that calculates
-    the metric over a sequence of tensors.
-    """
-    def tensor_sequence_metric(preds, targets):
-        preds = torch.cat(preds, dim=0)  # type: ignore
-        targets = torch.cat(targets, dim=0)  # type: ignore
-        return metric_fn(preds, targets)
-    return tensor_sequence_metric
-

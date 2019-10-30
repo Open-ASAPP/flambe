@@ -225,12 +225,8 @@ Resources (Additional Files and Folders)
 
 The :attr:`~flambe.experiment.Experiment.resources` argument lets users specify files that can be used in the
 :class:`~flambe.experiment.Experiment` (usually local datasets, embeddings or other files).
-In this section, you can put your resources under ``local`` or ``remote``.
 
-**Local resources**: The ``local`` section must include all local files.
-
-**Remote resources**: The ``remote`` section must contain all files that are going to be located in the
-instances and must not be uploaded. This feature is only useful when running remotely (read :ref:`understanding-clusters_label`)
+For example:
 
 .. code-block:: yaml
 
@@ -238,14 +234,13 @@ instances and must not be uploaded. This feature is only useful when running rem
     ...
 
     resources:
-        local:
-            data: path/to/train.csv
-            embeddings: path/to/embeddings.txt
-        remote:
-            remote_embeddings: /file/in/instance/
-        ...
+        data: path/to/train.csv
+        embeddings: s3://mybucket/embeddings.bin
+    ...
 
-.. attention:: The ``remote`` section is only useful in remote experiments. If the user is running local experiments, then only the ``local`` section should be used.
+In case a resource is a remote URL, then flambé will download the file fow you (relying on the user local permissions)
+
+.. attention:: Currently S3 and HTTP hosted resources are supported.
 
 ``resources`` can be referenced in the pipeline via linking:
 
@@ -256,12 +251,52 @@ instances and must not be uploaded. This feature is only useful when running rem
 
     resources:
         ...
-        local:
-            embeddings: path/to/embeddings.txt
+        embeddings: path/to/embeddings.txt
 
     pipeline:
         ...
           some_field: !@ embeddings
+
+
+**Resources in remote experiment**
+
+When running remote experiments, all resources will be rsynced into the instances so that they are available in
+the cluster **unless a ``!cluster`` tag is specified**.
+
+The ``!cluster`` tag is useful when the cluster needs to handle the resources. The local process will just
+ignore those tagged resources.
+
+For example:
+
+.. code-block:: yaml
+
+    !Experiment
+    ...
+
+    resources:
+        data: !cluster path/to/train.csv  # This file is already in all instances of the cluster
+    ...
+ 
+When running this example in a cluster, then no ``rsync`` will be involved as flambé assumes the resource
+path ``path/to/train.csv`` exists in all instances of the cluster.
+
+.. tip::
+    You can also specify remote URL with the ``!cluster`` tag:
+
+    .. code-block:: yaml
+
+        !Experiment
+        ...
+
+        resources:
+            data: !cluster s3://bucket/data.csv
+        ...
+
+    In this case the cluster will download the data instead of the local process (if it has permissions to
+    do so)
+
+
+.. attention:: The ``!cluster`` tag is only useful in remote experiments. If the user is running local experiments, using ``!cluster`` will fail.
 
 .. _understanding-experiments-scheduling_label:
 

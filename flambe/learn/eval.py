@@ -4,7 +4,7 @@ import torch
 
 from flambe.compile import Component
 from flambe.dataset import Dataset
-from flambe.learn.utils import select_device
+from .utils import select_device
 from flambe.nn import Module
 from flambe.metric import Metric
 from flambe.sampler import Sampler, BaseSampler

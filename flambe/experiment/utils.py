@@ -145,6 +145,29 @@ def traverse(nested: Mapping[str, Any], path: Optional[List[str]] = None) -> Ite
             yield path, key, value
 
 
+def traverse_all(obj: Any) -> Iterable[Any]:
+    """Iterate over all nested mappings and sequences
+
+    Parameters
+    ----------
+    obj: Any
+
+    Returns
+    -------
+    Iterable[Any]
+        Iterable of child values to obj
+
+    """
+    if isinstance(obj, Mapping):
+        for key, value in obj.items():
+            yield from traverse_all(value)
+    elif isinstance(obj, Sequence) and not isinstance(obj, str):
+        for value in obj:
+            yield from traverse_all(value)
+    else:
+        yield obj
+
+
 def traverse_spec(nested: Mapping[str, Any], path: Optional[List[str]] = None) -> Iterable[Any]:
     """Iterate over a nested mapping returning the path and key, value.
 
@@ -408,7 +431,7 @@ def update_link_refs(schemas: Dict[str, Schema],
 
     """
     this_block = schemas[block_id]
-    for _, _, value in traverse(this_block):
+    for value in traverse_all(this_block):
         if isinstance(value, Link):
             if value.root_schema in schemas:
                 value.target = schemas[value.root_schema]

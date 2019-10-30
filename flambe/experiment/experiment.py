@@ -155,16 +155,19 @@ class Experiment(ClusterRunnable):
 
     def process_resources(
         self,
-        resources: Dict[str, Union[str, RemoteResource]]
+        resources: Dict[str, Union[str, RemoteResource]],
+        folder: str
     ) -> Dict[str, Union[str, RemoteResource]]:
         """Download resources that are not tagged with '!cluster'
-        into a temporary directory that is kept until Experiment
-        is done running.
+        into a given directory.
 
         Parameters
         ----------
         resources: Dict[str, Union[str, RemoteResource]]
             The resources dict
+        folder: str
+            The directort where the remote resources
+            will be downloaded
 
         Returns
         -------
@@ -175,11 +178,10 @@ class Experiment(ClusterRunnable):
 
         """
         # Keep the resources temporary dict for later
-        self.tmp_resources_dir = tempfile.TemporaryDirectory()
         ret = {}
         for k, v in resources.items():
             if not isinstance(v, RemoteResource):
-                with download_manager(v, self.tmp_resources_dir.name) as path:
+                with download_manager(v, folder) as path:
                     ret[k] = path
             else:
                 ret[k] = v
@@ -228,8 +230,22 @@ class Experiment(ClusterRunnable):
                 "The '!cluster' tag is used for those resources that need to be handled " +
                 "in the cluster when running remote experiments.")
 
-        # This will download remote resources.
-        resources = self.process_resources(self.resources)
+        if not self.env:
+            self.tmp_resources_dir = tempfile.TemporaryDirectory()
+            resources_folder = self.tmp_resources_dir.name
+        else:
+            resources_folder = self.full_save_path
+
+        resources = self.process_resources(self.resources, resources_folder)
+
+        # rsync downloaded resources
+        if self.env:
+            run_utils.rsync_hosts(self.env.orchestrator_ip,
+                                  self.env.factories_ips,
+                                  self.env.user,
+                                  self.full_save_path,
+                                  self.env.key,
+                                  exclude=["state.pkl"])
 
         # Check that links are in order (i.e topologically in pipeline)
         utils.check_links(self.pipeline, resources)

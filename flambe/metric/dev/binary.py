@@ -256,8 +256,8 @@ class F1(BinaryMetric):
     def compute_binary(self,
                        pred: torch.Tensor,
                        target: torch.Tensor) -> torch.Tensor:
-        """Compute F1.
-
+        """Compute F1. Score, the harmonic mean between precision and
+        recall.
         Parameters
         ---------
         pred: torch.Tensor

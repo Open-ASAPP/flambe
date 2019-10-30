@@ -102,9 +102,11 @@ class Evaluator(Component):
 
 def adapt_metric(metric_fn):
     """
-    Adapts a Metric_fn to the model's outputs
-    :param metric_fn:
-    :return:
+    Adapts a Metric_fn so that it can take a list
+    of tensors.
+    :param metric_fn: metric to adapt
+    :return: a function that calculates
+    the metric over a sequence of tensors.
     """
     def tensor_sequence_metric(preds, targets):
         preds = torch.cat(preds, dim=0)  # type: ignore

@@ -183,6 +183,8 @@ class Trainer(Component):
         """Run a training step over the training data."""
         self.model.train()
 
+        tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
+
         with torch.enable_grad():
             for i in range(self.iter_per_step):
                 # Zero the gradients and clear the accumulated loss

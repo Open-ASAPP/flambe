@@ -1,8 +1,9 @@
+import pytest
 import torch
 import sklearn.metrics
 import numpy as np
 
-from flambe.metric import Accuracy, AUC, Perplexity, BPC
+from flambe.metric import Accuracy, AUC, Perplexity, BPC, F1
 from flambe.metric import BinaryRecall, BinaryPrecision, BinaryAccuracy
 from pytest import approx
 
@@ -141,34 +142,39 @@ def test_binary_recall():
     metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryRecall(0.8), 0)
 
 
-def test_inverted_binary_recall():
+@pytest.mark.parametrize("true_classes, metric, result",
+                         [(torch.tensor([1, 1, 1, 1]), BinaryRecall(positive_label=0), 0),
+                          (torch.tensor([1, 0, 1, 0]), BinaryRecall(positive_label=0), 1),
+                          (torch.tensor([0, 0, 0, 0]), BinaryRecall(positive_label=0), 0.5),
+                          (torch.tensor([0, 1, 0, 1]), BinaryRecall(positive_label=0), 0),
+                          (torch.tensor([0, 0, 0, 1]), BinaryRecall(positive_label=0), 1 / 3),
+                          (torch.tensor([0, 1, 1, 1]), BinaryRecall(positive_label=0), 0),
+                          (torch.tensor([0, 0, 1, 1]), BinaryRecall(0.65, positive_label=0), 0.5),
+                          (torch.tensor([0, 0, 0, 1]), BinaryRecall(0.75, positive_label=0), 2 / 3)]
+                         )
+def test_inverted_binary_recall(true_classes, metric, result):
+    """
+        precision = tp/tp+fn
+    """
+    y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
+    metric_test_case(y_pred, true_classes, metric, result)
+
+
+@pytest.mark.parametrize("true_classes, metric, result",
+                         [(torch.tensor([1, 0, 1, 0]), BinaryAccuracy(), 1),
+                          (torch.tensor([1, 1, 1, 0]), BinaryAccuracy(), 3 / 4),
+                          (torch.tensor([1, 1, 1, 1]), BinaryAccuracy(), 0.5),
+                          (torch.tensor([0, 0, 0, 0]), BinaryAccuracy(), 0.5),
+                          (torch.tensor([0, 1, 0, 1]), BinaryAccuracy(), 0),
+                          (torch.tensor([1, 0, 0, 0]), BinaryAccuracy(0.75), 1)
+                          ])
+def test_binary_accuracy(true_classes, metric, result):
     """
         precision = tp/tp+fn
     """
     y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
 
-    metric_test_case(y_pred, torch.tensor([1, 1, 1, 1]), BinaryRecall(positive_label=0), 0)
-    metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryRecall(positive_label=0), 1)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 0]), BinaryRecall(positive_label=0), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 1, 0, 1]), BinaryRecall(positive_label=0), 0)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryRecall(positive_label=0), 1 / 3)
-    metric_test_case(y_pred, torch.tensor([0, 1, 1, 1]), BinaryRecall(positive_label=0), 0)
-    metric_test_case(y_pred, torch.tensor([0, 0, 1, 1]), BinaryRecall(0.65, positive_label=0), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 1]), BinaryRecall(0.75, positive_label=0), 2 / 3)
-
-
-def test_binary_accuracy():
-    """
-        precision = tp/tp+fn
-    """
-    y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
-
-    metric_test_case(y_pred, torch.tensor([1, 0, 1, 0]), BinaryAccuracy(), 1)
-    metric_test_case(y_pred, torch.tensor([1, 1, 1, 0]), BinaryAccuracy(), 3 / 4)
-    metric_test_case(y_pred, torch.tensor([1, 1, 1, 1]), BinaryAccuracy(), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 0, 0, 0]), BinaryAccuracy(), 0.5)
-    metric_test_case(y_pred, torch.tensor([0, 1, 0, 1]), BinaryAccuracy(), 0)
-    metric_test_case(y_pred, torch.tensor([1, 0, 0, 0]), BinaryAccuracy(0.75), 1)
+    metric_test_case(y_pred, true_classes, metric, result)
 
 
 def test_multiple_dims():
@@ -183,3 +189,14 @@ def test_multiple_dims():
 
     y_pred = torch.tensor([[[0.8]], [[0.1]], [[0.7]], [[0.1]]])
     metric_test_case(y_pred, torch.tensor([[1], [0], [1], [0]]), BinaryAccuracy(), 1)
+
+
+@pytest.mark.parametrize("true_classes, metric, result",
+                         [(torch.tensor([1, 0, 1, 0]), F1(), 1),
+                             (torch.tensor([1, 1, 1, 1]), F1(), 1 / 1.5),
+                             (torch.tensor([0, 0, 0, 0]), F1(), 0),
+                             (torch.tensor([0, 1, 0, 1]), F1(), 0)
+                         ])
+def test_f1(true_classes, metric, result):
+    y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
+    metric_test_case(y_pred, true_classes, metric, result)

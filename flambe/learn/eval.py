@@ -4,6 +4,7 @@ import torch
 
 from flambe.compile import Component
 from flambe.dataset import Dataset
+from flambe.learn.utils import select_device
 from flambe.nn import Module
 from flambe.metric import Metric
 from flambe.sampler import Sampler, BaseSampler
@@ -111,8 +112,3 @@ def adapt_metric(metric_fn):
         return metric_fn(preds, targets)
     return tensor_sequence_metric
 
-def select_device(device):
-    if device is not None:
-        return device
-    else:
-        return  "cuda" if torch.cuda.is_available() else "cpu"

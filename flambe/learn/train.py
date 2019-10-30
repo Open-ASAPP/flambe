@@ -9,6 +9,7 @@ from torch.nn.utils.clip_grad import clip_grad_norm_, clip_grad_value_
 
 from flambe.dataset import Dataset
 from flambe.compile import Schema, State, Component
+from flambe.learn.utils import select_device
 from flambe.nn import Module
 from flambe.sampler import Sampler
 from flambe.metric import Metric
@@ -117,10 +118,7 @@ class Trainer(Component):
         self.tb_log_prefix = None
 
         # Select right device
-        if device is not None:
-            self.device = device
-        else:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = select_device(device)
 
         if (not getattr(self.train_sampler, 'drop_last', False) and batches_per_iter != 1):
             raise ValueError(f'batches_per_iter cannot be set to {batches_per_iter} '
@@ -184,8 +182,6 @@ class Trainer(Component):
     def _train_step(self) -> None:
         """Run a training step over the training data."""
         self.model.train()
-
-        tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
 
         with torch.enable_grad():
             for i in range(self.iter_per_step):

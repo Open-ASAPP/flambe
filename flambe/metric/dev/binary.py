@@ -275,6 +275,6 @@ class F1(BinaryMetric):
         recall =  self.recall.compute_binary(pred, target)
         precision = self.precision.compute_binary(pred, target)
 
-        return 2 * precision * recall / (precision + recall)
+        return 2 * precision * recall / (precision + recall + 1e-10)
 
 

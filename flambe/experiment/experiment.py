@@ -3,9 +3,10 @@ import os
 import re
 import logging
 from copy import deepcopy
-from typing import Dict, Optional, Any, Union, Sequence
+from typing import Dict, Optional, Union, Sequence
 from collections import OrderedDict
 import shutil
+import tempfile
 
 from tqdm import tqdm
 import ray
@@ -14,12 +15,13 @@ from ray.tune.schedulers import TrialScheduler
 from ray.tune.logger import DEFAULT_LOGGERS, TFLogger
 
 from flambe.compile import Schema, Component
-from flambe.compile.utils import _is_url
 from flambe.runnable import ClusterRunnable
+from flambe.compile.downloader import download_manager
 from flambe.cluster import errors as man_errors
 from flambe.cluster import const
 from flambe.cluster import Cluster
 from flambe.experiment import utils, wording
+from flambe.experiment.options import RemoteResource
 from flambe.runnable import RemoteEnvironment
 from flambe.runnable import error
 from flambe.runnable import utils as run_utils
@@ -96,7 +98,7 @@ class Experiment(ClusterRunnable):
                  debug: bool = False,
                  devices: Dict[str, int] = None,
                  save_path: Optional[str] = None,
-                 resources: Optional[Dict[str, Dict[str, Any]]] = None,
+                 resources: Optional[Dict[str, Union[str, RemoteResource]]] = None,
                  search: OptionalSearchAlgorithms = None,
                  schedulers: OptionalTrialSchedulers = None,
                  reduce: Optional[Dict[str, int]] = None,
@@ -130,6 +132,7 @@ class Experiment(ClusterRunnable):
         self.resume = resume
         self.debug = debug
         self.devices = devices
+        self.resources = resources or dict()
         self.pipeline = pipeline
         # Compile search algorithms if needed
         self.search = search or dict()
@@ -142,7 +145,6 @@ class Experiment(ClusterRunnable):
             if isinstance(scheduler, Schema):
                 self.schedulers[stage_name] = scheduler()
         self.reduce = reduce or dict()
-        self.resources = resources or dict()
         self.max_failures = max_failures
         self.stop_on_failure = stop_on_failure
         self.merge_plot = merge_plot
@@ -150,6 +152,21 @@ class Experiment(ClusterRunnable):
             raise TypeError("Pipeline argument is not of type Dict[str, Schema]. "
                             f"Got {type(pipeline).__name__} instead")
         self.pipeline = pipeline
+
+    def process_resources(
+        self,
+        resources: Dict[str, Union[str, RemoteResource]]
+    ) -> Dict[str, Union[str, RemoteResource]]:
+        self.tmp_resources_dir = tempfile.TemporaryDirectory()
+        ret = {}
+        for k, v in resources.items():
+            if not isinstance(v, RemoteResource):
+                with download_manager(v, self.tmp_resources_dir.name) as path:
+                    ret[k] = path
+            else:
+                ret[k] = v
+
+        return ret
 
     def run(self, force: bool = False, verbose: bool = False, **kwargs):
         """Run an Experiment"""
@@ -187,14 +204,17 @@ class Experiment(ClusterRunnable):
                 os.makedirs(full_save_path)
                 logger.debug(f"{full_save_path} created to store output")
 
-        local_vars = self.resources.get('local', {}) or {}
-        local_vars = utils.rel_to_abs_paths(local_vars)
-        remote_vars = self.resources.get('remote', {}) or {}
+        if any(map(lambda x: isinstance(x, RemoteResource), self.resources.values())):
+            raise ValueError(
+                f"Local experiments doesn't support resources with '!cluster' tags. " +
+                "The '!cluster' tag is used for those resources that need to be handled " +
+                "in the cluster when running remote experiments.")
 
-        global_vars = dict(local_vars, **remote_vars)
+        # This will download remote resources.
+        resources = self.process_resources(self.resources)
 
         # Check that links are in order (i.e topologically in pipeline)
-        utils.check_links(self.pipeline, global_vars)
+        utils.check_links(self.pipeline, resources)
 
         # Check that only computable blocks are given
         # search algorithms and schedulers
@@ -265,7 +285,7 @@ class Experiment(ClusterRunnable):
         schemas_dag: OrderedDict = OrderedDict()
         for block_id, schema_block in self.pipeline.items():
             schemas_dag[block_id] = schema_block
-            relevant_ids = utils.extract_needed_blocks(schemas_dag, block_id, global_vars)
+            relevant_ids = utils.extract_needed_blocks(schemas_dag, block_id, resources)
             dependencies = deepcopy(relevant_ids)
             dependencies.discard(block_id)
 
@@ -288,7 +308,7 @@ class Experiment(ClusterRunnable):
             success[block_id] = True
 
             self.progress_state.checkpoint_start(block_id)
-            relevant_ids = utils.extract_needed_blocks(schemas, block_id, global_vars)
+            relevant_ids = utils.extract_needed_blocks(schemas, block_id, resources)
             relevant_schemas = {k: v for k, v in deepcopy(schemas).items() if k in relevant_ids}
 
             # Set resume
@@ -314,7 +334,7 @@ class Experiment(ClusterRunnable):
                               'schemas': Schema.serialize(schemas_dict),
                               'checkpoints': checkpoints,
                               'to_run': block_id,
-                              'global_vars': global_vars,
+                              'global_vars': resources,
                               'verbose': verbose,
                               'custom_modules': list(self.extensions.keys()),
                               'debug': self.debug}
@@ -429,6 +449,9 @@ class Experiment(ClusterRunnable):
 
         self.progress_state.finish()
 
+        if hasattr(self, 'tmp_resources_dir'):
+            self.tmp_resources_dir.cleanup()
+
     def setup(self, cluster: Cluster, extensions: Dict[str, str], force: bool, **kwargs) -> None:
         """Prepare the cluster for the Experiment remote execution.
 
@@ -500,16 +523,23 @@ class Experiment(ClusterRunnable):
         if not cluster.check_ray_cluster():
             raise man_errors.ClusterError("Ray cluster not launched correctly.")
 
-        local_resources = self.resources.get("local")
-        new_resources = {"remote": self.resources.get("remote", dict())}
+        local_resources = {k: v for k, v in self.resources.items()
+                           if not isinstance(v, RemoteResource)}
+        # This will download remote resources.
+        local_resources = self.process_resources(local_resources)
+
         if local_resources:
-            new_resources['local'] = cluster.send_local_content(
+            new_resources = cluster.send_local_content(
                 local_resources,
                 os.path.join(cluster.orchestrator.get_home_path(), self.name, "resources"),
                 all_hosts=True
             )
         else:
-            new_resources['local'] = dict()
+            new_resources = dict()
+
+        # Add the cluster resources without the tag
+        new_resources.update({k: v.location for k, v in self.resources.items()
+                              if isinstance(v, RemoteResource)})
 
         if cluster.orchestrator.is_tensorboard_running():
             if force:
@@ -564,19 +594,3 @@ class Experiment(ClusterRunnable):
                     "Experiment name should contain only alphanumeric characters " +
                     "(with optional - or _ in between)"
                 )
-
-        # Check if resources contains only local and remote
-        if self.resources:
-            if len(list(filter(lambda x: x not in ['local', 'remote'],
-                               self.resources.keys()))) > 0:
-                raise error.ParsingRunnableError(
-                    f"'resources' section must contain only 'local' section and/or 'remote' keys"
-                )
-
-        # Check if local resources exists:
-        if self.resources and self.resources.get("local"):
-            for v in self.resources["local"].values():
-                if not _is_url(v) and not os.path.exists(os.path.expanduser(v)):
-                    raise error.ParsingRunnableError(
-                        f"Local resource '{v}' does not exist."
-                    )

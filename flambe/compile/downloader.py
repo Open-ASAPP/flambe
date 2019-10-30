@@ -170,6 +170,7 @@ def download_manager(path: str, folder: str = None):
     """
     url = urlparse(path)
 
+    tmp_dir = None
     if not folder:
         tmp_dir = tempfile.TemporaryDirectory()
         folder = tmp_dir.name
@@ -209,3 +210,6 @@ def download_manager(path: str, folder: str = None):
             raise ValueError(
                 f"'{path}' is not a valid remote URL. Only S3 and http/https URLs are supported."
             )
+
+    if tmp_dir:
+        tmp_dir.cleanup()

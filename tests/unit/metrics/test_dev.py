@@ -193,10 +193,11 @@ def test_multiple_dims():
 
 @pytest.mark.parametrize("true_classes, metric, result",
                          [(torch.tensor([1, 0, 1, 0]), F1(), 1),
-                             (torch.tensor([1, 1, 1, 1]), F1(), 1 / 1.5),
-                             (torch.tensor([0, 0, 0, 0]), F1(), 0),
-                             (torch.tensor([0, 1, 0, 1]), F1(), 0)
-                         ])
+                          (torch.tensor([1, 1, 1, 1]), F1(), 1 / 1.5),
+                          (torch.tensor([0, 0, 0, 0]), F1(), 0),
+                          (torch.tensor([0, 1, 0, 1]), F1(), 0),
+                          (torch.tensor([1, 0, 1, 1]), F1(), 0.80)
+                          ])
 def test_f1(true_classes, metric, result):
     y_pred = torch.tensor([0.8, 0.1, 0.7, 0.1])
     metric_test_case(y_pred, true_classes, metric, result)

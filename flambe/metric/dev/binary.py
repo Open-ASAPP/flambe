@@ -244,3 +244,37 @@ class BinaryRecall(BinaryMetric):
         """Return the name of the Metric (for use in logging)."""
         invert_label = "Negative" if self.positive_label == 0 else "Positive"
         return f"{invert_label}{self.__class__.__name__}"
+
+
+class F1(BinaryMetric):
+
+    def __init__(self, threshold: float = 0.5, positive_label: int = 1):
+        super().__init__(threshold)
+        self.recall = BinaryRecall(threshold, positive_label)
+        self.precision = BinaryPrecision(threshold, positive_label)
+
+    def compute_binary(self,
+                       pred: torch.Tensor,
+                       target: torch.Tensor) -> torch.Tensor:
+        """Compute F1.
+
+        Parameters
+        ---------
+        pred: torch.Tensor
+            Predictions made by the model. It should be a probability
+            0 <= p <= 1 for each sample, 1 being the positive class.
+        target: torch.Tensor
+            Ground truth. Each label should be either 0 or 1.
+
+        Returns
+        ------
+        torch.float
+            The computed binary metric
+
+        """
+        recall =  self.recall.compute_binary(pred, target)
+        precision = self.precision.compute_binary(pred, target)
+
+        return 2 * precision * recall / (precision + recall)
+
+

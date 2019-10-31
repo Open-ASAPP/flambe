@@ -4,6 +4,7 @@ import torch
 
 from flambe.compile import Component
 from flambe.dataset import Dataset
+from flambe.learn.utils import select_device
 from flambe.nn import Module
 from flambe.metric import Metric
 from flambe.sampler import Sampler, BaseSampler
@@ -51,11 +52,7 @@ class Evaluator(Component):
         self.eval_metric = None
         self.dataset = dataset
 
-        # Select right device
-        if device is not None:
-            self.device = device
-        else:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = select_device(device)
 
         data = getattr(dataset, eval_data)
         self._eval_iterator = self.eval_sampler.sample(data)
@@ -91,8 +88,7 @@ class Evaluator(Component):
             log(f'{tb_prefix}Eval {self.metric_fn}',  # type: ignore
                 self.eval_metric, global_step=0)  # type: ignore
 
-        continue_ = False  # Single step so don't continue
-        return continue_
+        return False
 
     def metric(self) -> Optional[float]:
         """Override this method to enable scheduling.

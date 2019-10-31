@@ -16,6 +16,7 @@ class BinaryMetric(Metric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
+            Defaults to 0.5
 
         """
         self.threshold = threshold
@@ -124,6 +125,7 @@ class BinaryPrecision(BinaryMetric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
+            Defaults to 0.5
         positive_label: int
             Specify if the positive class should be 1 or 0.
             Defaults to 1.
@@ -196,6 +198,7 @@ class BinaryRecall(BinaryMetric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
+            Defaults to 0.5
         positive_label: int
             Specify if the positive class should be 1 or 0.
             Defaults to 1.
@@ -244,3 +247,57 @@ class BinaryRecall(BinaryMetric):
         """Return the name of the Metric (for use in logging)."""
         invert_label = "Negative" if self.positive_label == 0 else "Positive"
         return f"{invert_label}{self.__class__.__name__}"
+
+
+class F1(BinaryMetric):
+
+    def __init__(self,
+                 threshold: float = 0.5,
+                 positive_label: int = 1,
+                 eps: float = 1e-8) -> None:
+        """
+        Parameters
+        ---------
+        threshold: float
+            Given a probability p of belonging to Positive class,
+            p < threshold will be considered tagged as Negative by
+            the classifier when computing the metric.
+            Defaults to 0.5
+        positive_label: int
+            Specify if the positive class should be 1 or 0.
+            Defaults to 1.
+        eps: float
+            Float to sum to the denominator, so that we avoid division
+            by zero. Defaults to 1e-8.
+
+        """
+
+        super().__init__(threshold)
+        self.recall = BinaryRecall(threshold, positive_label)
+        self.precision = BinaryPrecision(threshold, positive_label)
+        self.eps = eps
+
+    def compute_binary(self,
+                       pred: torch.Tensor,
+                       target: torch.Tensor) -> torch.Tensor:
+        """Compute F1. Score, the harmonic mean between precision and
+        recall.
+
+        Parameters
+        ---------
+        pred: torch.Tensor
+            Predictions made by the model. It should be a probability
+            0 <= p <= 1 for each sample, 1 being the positive class.
+        target: torch.Tensor
+            Ground truth. Each label should be either 0 or 1.
+
+        Returns
+        ------
+        torch.float
+            The computed binary metric
+
+        """
+        recall = self.recall.compute_binary(pred, target)
+        precision = self.precision.compute_binary(pred, target)
+
+        return 2 * precision * recall / (precision + recall + self.eps)

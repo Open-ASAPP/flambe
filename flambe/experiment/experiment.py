@@ -234,7 +234,7 @@ class Experiment(ClusterRunnable):
             self.tmp_resources_dir = tempfile.TemporaryDirectory()
             resources_folder = self.tmp_resources_dir.name
         else:
-            resources_folder = self.full_save_path
+            resources_folder = f"{self.full_save_path}/_resources"
 
         resources = self.process_resources(self.resources, resources_folder)
 
@@ -548,7 +548,8 @@ class Experiment(ClusterRunnable):
             raise man_errors.ClusterError("The orchestrator needs to exist at this point")
 
         cluster.create_dirs([self.name,
-                             f"{self.name}/{self.output_folder_name}"])
+                             f"{self.name}/{self.output_folder_name}",
+                             f"{self.name}/{self.output_folder_name}/_resources"])
         logger.info(cl.YE("Created supporting directories"))
 
         cluster.launch_ray_cluster()
@@ -559,8 +560,11 @@ class Experiment(ClusterRunnable):
         local_resources = {k: v for k, v in self.resources.items()
                            if not isinstance(v, RemoteResource)}
 
+        tmp_resources_dir = tempfile.TemporaryDirectory()
+
         # This will download remote resources.
-        local_resources = self.process_resources(local_resources)  # type: ignore
+        local_resources = self.process_resources(
+            local_resources, tmp_resources_dir.name)  # type: ignore
 
         local_resources = cast(Dict[str, str], local_resources)
 
@@ -568,11 +572,13 @@ class Experiment(ClusterRunnable):
             new_resources = cluster.send_local_content(
                 local_resources,
                 os.path.join(cluster.orchestrator.get_home_path(), self.name,
-                             self.output_folder_name),
+                             self.output_folder_name, "_resources"),
                 all_hosts=True
             )
         else:
             new_resources = dict()
+
+        tmp_resources_dir.cleanup()
 
         # Add the cluster resources without the tag
         new_resources.update({k: v.location for k, v in self.resources.items()

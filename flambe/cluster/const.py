@@ -5,7 +5,7 @@ SOCKET_TIMEOUT = 50
 RETRY_DELAY = 1
 RETRIES = 60
 
-TENSORBOARD_IMAGE = "tensorflow/tensorflow:latest"
+TENSORBOARD_IMAGE = "tensorflow/tensorflow:1.15.0"
 
 RAY_REDIS_PORT = 12345
 

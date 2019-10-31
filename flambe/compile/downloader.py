@@ -6,7 +6,7 @@ import os
 import subprocess
 import tempfile
 import requests
-
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ def download_s3_folder(url: str, destination: str) -> None:
 
 
 @contextmanager
-def download_manager(path: str):
+def download_manager(path: str, destination: Optional[str] = None):
     """Manager for downloading remote URLs
 
     Parameters
@@ -152,6 +152,11 @@ def download_manager(path: str):
         The remote URL to download. Currently, only S3 and http/https
         URLs are supported.
         In case it's already a local path, it yields the same path.
+    destination: Optional[str]
+        The path where the artifact will be downloaded (this includes
+        the file/folder name also).
+        In case of not given, a temporary directory will be used and the
+        name of the artifact will be inferred from the path.
 
     Examples
     --------
@@ -176,29 +181,37 @@ def download_manager(path: str):
             raise ValueError(f"Path: '{path}' does not exist locally.")
 
     else:
+        tmp_dir = None
+
+        if not destination:
+            tmp_dir = tempfile.TemporaryDirectory()
+            trailing_url = url.path[:-1] if url.path.endswith('/') else url.path
+            fname = trailing_url[trailing_url.rfind('/') + 1:]
+            destination = os.path.join(tmp_dir.name, fname)
+
         # 'path' is a remote URL
         if url.scheme == 's3':
             if not s3_exists(url):
                 raise ValueError(f"S3 url: '{path}' is not available")
 
             if s3_remote_file(url):
-                with tempfile.NamedTemporaryFile() as tmpfile:
-                    download_s3_file(path, tmpfile.name)
-                    yield tmpfile.name
+                download_s3_file(path, destination)
             else:
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    download_s3_folder(path, tmpdir)
-                    yield tmpdir
+                download_s3_folder(path, destination)
+
+            yield destination
 
         elif url.scheme == 'http' or url.scheme == 'https':
             if not http_exists(path):
                 raise ValueError(f"HTTP url: '{path}' is not available")
 
-            with tempfile.NamedTemporaryFile('wb') as tmpfile:
-                download_http_file(path, tmpfile.name)
-                yield tmpfile.name
+            download_http_file(path, destination)
+            yield destination
 
         else:
             raise ValueError(
                 f"'{path}' is not a valid remote URL. Only S3 and http/https URLs are supported."
             )
+
+        if tmp_dir:
+            tmp_dir.cleanup()

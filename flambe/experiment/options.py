@@ -131,3 +131,22 @@ class SampledUniformSearchOptions(Sequence[Number], Options):
     @classmethod
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
         return representer.represent_sequence('!g', node.elements)
+
+
+@alias('cluster')
+class ClusterResource(Registrable):
+
+    def __init__(self, location: str) -> None:
+        self.location = location
+
+    @classmethod
+    def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
+        # NOTE: here we are using scalar even considering this
+        # is a string. Other representers are not able to representer
+        # correctly this information
+        return representer.represent_scalar(tag, node.location)
+
+    @classmethod
+    def from_yaml(cls, constructor: Any, node: Any, factory_name: str) -> 'ClusterResource':
+        value = constructor.construct_yaml_str(node)
+        return cls(location=value)

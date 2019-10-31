@@ -16,6 +16,7 @@ class BinaryMetric(Metric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
+            Defaults to 0.5
 
         """
         self.threshold = threshold
@@ -124,6 +125,7 @@ class BinaryPrecision(BinaryMetric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
+            Defaults to 0.5
         positive_label: int
             Specify if the positive class should be 1 or 0.
             Defaults to 1.
@@ -196,6 +198,7 @@ class BinaryRecall(BinaryMetric):
             Given a probability p of belonging to Positive class,
             p < threshold will be considered tagged as Negative by
             the classifier when computing the metric.
+            Defaults to 0.5
         positive_label: int
             Specify if the positive class should be 1 or 0.
             Defaults to 1.
@@ -248,20 +251,24 @@ class BinaryRecall(BinaryMetric):
 
 class F1(BinaryMetric):
 
-    def __init__(self, threshold: float = 0.5, positive_label: int = 1, eps: float = 1e-8):
+    def __init__(self,
+                 threshold: float = 0.5,
+                 positive_label: int = 1,
+                 eps: float = 1e-8) -> None:
         """
-                Parameters
-                ---------
-                threshold: float
-                    Given a probability p of belonging to Positive class,
-                    p < threshold will be considered tagged as Negative by
-                    the classifier when computing the metric.
-                positive_label: int
-                    Specify if the positive class should be 1 or 0.
-                    Defaults to 1.
-                eps: float
-                    Float to sum to the denominator, so that we avoid division by zero
-
+        Parameters
+        ---------
+        threshold: float
+            Given a probability p of belonging to Positive class,
+            p < threshold will be considered tagged as Negative by
+            the classifier when computing the metric.
+            Defaults to 0.5
+        positive_label: int
+            Specify if the positive class should be 1 or 0.
+            Defaults to 1.
+        eps: float
+            Float to sum to the denominator, so that we avoid division
+            by zero. Defaults to 1e-8.
 
         """
 

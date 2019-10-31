@@ -1,9 +1,9 @@
-from typing import Union
+from typing import Union, Optional
 
 import torch
 
 
-def select_device(device: Union[torch.device, str]) -> Union[torch.device, str]:
+def select_device(device: Optional[str]) -> str:
     """
     Chooses the torch device to run in.
 

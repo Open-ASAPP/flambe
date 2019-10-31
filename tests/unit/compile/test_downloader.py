@@ -1,6 +1,7 @@
 from moto import mock_s3
 
 import pytest
+import mock
 import os
 import boto3
 import responses
@@ -62,6 +63,36 @@ def test_local_file():
     path = __file__
     with downloader.download_manager(path) as p:
         assert path == p
+
+
+@mock.patch('subprocess.check_output')
+def test_s3_file_given_folder(mock_check_output):
+    s3 = boto3.client('s3', region_name='us-east-1')
+    s3.create_bucket(Bucket='mybucket')
+
+    s3.put_object(Bucket='mybucket', Key="some_file.txt", Body="CONTENT")
+
+    with tempfile.TemporaryDirectory() as t:
+        destination = os.path.join(t, "some_file.txt")
+        with downloader.download_manager("s3://mybucket/some_file.txt", destination) as p:
+            assert p == destination
+
+    s3.put_object(Bucket='mybucket', Key="some_folder/some_other_file.txt", Body="CONTENT")
+
+    with tempfile.TemporaryDirectory() as t:
+        destination = os.path.join(t, "some_other_file.txt")
+        with downloader.download_manager("s3://mybucket/some_folder/some_other_file.txt", destination) as p:
+            assert p == destination
+
+    with tempfile.TemporaryDirectory() as t:
+        destination = os.path.join(t, "some_folder")
+        with downloader.download_manager("s3://mybucket/some_folder", destination) as p:
+            assert p == destination
+
+    with tempfile.TemporaryDirectory() as t:
+        destination = os.path.join(t, "some_folder")
+        with downloader.download_manager("s3://mybucket/some_folder/", destination) as p:
+            assert p == destination
 
 
 def test_invalid_local_file():

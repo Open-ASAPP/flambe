@@ -24,3 +24,4 @@ awscli==1.16.202
 pytorch-transformers==1.1.0
 jinja2~=2.10.1
 fastBPE==0.1.0
+ninja~=1.9.0

@@ -129,47 +129,6 @@ pipeline:
         runnable.parse()
 
 
-def test_preprocessor_invalid_resources(context):
-    config = """
-!Experiment
-
-name: random-name
-
-resources:
-  random:
-    r0: /non/path
-
-pipeline:
-    mod: !Module
-"""
-    with pytest.raises(error.ParsingRunnableError):
-        ex = context(config)
-        content, ext = ex.first_parse()
-        runnable = ex.compile_runnable(content)
-        runnable.parse()
-
-
-def test_preprocessor_invalid_resources2(context):
-    config = """
-!Experiment
-
-name: random-name
-
-resources:
-  remote:
-    r0: /non/path
-  random:
-    r0: /non/path
-
-pipeline:
-    mod: !Module
-"""
-    with pytest.raises(error.ParsingRunnableError):
-        ex = context(config)
-        content, ext = ex.first_parse()
-        runnable = ex.compile_runnable(content)
-        runnable.parse()
-
 
 def test_preprocessor_valid_resources(context):
     config = """
@@ -178,8 +137,7 @@ def test_preprocessor_valid_resources(context):
 name: random-name
 
 resources:
-  remote:
-    r0: /remote/path
+  r0: !cluster /remote/path
 
 pipeline:
     mod: !Module
@@ -188,49 +146,6 @@ pipeline:
     content, ext = ex.first_parse()
     runnable = ex.compile_runnable(content)
     runnable.parse()
-
-
-def test_preprocessor_invalid_resources4(context):
-    config = """
-!Experiment
-
-name: random-name
-
-resources:
-  remote:
-    r0: /remote/path
-  local:
-    r1: /non/path
-
-pipeline:
-    mod: !Module
-"""
-    with pytest.raises(error.ParsingRunnableError):
-        ex = context(config)
-        content, ext = ex.first_parse()
-        runnable = ex.compile_runnable(content)
-        runnable.parse()
-
-
-def test_preprocessor_invalid_resources5(context):
-    config = """
-!Experiment
-
-name: random-name
-
-resources:
-  remote:
-  local:
-    r1: /non/path
-
-pipeline:
-    mod: !Module
-"""
-    with pytest.raises(error.ParsingRunnableError):
-        ex = context(config)
-        content, ext = ex.first_parse()
-        runnable = ex.compile_runnable(content)
-        runnable.parse()
 
 
 def test_preprocessor_valid_paths(context):
@@ -248,25 +163,6 @@ pipeline:
     content, ext = ex.first_parse()
     runnable = ex.compile_runnable(content)
     runnable.parse()
-
-
-def test_preprocessor_inexistent_paths(context):
-    config = """
-!Experiment
-
-name: random-name
-
-resources:
-  v1: non/existent/path
-
-pipeline:
-    mod: !Module
-"""
-    with pytest.raises(error.ParsingRunnableError):
-        ex = context(config)
-        content, ext = ex.first_parse()
-        runnable = ex.compile_runnable(content)
-        runnable.parse()
 
 
 def test_preprocessor_extensions_non_package(context):

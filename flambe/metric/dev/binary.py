@@ -248,16 +248,18 @@ class BinaryRecall(BinaryMetric):
 
 class F1(BinaryMetric):
 
-    def __init__(self, threshold: float = 0.5, positive_label: int = 1):
+    def __init__(self, threshold: float = 0.5, positive_label: int = 1, eps: float = 1e-8):
         super().__init__(threshold)
         self.recall = BinaryRecall(threshold, positive_label)
         self.precision = BinaryPrecision(threshold, positive_label)
+        self.eps = eps
 
     def compute_binary(self,
                        pred: torch.Tensor,
                        target: torch.Tensor) -> torch.Tensor:
         """Compute F1. Score, the harmonic mean between precision and
         recall.
+
         Parameters
         ---------
         pred: torch.Tensor
@@ -275,4 +277,4 @@ class F1(BinaryMetric):
         recall = self.recall.compute_binary(pred, target)
         precision = self.precision.compute_binary(pred, target)
 
-        return 2 * precision * recall / (precision + recall + 1e-10)
+        return 2 * precision * recall / (precision + recall + self.eps)

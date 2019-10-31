@@ -6,7 +6,7 @@ import os
 import subprocess
 import tempfile
 import requests
-
+from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ def download_s3_folder(url: str, destination: str) -> None:
 
 
 @contextmanager
-def download_manager(path: str, folder: str = None):
+def download_manager(path: str, destination: Optional[str] = None):
     """Manager for downloading remote URLs
 
     Parameters
@@ -152,8 +152,11 @@ def download_manager(path: str, folder: str = None):
         The remote URL to download. Currently, only S3 and http/https
         URLs are supported.
         In case it's already a local path, it yields the same path.
-    folder: str
-        Optional folder where all remote content will be downloaded.
+    destination: Optional[str]
+        The path where the artifact will be downloaded (this includes
+        the file/folder name also).
+        In case of not given, a temporary directory will be used and the
+        name of the artifact will be inferred from the path.
 
     Examples
     --------
@@ -170,11 +173,6 @@ def download_manager(path: str, folder: str = None):
     """
     url = urlparse(path)
 
-    tmp_dir = None
-    if not folder:
-        tmp_dir = tempfile.TemporaryDirectory()
-        folder = tmp_dir.name
-
     if not url.scheme:
         # 'path' is a local path
         if os.path.exists(os.path.expanduser(path)):
@@ -183,9 +181,13 @@ def download_manager(path: str, folder: str = None):
             raise ValueError(f"Path: '{path}' does not exist locally.")
 
     else:
-        trailing_url = url.path[:-1] if url.path.endswith('/') else url.path
-        fname = trailing_url[trailing_url.rfind('/') + 1:]
-        destination = os.path.join(folder, fname)
+        tmp_dir = None
+
+        if not destination:
+            tmp_dir = tempfile.TemporaryDirectory()
+            trailing_url = url.path[:-1] if url.path.endswith('/') else url.path
+            fname = trailing_url[trailing_url.rfind('/') + 1:]
+            destination = os.path.join(tmp_dir.name, fname)
 
         # 'path' is a remote URL
         if url.scheme == 's3':
@@ -211,5 +213,5 @@ def download_manager(path: str, folder: str = None):
                 f"'{path}' is not a valid remote URL. Only S3 and http/https URLs are supported."
             )
 
-    if tmp_dir:
-        tmp_dir.cleanup()
+        if tmp_dir:
+            tmp_dir.cleanup()

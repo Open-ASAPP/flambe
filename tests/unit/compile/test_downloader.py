@@ -73,22 +73,26 @@ def test_s3_file_given_folder(mock_check_output):
     s3.put_object(Bucket='mybucket', Key="some_file.txt", Body="CONTENT")
 
     with tempfile.TemporaryDirectory() as t:
-        with downloader.download_manager("s3://mybucket/some_file.txt", t) as p:
-            assert p == os.path.join(t, "some_file.txt")
+        destination = os.path.join(t, "some_file.txt")
+        with downloader.download_manager("s3://mybucket/some_file.txt", destination) as p:
+            assert p == destination
 
     s3.put_object(Bucket='mybucket', Key="some_folder/some_other_file.txt", Body="CONTENT")
 
     with tempfile.TemporaryDirectory() as t:
-        with downloader.download_manager("s3://mybucket/some_folder/some_other_file.txt", t) as p:
-            assert p == os.path.join(t, "some_other_file.txt")
+        destination = os.path.join(t, "some_other_file.txt")
+        with downloader.download_manager("s3://mybucket/some_folder/some_other_file.txt", destination) as p:
+            assert p == destination
 
     with tempfile.TemporaryDirectory() as t:
-        with downloader.download_manager("s3://mybucket/some_folder", t) as p:
-            assert p == os.path.join(t, "some_folder")
+        destination = os.path.join(t, "some_folder")
+        with downloader.download_manager("s3://mybucket/some_folder", destination) as p:
+            assert p == destination
 
     with tempfile.TemporaryDirectory() as t:
-        with downloader.download_manager("s3://mybucket/some_folder/", t) as p:
-            assert p == os.path.join(t, "some_folder")
+        destination = os.path.join(t, "some_folder")
+        with downloader.download_manager("s3://mybucket/some_folder/", destination) as p:
+            assert p == destination
 
 
 def test_invalid_local_file():

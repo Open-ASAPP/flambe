@@ -156,7 +156,7 @@ class Experiment(ClusterRunnable):
     def process_resources(
         self,
         resources: Dict[str, Union[str, RemoteResource]],
-        folder: str = None
+        folder: str
     ) -> Dict[str, Union[str, RemoteResource]]:
         """Download resources that are not tagged with '!remote'
         into a given directory.
@@ -165,10 +165,9 @@ class Experiment(ClusterRunnable):
         ----------
         resources: Dict[str, Union[str, RemoteResource]]
             The resources dict
-        folder: str, Optional
-            The directort where the remote resources
-            will be downloaded. In case of not providing
-            the folder a temporary one will be used.
+        folder: str
+            The directory where the remote resources
+            will be downloaded.
 
         Returns
         -------
@@ -179,11 +178,10 @@ class Experiment(ClusterRunnable):
 
         """
         # Keep the resources temporary dict for later cleanup
-        self.tmp_resources_dir = tempfile.TemporaryDirectory()
         ret = {}
         for k, v in resources.items():
             if not isinstance(v, RemoteResource):
-                with download_manager(v, folder) as path:
+                with download_manager(v, os.path.join(folder, k)) as path:
                     ret[k] = path
             else:
                 ret[k] = v
@@ -233,10 +231,12 @@ class Experiment(ClusterRunnable):
                 "in the cluster when running remote experiments.")
 
         if not self.env:
-            resources = self.process_resources(self.resources)
+            self.tmp_resources_dir = tempfile.TemporaryDirectory()
+            resources_folder = self.tmp_resources_dir.name
         else:
             resources_folder = self.full_save_path
-            resources = self.process_resources(self.resources, resources_folder)
+
+        resources = self.process_resources(self.resources, resources_folder)
 
         # rsync downloaded resources
         if self.env:

@@ -133,8 +133,8 @@ class SampledUniformSearchOptions(Sequence[Number], Options):
         return representer.represent_sequence('!g', node.elements)
 
 
-@alias('remote')
-class RemoteResource(Registrable):
+@alias('cluster')
+class ClusterResource(Registrable):
 
     def __init__(self, location: str) -> None:
         self.location = location
@@ -147,6 +147,6 @@ class RemoteResource(Registrable):
         return representer.represent_scalar(tag, node.location)
 
     @classmethod
-    def from_yaml(cls, constructor: Any, node: Any, factory_name: str) -> 'RemoteResource':
+    def from_yaml(cls, constructor: Any, node: Any, factory_name: str) -> 'ClusterResource':
         value = constructor.construct_yaml_str(node)
         return cls(location=value)

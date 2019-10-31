@@ -21,7 +21,7 @@ from flambe.cluster import errors as man_errors
 from flambe.cluster import const
 from flambe.cluster import Cluster
 from flambe.experiment import utils, wording
-from flambe.experiment.options import RemoteResource
+from flambe.experiment.options import ClusterResource
 from flambe.runnable import RemoteEnvironment
 from flambe.runnable import error
 from flambe.runnable import utils as run_utils
@@ -98,7 +98,7 @@ class Experiment(ClusterRunnable):
                  debug: bool = False,
                  devices: Dict[str, int] = None,
                  save_path: Optional[str] = None,
-                 resources: Optional[Dict[str, Union[str, RemoteResource]]] = None,
+                 resources: Optional[Dict[str, Union[str, ClusterResource]]] = None,
                  search: OptionalSearchAlgorithms = None,
                  schedulers: OptionalTrialSchedulers = None,
                  reduce: Optional[Dict[str, int]] = None,
@@ -155,15 +155,15 @@ class Experiment(ClusterRunnable):
 
     def process_resources(
         self,
-        resources: Dict[str, Union[str, RemoteResource]],
+        resources: Dict[str, Union[str, ClusterResource]],
         folder: str
-    ) -> Dict[str, Union[str, RemoteResource]]:
-        """Download resources that are not tagged with '!remote'
+    ) -> Dict[str, Union[str, ClusterResource]]:
+        """Download resources that are not tagged with '!cluster'
         into a given directory.
 
         Parameters
         ----------
-        resources: Dict[str, Union[str, RemoteResource]]
+        resources: Dict[str, Union[str, ClusterResource]]
             The resources dict
         folder: str
             The directory where the remote resources
@@ -171,16 +171,16 @@ class Experiment(ClusterRunnable):
 
         Returns
         -------
-        Dict[str, Union[str, RemoteResource]]
+        Dict[str, Union[str, ClusterResource]]
             The resources dict where the remote urls that
-            don't contain '!remote' point now to the local
+            don't contain '!cluster' point now to the local
             path where the resource was downloaded.
 
         """
         # Keep the resources temporary dict for later cleanup
         ret = {}
         for k, v in resources.items():
-            if not isinstance(v, RemoteResource):
+            if not isinstance(v, ClusterResource):
                 with download_manager(v, os.path.join(folder, k)) as path:
                     ret[k] = path
             else:
@@ -224,10 +224,10 @@ class Experiment(ClusterRunnable):
                 os.makedirs(full_save_path)
                 logger.debug(f"{full_save_path} created to store output")
 
-        if any(map(lambda x: isinstance(x, RemoteResource), self.resources.values())):
+        if any(map(lambda x: isinstance(x, ClusterResource), self.resources.values())):
             raise ValueError(
-                f"Local experiments doesn't support resources with '!remote' tags. " +
-                "The '!remote' tag is used for those resources that need to be handled " +
+                f"Local experiments doesn't support resources with '!cluster' tags. " +
+                "The '!cluster' tag is used for those resources that need to be handled " +
                 "in the cluster when running remote experiments.")
 
         if not self.env:
@@ -558,7 +558,7 @@ class Experiment(ClusterRunnable):
             raise man_errors.ClusterError("Ray cluster not launched correctly.")
 
         local_resources = {k: v for k, v in self.resources.items()
-                           if not isinstance(v, RemoteResource)}
+                           if not isinstance(v, ClusterResource)}
 
         tmp_resources_dir = tempfile.TemporaryDirectory()
 
@@ -582,7 +582,7 @@ class Experiment(ClusterRunnable):
 
         # Add the cluster resources without the tag
         new_resources.update({k: v.location for k, v in self.resources.items()
-                              if isinstance(v, RemoteResource)})
+                              if isinstance(v, ClusterResource)})
 
         if cluster.orchestrator.is_tensorboard_running():
             if force:

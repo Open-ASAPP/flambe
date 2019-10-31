@@ -161,7 +161,7 @@ def traverse_all(obj: Any) -> Iterable[Any]:
     if isinstance(obj, Mapping):
         for key, value in obj.items():
             yield from traverse_all(value)
-    elif isinstance(obj, Sequence) and not isinstance(obj, str):
+    elif isinstance(obj, Iterable) and not isinstance(obj, str):
         for value in obj:
             yield from traverse_all(value)
     else:

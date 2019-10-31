@@ -158,7 +158,7 @@ class Experiment(ClusterRunnable):
         resources: Dict[str, Union[str, RemoteResource]],
         folder: str = None
     ) -> Dict[str, Union[str, RemoteResource]]:
-        """Download resources that are not tagged with '!cluster'
+        """Download resources that are not tagged with '!remote'
         into a given directory.
 
         Parameters
@@ -174,7 +174,7 @@ class Experiment(ClusterRunnable):
         -------
         Dict[str, Union[str, RemoteResource]]
             The resources dict where the remote urls that
-            don't contain '!cluster' point now to the local
+            don't contain '!remote' point now to the local
             path where the resource was downloaded.
 
         """
@@ -228,8 +228,8 @@ class Experiment(ClusterRunnable):
 
         if any(map(lambda x: isinstance(x, RemoteResource), self.resources.values())):
             raise ValueError(
-                f"Local experiments doesn't support resources with '!cluster' tags. " +
-                "The '!cluster' tag is used for those resources that need to be handled " +
+                f"Local experiments doesn't support resources with '!remote' tags. " +
+                "The '!remote' tag is used for those resources that need to be handled " +
                 "in the cluster when running remote experiments.")
 
         if not self.env:

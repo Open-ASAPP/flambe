@@ -137,7 +137,7 @@ def test_preprocessor_valid_resources(context):
 name: random-name
 
 resources:
-  r0: !cluster /remote/path
+  r0: !remote /remote/path
 
 pipeline:
     mod: !Module

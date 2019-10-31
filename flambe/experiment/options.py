@@ -133,7 +133,7 @@ class SampledUniformSearchOptions(Sequence[Number], Options):
         return representer.represent_sequence('!g', node.elements)
 
 
-@alias('cluster')
+@alias('remote')
 class RemoteResource(Registrable):
 
     def __init__(self, location: str) -> None:

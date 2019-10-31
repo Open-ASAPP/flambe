@@ -261,9 +261,9 @@ In case a resource is a remote URL, then flambé will download the file fow you 
 **Resources in remote experiment**
 
 When running remote experiments, all resources will be rsynced into the instances so that they are available in
-the cluster **unless a ``!cluster`` tag is specified**.
+the cluster **unless a ``!remote`` tag is specified**.
 
-The ``!cluster`` tag is useful when the cluster needs to handle the resources. The local process will just
+The ``!remote`` tag is useful when the cluster needs to handle the resources. The local process will just
 ignore those tagged resources.
 
 For example:
@@ -274,14 +274,14 @@ For example:
     ...
 
     resources:
-        data: !cluster path/to/train.csv  # This file is already in all instances of the cluster
+        data: !remote path/to/train.csv  # This file is already in all instances of the cluster
     ...
  
 When running this example in a cluster, then no ``rsync`` will be involved as flambé assumes the resource
 path ``path/to/train.csv`` exists in all instances of the cluster.
 
 .. tip::
-    You can also specify remote URL with the ``!cluster`` tag:
+    You can also specify remote URL with the ``!remote`` tag:
 
     .. code-block:: yaml
 
@@ -289,14 +289,14 @@ path ``path/to/train.csv`` exists in all instances of the cluster.
         ...
 
         resources:
-            data: !cluster s3://bucket/data.csv
+            data: !remote s3://bucket/data.csv
         ...
 
     In this case the cluster will download the data instead of the local process (if it has permissions to
     do so)
 
 
-.. attention:: The ``!cluster`` tag is only useful in remote experiments. If the user is running local experiments, using ``!cluster`` will fail.
+.. attention:: The ``!remote`` tag is only useful in remote experiments. If the user is running local experiments, using ``!remote`` will fail.
 
 .. _understanding-experiments-scheduling_label:
 

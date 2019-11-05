@@ -269,62 +269,71 @@ class MappedRegistrable(Registrable):
         return instance
 
 
-def from_yaml(constructor: Any, node: Any, factory_name: str) -> Any:
-    """Use constructor to create an instance of cls"""
-    pass
+class Schema(MutableMapping[str, Any]):
 
-
-def to_yaml(representer: Any, node: Any, tag: str) -> Any:
-    """Use representer to create yaml representation of node"""
-    pass
-
-
-def transform_to(to_yaml_fn: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(to_yaml_fn)
-    def wrapped(representer: Any, node: Any) -> Any:
-        if hasattr(node, '_created_with_tag'):
-            tag = node._created_with_tag
+    def __init__(self, flambe_callable: Callable, flambe_factory_name: Optional[str] = None, **kwargs: Any):
+        self.callable = callable
+        if flambe_factory_name is None:
+            if not isinstance(self.callable, type):
+                raise NotImplementedError('Using non-class callables with Schema is not yet supported')
+            self.factory_method = flambe_callable
         else:
-            tag = Registrable.get_default_tag(type(node))
-        return to_yaml_fn(representer, node, tag=tag)
-    return wrapped
+            if not isinstance(self.callable, type):
+                raise Exception(f'Cannot specify factory name on non-class callable {callable}')
+            self.factory_method = getattr(self.callable, flambe_factory_name)
+        self.kwargs = kwargs
+        self.output_object = None
+        self.created_with_tag = None
+
+    @classmethod
+    def from_yaml(cls, callable: Callable, constructor: Any, node: Any, factory_name: str) -> Any:
+        """Use constructor to create an instance of cls"""
+        pass
+
+    @classmethod
+    def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
+        """Use representer to create yaml representation of node"""
+        pass
+
+    def __call__(self, root):
+        if self.output_object is not None:
+            return self.output_object
+        kwargs = fill_defaults(self.factory, self.kwargs)
+        self.kwargs.update(kwargs)
+
+        def helper(obj):
+            if isinstance(obj, Link):
+                return obj(root)
+            elif isinstance(obj, Schema):
+                return obj(root)
+            elif isinstance(obj, dict):
+                return {k: helper(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                [helper(x) for x in obj]
+            else:
+                return obj
+
+        kwargs = helper(kwargs)
+
+        if isinstance(self.callable, Component):
+            # TODO run hooks
+            pass
+        output = self.factory_method(**kwargs)
+        self.output_object = output
+        return output
 
 
-def transform_from(from_yaml_fn: Callable[..., Any],
-                   tag: str,
-                   factory_name: Optional[str] = None) -> Callable[..., Any]:
+def add_callable_from_yaml(from_yaml_fn: Callable, callable: Callable) -> Callable:
     @functools.wraps(from_yaml_fn)
     def wrapped(constructor: Any, node: Any) -> Any:
-        obj = from_yaml_fn(constructor, node, factory_name=factory_name)
-        # Access dict directly because obj may be a Schema, and have
-        # special dot notation access behavior
-        obj.__dict__['_created_with_tag'] = tag
+        obj = from_yaml_fn(constructor, node, callable=callable)
         return obj
     return wrapped
 
 
-def combine(*args):
-    return '!' + '.'.join(args)
+class Schematic(Registrable):
 
-
-def sync_registry_with_yaml(yaml, registry):
-    for entry in registry:
-        yaml.representer.add_representer(entry.class_, transform_to(entry.to_yaml))
-        combos = [(tag, factory) for tag in entry.tags for factory in entry.factories]
-        for tag, factory in combos:
-            full_tag = combine(entry.namespace, tag, factory)
-            yaml.constructor.add_constructor(full_tag,
-                                             transform_from(entry.from_yaml, full_tag, factory))
-
-
-def load_config(yaml_config: Union[stream, str]) -> Any:
-    yaml = YAML()
-    sync_registry_with_yaml(yaml, get_registry())
-    result = yaml.load(yaml_config)
-    return result
-
-
-def dump_to_config(obj: Any, stream):
-    yaml = YAML()
-    sync_registry_with_yaml(yaml, get_registry())
-    yaml.dump(obj, stream)
+    def __init_subclass__(cls: Type['Registrable'],
+                          **kwargs: Mapping[str, Any]) -> None:
+        from_yaml_fn = add_callable_from_yaml(Schema.from_yaml, callable=cls)
+        super().__init_subclass__(from_yaml=Schema.from_yaml, to_yaml=Schema.to_yaml, **kwargs)

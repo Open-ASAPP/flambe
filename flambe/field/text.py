@@ -6,6 +6,7 @@ import numpy as np
 import gensim.downloader as api
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
+from gensim.models import fasttext
 from gensim.test.utils import temporary_file
 
 from flambe.field import Field
@@ -144,8 +145,9 @@ class TextField(Field):
                 model = KeyedVectors.load_word2vec_format(self.embeddings,
                                                           binary=self.embeddings_binary)
             elif self.embeddings_format == 'fasttext':
-                model = KeyedVectors.load_fasttext_format(self.embeddings,
-                                                          binary=self.embeddings_binary)
+                model = fasttext.load_facebook_vectors(self.embeddings)
+                # model = KeyedVectors.load_fasttext_format(self.embeddings,
+                #                                          binary=self.embeddings_binary)
             elif self.embeddings_format == 'gensim':
                 try:
                     model = KeyedVectors.load(self.embeddings)

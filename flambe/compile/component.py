@@ -1307,7 +1307,7 @@ class Component(Registrable):
         return instance
 
     def save(self, path: str, **kwargs: Any):
-        flambe_save(self, path)
+        flambe_save(self, path, **kwargs)
 
     @classmethod
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:

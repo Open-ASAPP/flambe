@@ -176,6 +176,7 @@ def save_state_to_file(state: State,
                        path: str,
                        compress: bool = False,
                        pickle_only: bool = False,
+                       overwrite: bool = False,
                        pickle_module=dill,
                        pickle_protocol=DEFAULT_PROTOCOL) -> None:
     """Save state to given path
@@ -205,6 +206,9 @@ def save_state_to_file(state: State,
     pickle_only : bool
         Use given pickle_module instead of the hiearchical save format
         (the default is False).
+    overwrite : bool
+        If true, overwrites the contents of the given path to create a
+        directory at that location
     pickle_module : type
         Pickle module that has load and dump methods; dump should
         accpet a pickle_protocol parameter (the default is dill).
@@ -219,12 +223,18 @@ def save_state_to_file(state: State,
         some files.
 
     """
-    if os.path.exists(path) and os.path.isdir(path):
-        dir_contents = os.listdir(path)
-        if len(dir_contents) != 0:
-            raise ValueError('The given path points to an existing directory containing files:\n'
-                             f'{dir_contents}\n'
-                             'Please use a new path, or an existing directory without files.')
+    if os.path.exists(path):
+        if os.path.isdir(path):
+            dir_contents = os.listdir(path)
+            if len(dir_contents) != 0 and not overwrite:
+                raise ValueError(f'The given path ({path}) points to an existing directory '
+                                 f'containing files:\n{dir_contents}\n'
+                                 'Please use a new path, or an existing directory without files, '
+                                 'or specify overwrite=True.')
+        else:
+            if not overwrite:
+                raise ValueError(f'The given path ({path}) points to an existing file. Specify '
+                                 'overwrite=True to overwrite the file with a save file / dir.')
     if compress:
         original_path = path
         temp = tempfile.TemporaryDirectory()
@@ -277,6 +287,7 @@ def save(obj: Any,
          path: str,
          compress: bool = False,
          pickle_only: bool = False,
+         overwrite: bool = False,
          pickle_module=dill,
          pickle_protocol=DEFAULT_PROTOCOL) -> None:
     """Save `Component` object to given path
@@ -294,6 +305,9 @@ def save(obj: Any,
     pickle_only : bool
         Use given pickle_module instead of the hiearchical save format
         (the default is False).
+    overwrite : bool
+        If true, overwrites the contents of the given path to create a
+        directory at that location
     pickle_module : type
         Pickle module that has load and dump methods; dump should
         accept a pickle_protocol parameter (the default is dill).
@@ -303,7 +317,7 @@ def save(obj: Any,
 
     """
     state = obj.get_state()
-    save_state_to_file(state, path, compress, pickle_only,
+    save_state_to_file(state, path, compress, pickle_only, overwrite,
                        pickle_module, pickle_protocol)
 
 

@@ -155,7 +155,7 @@ class TuneAdapter(ray.tune.Trainable):
     def _save(self, checkpoint_dir: str) -> str:
         """Subclasses should override this to implement save()."""
         path = os.path.join(checkpoint_dir, "checkpoint.flambe")
-        self.block.save(path)
+        self.block.save(path, overwrite=True)
         return path
 
     def _restore(self, checkpoint: str) -> None:

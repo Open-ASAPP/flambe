@@ -146,8 +146,8 @@ class TextField(Field):
                                                           binary=self.embeddings_binary)
             elif self.embeddings_format == 'fasttext':
                 model = fasttext.load_facebook_vectors(self.embeddings)
-                # model = KeyedVectors.load_fasttext_format(self.embeddings,
-                #                                          binary=self.embeddings_binary)
+                model = KeyedVectors.load_fasttext_format(self.embeddings,
+                                                          binary=self.embeddings_binary)
             elif self.embeddings_format == 'gensim':
                 try:
                     model = KeyedVectors.load(self.embeddings)

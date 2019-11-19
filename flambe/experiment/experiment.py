@@ -257,14 +257,6 @@ class Experiment(ClusterRunnable):
         # Initialize ray cluster
         kwargs = {"logging_level": logging.ERROR, "include_webui": False}
         if self.debug:
-            logger.info(
-                cl.BL("Debugger activated"))
-            logger.info(
-                cl.YE("Pipeline will begin executing all variants and all " +
-                      "computables serially. " +
-                      "Press 's' to step into the " +
-                      "run method of the Component once the ipdb console " +
-                      "shows up"))
             kwargs['local_mode'] = True
 
         if self.env:

@@ -62,7 +62,7 @@ def test_integration_experiments():
     run_experiments(base)
 
 
-@pytest.mark.end2end
+@pytest.mark.examples
 def test_examples_experiments():
     """Runs all experiments found in top level examples
     folder

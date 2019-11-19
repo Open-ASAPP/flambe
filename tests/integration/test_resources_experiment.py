@@ -1,10 +1,8 @@
-import pytest
 import tempfile
 import subprocess
 import os
 
 
-@pytest.mark.integration
 def test_resources_config():
     config = """
 !Experiment

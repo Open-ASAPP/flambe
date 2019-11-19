@@ -31,5 +31,5 @@ pipeline:
     optimizer: !torch.Adam
       params: !@ 1_train[model].trainable_params
     lower_is_better: True
-    max_steps: 2
-    iter_per_step: 2
+    max_steps: 1
+    iter_per_step: 1

@@ -1,7 +1,6 @@
 !Experiment
 
 name: text_classification
-save_path: .
 
 pipeline:
   b1: !Trainer
@@ -28,5 +27,5 @@ pipeline:
     metric_fn: !Accuracy
     optimizer: !torch.Adam
       params: !@ b1[model].trainable_params
-    max_steps: 2
+    max_steps: 1
     iter_per_step: 1

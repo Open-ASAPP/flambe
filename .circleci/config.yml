@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  test:
+  unit_tests:
       docker:
         - image: python:3.6
       steps:
@@ -13,7 +13,7 @@ jobs:
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
-            command: python3 -m tox -- -m "not end2end" -v
+            command: python3 -m tox -- -m "not end2end and not examples" -v
             no_output_timeout: 30m
         - save_cache:
             paths:
@@ -23,7 +23,7 @@ jobs:
             path: test_results
         - store_artifacts:
             path: test_results
-  end2end:
+  end2end_tests:
       docker:
         - image: python:3.6
       steps:
@@ -31,8 +31,34 @@ jobs:
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
-            command: python3 -m tox -- -v
+            command: python3 -m tox -- -m "end2end" -v
             no_output_timeout: 180m
+        - save_cache:
+            paths:
+              - ~/.cache/pip
+            key: flambe-cache-{{ .Branch }}
+        - store_test_results:
+            path: test_results
+        - store_artifacts:
+            path: test_results
+  examples_tests:
+      docker:
+        - image: python:3.6
+      steps:
+        - checkout
+        - run: python3 -m pip install --user tox awscli
+        - run: python3 -m awscli configure set region us-east-1
+        - run:
+            command: python3 -m tox -- -m "examples" -v
+            no_output_timeout: 180m
+        - save_cache:
+            paths:
+              - ~/.cache/pip
+            key: flambe-cache-{{ .Branch }}
+        - store_test_results:
+            path: test_results
+        - store_artifacts:
+            path: test_results
   publish-test:
       docker:
           - image: python:3.6
@@ -54,12 +80,12 @@ workflows:
   version: 2
   build:
     jobs:
-      - test:
+      - unit_tests:
           filters:
             tags:
               only:
                 - /.*/
-      - end2end:
+      - examples_tests:
           requires:
             - test
           filters:

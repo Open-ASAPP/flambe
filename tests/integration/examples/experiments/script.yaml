@@ -3,7 +3,6 @@ flambe_script: tests/data/dummy_extensions/script
 !Experiment
 
 name: script_test
-save_path: .
 
 pipeline:
   stage_0: !Script

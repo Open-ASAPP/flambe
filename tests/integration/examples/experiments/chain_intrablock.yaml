@@ -1,7 +1,6 @@
 !Experiment
 
 name: basic-example
-save_path: .
 
 pipeline:
   encoder: !PooledRNNEncoder

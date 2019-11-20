@@ -3,7 +3,9 @@
 name: foo
 
 pipeline:
-  dataset: !SSTDataset
+  dataset: !TabularDataset.from_path
+    train_path: {top_level}/tests/data/dummy_tabular/train.csv
+    val_path: {top_level}/tests/data/dummy_tabular/val.csv
     transform:
       text: !BertTextField
         alias: 'bert-base-uncased'

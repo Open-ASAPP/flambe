@@ -105,7 +105,7 @@ workflows:
       - publish-test:
           context: flambe-publisher
           requires:
-            - examples_tests
+            - end2end_tests 
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/

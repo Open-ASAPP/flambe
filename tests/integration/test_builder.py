@@ -31,7 +31,7 @@ pipeline:
   dataset: !TabularDataset.from_path
     train_path: tests/data/dummy_tabular/train.csv
     val_path: tests/data/dummy_tabular/val.csv
-    sep: ',
+    sep: ','
     transform:
       text: !TextField
       label: !LabelField

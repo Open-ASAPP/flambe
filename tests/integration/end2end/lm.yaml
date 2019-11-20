@@ -5,7 +5,11 @@ save_path: .
 
 pipeline:
   1_train: !Trainer
-    dataset: !PTBDataset
+    dataset: !TabularDataset.from_path
+      train_path: tests/data/dummy_tabular/train.csv
+      val_path: tests/data/dummy_tabular/val.csv
+      sep: ','
+      columns: [text]
       transform:
         text: !LMField
           eos_token: <eos>

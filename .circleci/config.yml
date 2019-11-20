@@ -85,9 +85,16 @@ workflows:
             tags:
               only:
                 - /.*/
+      - end2end_tests:
+          requires:
+            - unit_tests 
+          filters:
+            tags:
+              only:
+                - /.*/
       - examples_tests:
           requires:
-            - test
+            - end2end_tests
           filters:
             branches:
               only:
@@ -98,7 +105,7 @@ workflows:
       - publish-test:
           context: flambe-publisher
           requires:
-            - test
+            - examples_tests
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/

@@ -19,7 +19,9 @@ pipeline:
     dataset: !MNISTDataset
     train_sampler: !BaseSampler
       batch_size: 64
+      downsample: 0.01
     val_sampler: !BaseSampler
+      downsample: 0.01
     model: !@ model
     loss_fn: !torch.NLLLoss
     metric_fn: !Accuracy

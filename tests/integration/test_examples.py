@@ -58,7 +58,7 @@ def test_integration_experiments():
 
     """
     tests_base = os.path.dirname(os.path.dirname(__file__))
-    base = os.path.join(tests_base, "integration", "examples", "experiments")
+    base = os.path.join(tests_base, "integration", "end2end")
     run_experiments(base)
 
 

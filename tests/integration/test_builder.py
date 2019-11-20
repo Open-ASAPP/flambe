@@ -28,7 +28,10 @@ name: exporter
 save_path: {}
 
 pipeline:
-  dataset: !SSTDataset
+  dataset: !TabularDataset.from_path
+    train_path: tests/data/dummy_tabular/train.csv
+    val_path: tests/data/dummy_tabular/val.csv
+    sep: ',
     transform:
       text: !TextField
       label: !LabelField

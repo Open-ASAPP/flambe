@@ -86,8 +86,6 @@ workflows:
               only:
                 - /.*/
       - end2end_tests:
-          requires:
-            - unit_tests 
           filters:
             tags:
               only:
@@ -95,6 +93,7 @@ workflows:
       - examples_tests:
           requires:
             - end2end_tests
+            - unit_tests
           filters:
             branches:
               only:

@@ -18,19 +18,19 @@ def module_equals(model1, model2):
     return True
 
 
-def test_exporter_builder():
+def test_exporter_builder(top_level):
     with tmpdir() as d, tmpdir() as d2, tmpfile(mode="w", suffix=".yaml") as f, tmpfile(mode="w", suffix=".yaml") as f2:
         # First run an experiment
         exp = """
 !Experiment
 
 name: exporter
-save_path: {}
+save_path: {save_path}
 
 pipeline:
   dataset: !TabularDataset.from_path
-    train_path: tests/data/dummy_tabular/train.csv
-    val_path: tests/data/dummy_tabular/val.csv
+    train_path: {top_level}/tests/data/dummy_tabular/train.csv
+    val_path: {top_level}/tests/data/dummy_tabular/val.csv
     sep: ','
     transform:
       text: !TextField
@@ -54,7 +54,7 @@ pipeline:
     text: !@ dataset.text
 """
 
-        exp = exp.format(d)
+        exp = exp.format(save_path=d, top_level=top_level)
         f.write(exp)
         f.flush()
         ret = subprocess.run(['flambe', f.name, '-i'])
@@ -63,22 +63,22 @@ pipeline:
         # Then run a builder
 
         builder = """
-flambe_inference: tests/data/dummy_extensions/inference/
+flambe_inference: {top_level}/tests/data/dummy_extensions/inference/
 ---
 
 !Builder
 
-destination: {0}
+destination: {dest}
 
 component: !flambe_inference.DummyInferenceEngine
   model: !TextClassifier.load_from_path
-    path: {1}
+    path: {path}
 """
         base = os.path.join(d, "output__exporter", "exporter")
         path_aux = [x for x in os.listdir(base) if os.path.isdir(os.path.join(base, x))][0]  # Should be only 1 folder bc of no variants
         model_path = os.path.join(base, path_aux, "checkpoint", "checkpoint.flambe", "model")
 
-        builder = builder.format(d2, model_path)
+        builder = builder.format(dest=d2, path=model_path, top_level=top_level)
         f2.write(builder)
         f2.flush()
 

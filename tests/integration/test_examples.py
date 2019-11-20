@@ -31,7 +31,7 @@ def _preprocess_experiment(fname, save_path):
     return None
 
 
-def run_experiments(base):
+def run_experiments(base, **kwargs):
     """Run all experiments found in base param.
     and check that flambe executes without errors.
 
@@ -43,8 +43,11 @@ def run_experiments(base):
     for fname in os.listdir(base):
         full_f = os.path.join(base, fname)
         if os.path.isfile(full_f) and fname.endswith('yaml'):
-            with tmpdir() as d, tmpfile() as f:
-                new_exp = _preprocess_experiment(full_f, d)
+            with tmpdir() as d, tmpfile() as f, tmpfile('w') as t:
+                content = open(full_f).read().format(**kwargs)
+                t.write(content)
+                t.flush()
+                new_exp = _preprocess_experiment(t.name, d)
                 if new_exp:
                     yaml.dump_all(new_exp, f)
                     ret = subprocess.run(['flambe', f.name, '-i'])
@@ -52,14 +55,14 @@ def run_experiments(base):
 
 
 @pytest.mark.end2end
-def test_integration_experiments():
+def test_end2end_experiments(top_level):
     """Runs all experiments found in the integration's
     folder
 
     """
     tests_base = os.path.dirname(os.path.dirname(__file__))
     base = os.path.join(tests_base, "integration", "end2end")
-    run_experiments(base)
+    run_experiments(base, top_level=top_level)
 
 
 @pytest.mark.examples

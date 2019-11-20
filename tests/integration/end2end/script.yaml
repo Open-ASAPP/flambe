@@ -1,4 +1,4 @@
-flambe_script: tests/data/dummy_extensions/script
+flambe_script: {top_level}/tests/data/dummy_extensions/script
 ---
 !Experiment
 

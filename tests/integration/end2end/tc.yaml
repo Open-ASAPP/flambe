@@ -6,8 +6,8 @@ save_path: .
 pipeline:
   b1: !Trainer
     dataset: !TabularDataset.from_path
-      train_path: tests/data/dummy_tabular/train.csv
-      val_path: tests/data/dummy_tabular/val.csv
+      train_path: {top_level}/tests/data/dummy_tabular/train.csv
+      val_path: {top_level}/tests/data/dummy_tabular/val.csv
       sep: ','
       transform:
         text: !TextField

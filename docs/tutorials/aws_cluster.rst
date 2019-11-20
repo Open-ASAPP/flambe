@@ -353,11 +353,11 @@ Then flambé will automatically detect an existing cluster and it will reuse it:
 
 .. tip::
     This is particularly useful when running :class:`~flambe.experiment.Experiment` objects in the cluster.
-    You can run:
+    While you cannot run multiple experiments in the same cluster simultaneously, you can run them sequentially
+    without having to set up the cluster again like the following:
 
     .. code-block:: bash
     
         flambe experiment.yaml -c my-cluster.yaml
+        # after experiment is done...
         flambe other_experiment.yaml -c my-cluster.yaml
-
-    In the same cluster!

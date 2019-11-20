@@ -138,9 +138,6 @@ class TuneAdapter(ray.tune.Trainable):
                           console_prefix=self.block_id,
                           hyper_params=self.hyper_params,
                           capture_warnings=True):
-            if self.debug:
-                import ipdb
-                ipdb.set_trace()
             # Tune uses "done" instead of "continue" flag, so reverse
             # the boolean
             done = not self.block.run()

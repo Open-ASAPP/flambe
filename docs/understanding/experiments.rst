@@ -490,7 +490,7 @@ Resuming
            model: !@ trainer.model
 
 By providing a ``Component`` keyname (or a list of them) that belong to the ``pipeline``, then
-**flambé will resume all blocks up until the given one (or ones).**
+**flambé will resume AFTER all the given blocks, i.e. it would not execute those blocks and continue the experiment after them.**
 
 Debugging
 ---------

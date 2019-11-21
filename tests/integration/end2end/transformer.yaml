@@ -9,7 +9,6 @@ pipeline:
       train_path: {top_level}/tests/data/dummy_tabular/train.csv
       val_path: {top_level}/tests/data/dummy_tabular/val.csv
       sep: ','
-      columns: [text]
       transform:
         text: !TextField
           lower: True

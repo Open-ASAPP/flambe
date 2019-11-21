@@ -1,6 +1,6 @@
 !Experiment
 
-name: foo
+name: bert
 
 pipeline:
   dataset: !TabularDataset.from_path

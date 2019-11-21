@@ -46,9 +46,10 @@ pipeline:
           num_embeddings: !@ b1.model.embedder.embedding.num_embeddings
           embedding_dim: 300
         encoder: !PooledRNNEncoder
-          input_size: !g
-            - !@ b2[model][embedder][embedding].embedding_dim
-            - !@ b1.model.embedder.embedding.embedding_dim
+          input_size: !@ b2[model][embedder][embedding].embedding_dim
+          # input_size: !g
+            # - !@ b2[model][embedder][embedding].embedding_dim
+            # - !@ b1.model.embedder.embedding.embedding_dim
           rnn_type: lstm
           n_layers: !g [2, 3]
           hidden_size: !@ b2[model][embedder][encoder][input_size]

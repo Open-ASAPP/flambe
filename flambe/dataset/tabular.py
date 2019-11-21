@@ -418,6 +418,7 @@ class TabularDataset(Dataset):
         The path may be either a single file or a directory. If it is
         a directory, each file is loaded according to the specified
         options and all the data is concatenated into a single list.
+        The files will be processed in order based on file name.
 
         Parameters
         ----------

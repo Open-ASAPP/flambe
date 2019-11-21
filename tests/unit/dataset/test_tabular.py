@@ -253,13 +253,13 @@ def test_full_dataset_from_file(full_dataset):
 
 def test_dataset_from_dir(dir_dataset):
     """Test loading multiple datasets at once"""
-    dummy = "justo. Praesent luctus. Curabitur egestas nunc sed libero. Proin sed"
-    assert dir_dataset[0][0] == dummy
-    assert dir_dataset[0][1] == '6'
-
     dummy = "malesuada. Integer id magna et ipsum cursus vestibulum. Mauris magna."
+    assert dir_dataset[0][0] == dummy
+    assert dir_dataset[0][1] == '8'
+
+    dummy = "Sed molestie. Sed id risus quis diam luctus lobortis. Class"
     assert dir_dataset[100][0] == dummy
-    assert dir_dataset[100][1] == '8'
+    assert dir_dataset[100][1] == '6'
 
 
 def test_dataset_autogen(autogen_dataset):
@@ -340,36 +340,36 @@ def test_dataset_autogen_ratios_with_test(autogen_dataset_ratios_with_test):
 
 def test_dataset_autogen_dir_val_test(autogen_dataset_dir):
     """Test autogenerating val and test sets from a dir"""
-    train_dummy = "elementum, lorem ut aliquam iaculis, lacus pede sagittis augue, eu"
-    val_dummy = "iaculis nec, eleifend non, dapibus rutrum, justo. Praesent luctus. Curabitur"
-    test_dummy = "amet ornare lectus justo eu arcu. Morbi sit amet massa."
+    train_dummy = "egestas blandit. Nam nulla magna, malesuada vel, convallis in, cursus"
+    val_dummy = "turpis egestas. Aliquam fringilla cursus purus. Nullam scelerisque neque sed"
+    test_dummy = "nibh. Aliquam ornare, libero at auctor ullamcorper, nisl arcu iaculis"
 
     assert autogen_dataset_dir.train[0][0] == train_dummy
-    assert autogen_dataset_dir.train[0][1] == '2'
-    assert len(autogen_dataset_dir.train) == 128
+    assert autogen_dataset_dir.train[0][1] == '1'
+    assert len(autogen_dataset_dir.train) == 160
 
     assert autogen_dataset_dir.val[0][0] == val_dummy
-    assert autogen_dataset_dir.val[0][1] == '8'
-    assert len(autogen_dataset_dir.val) == 32
+    assert autogen_dataset_dir.val[0][1] == '6'
+    assert len(autogen_dataset_dir.val) == 41
 
     assert autogen_dataset_dir.test[0][0] == test_dummy
-    assert autogen_dataset_dir.test[0][1] == '9'
-    assert len(autogen_dataset_dir.test) == 40
+    assert autogen_dataset_dir.test[0][1] == '10'
+    assert len(autogen_dataset_dir.test) == 51
 
 
 def test_dataset_autogen_dir_with_test(autogen_dataset_dir_with_test):
     """Test autogenerating val from a dir and given test"""
-    train_dummy = "ornare lectus justo eu arcu. Morbi sit amet massa. Quisque"
-    val_dummy = "amet ornare lectus justo eu arcu. Morbi sit amet massa."
+    train_dummy = "Donec non justo. Proin non massa non ante bibendum ullamcorper."
+    val_dummy = "nibh. Aliquam ornare, libero at auctor ullamcorper, nisl arcu iaculis"
     test_dummy = "a sollicitudin orci sem eget massa. Suspendisse eleifend. Cras sed"
 
     assert autogen_dataset_dir_with_test.train[0][0] == train_dummy
     assert autogen_dataset_dir_with_test.train[0][1] == '4'
-    assert len(autogen_dataset_dir_with_test.train) == 160
+    assert len(autogen_dataset_dir_with_test.train) == 201
 
     assert autogen_dataset_dir_with_test.val[0][0] == val_dummy
-    assert autogen_dataset_dir_with_test.val[0][1] == '9'
-    assert len(autogen_dataset_dir_with_test.val) == 40
+    assert autogen_dataset_dir_with_test.val[0][1] == '10'
+    assert len(autogen_dataset_dir_with_test.val) == 51
 
     assert autogen_dataset_dir_with_test.test[0][0] == test_dummy
     assert autogen_dataset_dir_with_test.test[0][1] == '3'
@@ -380,36 +380,36 @@ def test_dataset_autogen_dir_val_test_ratios(autogen_dataset_dir_ratios):
     """Test autogenerating val set from a dir with given test and
     different ratios
     """
-    train_dummy = "augue scelerisque mollis. Phasellus libero mauris, aliquam eu, accumsan sed,"
-    val_dummy = "lacinia orci, consectetuer euismod est arcu ac orci. Ut semper"
-    test_dummy = "amet ornare lectus justo eu arcu. Morbi sit amet massa."
+    train_dummy = "Aenean euismod mauris eu elit. Nulla facilisi. Sed neque. Sed"
+    val_dummy = "ut quam vel sapien imperdiet ornare. In faucibus. Morbi vehicula."
+    test_dummy = "nibh. Aliquam ornare, libero at auctor ullamcorper, nisl arcu iaculis"
 
     assert autogen_dataset_dir_ratios.train[0][0] == train_dummy
-    assert autogen_dataset_dir_ratios.train[0][1] == '5'
-    assert len(autogen_dataset_dir_ratios.train) == 50
+    assert autogen_dataset_dir_ratios.train[0][1] == '9'
+    assert len(autogen_dataset_dir_ratios.train) == 63
 
     assert autogen_dataset_dir_ratios.val[0][0] == val_dummy
-    assert autogen_dataset_dir_ratios.val[0][1] == '6'
-    assert len(autogen_dataset_dir_ratios.val) == 50
+    assert autogen_dataset_dir_ratios.val[0][1] == '10'
+    assert len(autogen_dataset_dir_ratios.val) == 63
 
     assert autogen_dataset_dir_ratios.test[0][0] == test_dummy
-    assert autogen_dataset_dir_ratios.test[0][1] == '9'
-    assert len(autogen_dataset_dir_ratios.test) == 100
+    assert autogen_dataset_dir_ratios.test[0][1] == '10'
+    assert len(autogen_dataset_dir_ratios.test) == 126
 
 
 def test_dataset_autogen_dir_val_test_ratios_with_test(autogen_dataset_dir_ratios_with_test):
     """Test autogenerating val and test sets from a file"""
-    train_dummy = "elementum, lorem ut aliquam iaculis, lacus pede sagittis augue, eu"
-    val_dummy = "amet ornare lectus justo eu arcu. Morbi sit amet massa."
+    train_dummy = "Donec egestas. Aliquam nec enim. Nunc ut erat. Sed nunc"
+    val_dummy = "nibh. Aliquam ornare, libero at auctor ullamcorper, nisl arcu iaculis"
     test_dummy = "a sollicitudin orci sem eget massa. Suspendisse eleifend. Cras sed"
 
     assert autogen_dataset_dir_ratios_with_test.train[0][0] == train_dummy
-    assert autogen_dataset_dir_ratios_with_test.train[0][1] == '2'
-    assert len(autogen_dataset_dir_ratios_with_test.train) == 100
+    assert autogen_dataset_dir_ratios_with_test.train[0][1] == '1'
+    assert len(autogen_dataset_dir_ratios_with_test.train) == 126
 
     assert autogen_dataset_dir_ratios_with_test.val[0][0] == val_dummy
-    assert autogen_dataset_dir_ratios_with_test.val[0][1] == '9'
-    assert len(autogen_dataset_dir_ratios_with_test.val) == 100
+    assert autogen_dataset_dir_ratios_with_test.val[0][1] == '10'
+    assert len(autogen_dataset_dir_ratios_with_test.val) == 126
 
     assert autogen_dataset_dir_ratios_with_test.test[0][0] == test_dummy
     assert autogen_dataset_dir_ratios_with_test.test[0][1] == '3'

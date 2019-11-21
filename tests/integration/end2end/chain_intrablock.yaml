@@ -11,6 +11,7 @@ pipeline:
   dataset: !TabularDataset.from_path
     train_path: {top_level}/tests/data/dummy_tabular/train.csv
     val_path: {top_level}/tests/data/dummy_tabular/val.csv
+    test_path: {top_level}/tests/data/dummy_tabular/test.csv
     sep: ','
     transform:
       text: !TextField

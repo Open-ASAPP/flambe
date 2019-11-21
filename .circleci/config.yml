@@ -13,7 +13,7 @@ jobs:
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
-            command: python3 -m tox -- -m "not end2end and not examples" -v
+            command: python3 -m tox -- -m "not end2end and not examples" -sv
             no_output_timeout: 30m
         - save_cache:
             paths:

@@ -70,6 +70,8 @@ Once you have done the above step, you can use your script in Flambé as follows
     ---
 
     !Experiment
+    
+    name: example
 
     pipeline:
       stage_0: !Script

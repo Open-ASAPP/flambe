@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Optional, Dict
+from typing import Optional, Dict, Callable
 
 from flambe.runnable import Runnable
 from flambe.cluster import Cluster
@@ -28,8 +28,9 @@ class ClusterRunnable(Runnable):
         the ClusterRunnable is running remotely.
 
     """
-    def __init__(self, env: Optional[RemoteEnvironment] = None, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, user_provider: Callable[[], str] = None,
+                 env: Optional[RemoteEnvironment] = None, **kwargs) -> None:
+        super().__init__(user_provider=user_provider, **kwargs)
         self.env = env
 
     @abstractmethod
@@ -66,7 +67,7 @@ class ClusterRunnable(Runnable):
 
         """
         self.setup(cluster=cluster, extensions=extensions, force=force, **kwargs)
-        self.set_serializable_attr("env", cluster.get_remote_env())
+        self.set_serializable_attr("env", cluster.get_remote_env(self.user_provider))
 
     def set_serializable_attr(self, attr, value):
         """Set an attribute while keep supporting serializaton.

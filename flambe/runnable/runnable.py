@@ -1,8 +1,9 @@
 from abc import abstractmethod
 import configparser
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 
 from flambe.compile import MappedRegistrable
+from flambe.runnable.utils import DEFAULT_USER_PROVIDER
 
 
 class Runnable(MappedRegistrable):
@@ -24,10 +25,12 @@ class Runnable(MappedRegistrable):
         'config["AWS"]["ACCESS_KEY"]'
 
     """
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, user_provider: Callable[[], str] = None, **kwargs) -> None:
         self.config = configparser.ConfigParser()
         self.extensions: Dict[str, str] = {}
         self.content: Optional[str] = None
+
+        self.user_provider = kwargs.get('user_provider', DEFAULT_USER_PROVIDER)
 
     def inject_content(self, content: str) -> None:
         """Inject the original YAML string that was used

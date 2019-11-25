@@ -3,10 +3,9 @@ import os
 import re
 import logging
 from copy import deepcopy
-from typing import Dict, Optional, Union, Sequence, cast
+from typing import Dict, Optional, Union, Sequence, cast, Callable
 from collections import OrderedDict
 import shutil
-import getpass
 import tempfile
 
 from tqdm import tqdm
@@ -107,8 +106,9 @@ class Experiment(ClusterRunnable):
                  env: RemoteEnvironment = None,
                  max_failures: int = 1,
                  stop_on_failure: bool = True,
-                 merge_plot: bool = True) -> None:
-        super().__init__(env)
+                 merge_plot: bool = True,
+                 user_provider: Callable[[], str] = None) -> None:
+        super().__init__(env=env, user_provider=user_provider)
         self.name = name
 
         self.original_save_path = save_path
@@ -644,7 +644,7 @@ class Experiment(ClusterRunnable):
             The user as a string.
 
         """
-        return self.env.local_user if self.env else getpass.getuser()
+        return self.env.local_user if self.env else self.user_provider()
 
     def _dump_experiment_file(self) -> None:
         """Dump the experiment YAML representation

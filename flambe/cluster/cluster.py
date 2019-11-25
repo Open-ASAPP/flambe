@@ -18,11 +18,10 @@ from flambe.logging import coloredlogs as cl
 from flambe.runnable.environment import RemoteEnvironment
 from concurrent.futures import ThreadPoolExecutor
 
-from typing import Optional, Type, List, TypeVar, Union, Dict
+from typing import Optional, Type, List, TypeVar, Union, Dict, Callable
 from types import TracebackType
 
 import logging
-import getpass
 import os
 import traceback
 import sys
@@ -898,7 +897,7 @@ class Cluster(Runnable):
         for f in self.factories:
             f.install_extensions(extensions)
 
-    def get_remote_env(self) -> RemoteEnvironment:
+    def get_remote_env(self, user_provider: Callable[[], str]) -> RemoteEnvironment:
         """Get the RemoteEnvironment for this cluster.
 
         The IPs stored will be the private IPs
@@ -918,7 +917,7 @@ class Cluster(Runnable):
             orchestrator_ip=self.orchestrator.private_host,
             factories_ips=[f.private_host for f in self.factories],
             user=self.orchestrator.username,
-            local_user=getpass.getuser(),
+            local_user=user_provider(),
             public_orchestrator_ip=self.orchestrator.host,
             public_factories_ips=[f.host for f in self.factories]
         )

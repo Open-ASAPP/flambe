@@ -25,12 +25,12 @@ class Runnable(MappedRegistrable):
         'config["AWS"]["ACCESS_KEY"]'
 
     """
-    def __init__(self, user_provider: Callable[[], str] = None, **kwargs) -> None:
+    def __init__(self, user_provider: Callable[[], str] = DEFAULT_USER_PROVIDER, **kwargs) -> None:
         self.config = configparser.ConfigParser()
         self.extensions: Dict[str, str] = {}
         self.content: Optional[str] = None
 
-        self.user_provider = user_provider or DEFAULT_USER_PROVIDER
+        self.user_provider = user_provider
 
     def inject_content(self, content: str) -> None:
         """Inject the original YAML string that was used

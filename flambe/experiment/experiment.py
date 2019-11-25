@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Dict, Optional, Union, Sequence, cast
 from collections import OrderedDict
 import shutil
+import getpass
 import tempfile
 
 from tqdm import tqdm
@@ -629,3 +630,14 @@ class Experiment(ClusterRunnable):
                     "Experiment name should contain only alphanumeric characters " +
                     "(with optional - or _ in between)"
                 )
+
+    def get_user(self) -> str:
+        """Get the user that triggered this experiment.
+
+        Returns
+        -------
+        str:
+            The user as a string.
+
+        """
+        return self.env.local_user if self.env else getpass.getuser()

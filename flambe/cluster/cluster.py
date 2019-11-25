@@ -22,6 +22,7 @@ from typing import Optional, Type, List, TypeVar, Union, Dict
 from types import TracebackType
 
 import logging
+import getpass
 import os
 import traceback
 import sys
@@ -917,6 +918,7 @@ class Cluster(Runnable):
             orchestrator_ip=self.orchestrator.private_host,
             factories_ips=[f.private_host for f in self.factories],
             user=self.orchestrator.username,
+            local_user=getpass.getuser(),
             public_orchestrator_ip=self.orchestrator.host,
             public_factories_ips=[f.host for f in self.factories]
         )

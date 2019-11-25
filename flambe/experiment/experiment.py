@@ -10,12 +10,13 @@ import getpass
 import tempfile
 
 from tqdm import tqdm
+from io import StringIO
 import ray
 from ray.tune.suggest import SearchAlgorithm
 from ray.tune.schedulers import TrialScheduler
 from ray.tune.logger import DEFAULT_LOGGERS, TFLogger
 
-from flambe.compile import Schema, Component
+from flambe.compile import Schema, Component, yaml
 from flambe.runnable import ClusterRunnable
 from flambe.compile.downloader import download_manager
 from flambe.cluster import errors as man_errors
@@ -209,6 +210,7 @@ class Experiment(ClusterRunnable):
             )
 
         full_save_path = self.full_save_path
+
         if not self.env:
             wording.print_useful_local_info(full_save_path)
 
@@ -224,6 +226,8 @@ class Experiment(ClusterRunnable):
             if not os.path.exists(full_save_path):
                 os.makedirs(full_save_path)
                 logger.debug(f"{full_save_path} created to store output")
+
+        self._dump_experiment_file()
 
         if any(map(lambda x: isinstance(x, ClusterResource), self.resources.values())):
             raise ValueError(
@@ -641,3 +645,16 @@ class Experiment(ClusterRunnable):
 
         """
         return self.env.local_user if self.env else getpass.getuser()
+
+    def _dump_experiment_file(self) -> None:
+        """Dump the experiment YAML representation
+        to the output folder.
+
+        """
+        destination = os.path.join(self.full_save_path, "experiment.yaml")
+        with open(destination, 'w') as f:
+            with StringIO() as s:
+                yaml.dump_all([self.extensions, self], s)
+                f.write(s.getvalue())
+            f.flush()
+        logger.debug(f"Saved experiment file in {destination}")

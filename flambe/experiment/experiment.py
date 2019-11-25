@@ -89,6 +89,10 @@ class Experiment(ClusterRunnable):
     merge_plot: bool
         Display all tensorboard logs in the same plot (per block type).
         Defaults to True.
+    user_provider: Callable[[], str]
+        The logic for specifying the user triggering this
+        Runnable. If not passed, by default it will pick the computer's
+        user.
 
     """
 

@@ -26,6 +26,10 @@ class ClusterRunnable(Runnable):
         where this ClusterRunnable will be running.
         IMPORTANT: this object will be available only when
         the ClusterRunnable is running remotely.
+    user_provider: Callable[[], str]
+        The logic for specifying the user triggering this
+        Runnable. If not passed, by default it will pick the computer's
+        user.
 
     """
     def __init__(self, user_provider: Callable[[], str] = None,

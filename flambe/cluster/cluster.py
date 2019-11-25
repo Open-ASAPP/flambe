@@ -578,7 +578,7 @@ class Cluster(Runnable):
                 elif os.path.isfile(c):
                     base = os.path.basename(c)
 
-                new_c = os.path.join(dest, k, base)
+                new_c = os.path.join(dest, f"{k}__{base}")
                 self.orchestrator.send_rsync(c, new_c)
                 logger.debug(f"Content {k}: {c} sent to cluster")
 

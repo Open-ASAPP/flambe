@@ -3,18 +3,19 @@ import os
 import re
 import logging
 from copy import deepcopy
-from typing import Dict, Optional, Union, Sequence, cast
+from typing import Dict, Optional, Union, Sequence, cast, Callable
 from collections import OrderedDict
 import shutil
 import tempfile
 
 from tqdm import tqdm
+from io import StringIO
 import ray
 from ray.tune.suggest import SearchAlgorithm
 from ray.tune.schedulers import TrialScheduler
 from ray.tune.logger import DEFAULT_LOGGERS, TFLogger
 
-from flambe.compile import Schema, Component
+from flambe.compile import Schema, Component, yaml
 from flambe.runnable import ClusterRunnable
 from flambe.compile.downloader import download_manager
 from flambe.cluster import errors as man_errors
@@ -88,6 +89,10 @@ class Experiment(ClusterRunnable):
     merge_plot: bool
         Display all tensorboard logs in the same plot (per block type).
         Defaults to True.
+    user_provider: Callable[[], str]
+        The logic for specifying the user triggering this
+        Runnable. If not passed, by default it will pick the computer's
+        user.
 
     """
 
@@ -105,8 +110,9 @@ class Experiment(ClusterRunnable):
                  env: RemoteEnvironment = None,
                  max_failures: int = 1,
                  stop_on_failure: bool = True,
-                 merge_plot: bool = True) -> None:
-        super().__init__(env)
+                 merge_plot: bool = True,
+                 user_provider: Callable[[], str] = None) -> None:
+        super().__init__(env=env, user_provider=user_provider)
         self.name = name
 
         self.original_save_path = save_path
@@ -208,6 +214,7 @@ class Experiment(ClusterRunnable):
             )
 
         full_save_path = self.full_save_path
+
         if not self.env:
             wording.print_useful_local_info(full_save_path)
 
@@ -223,6 +230,8 @@ class Experiment(ClusterRunnable):
             if not os.path.exists(full_save_path):
                 os.makedirs(full_save_path)
                 logger.debug(f"{full_save_path} created to store output")
+
+        self._dump_experiment_file()
 
         if any(map(lambda x: isinstance(x, ClusterResource), self.resources.values())):
             raise ValueError(
@@ -629,3 +638,27 @@ class Experiment(ClusterRunnable):
                     "Experiment name should contain only alphanumeric characters " +
                     "(with optional - or _ in between)"
                 )
+
+    def get_user(self) -> str:
+        """Get the user that triggered this experiment.
+
+        Returns
+        -------
+        str:
+            The user as a string.
+
+        """
+        return self.env.local_user if self.env else self.user_provider()
+
+    def _dump_experiment_file(self) -> None:
+        """Dump the experiment YAML representation
+        to the output folder.
+
+        """
+        destination = os.path.join(self.full_save_path, "experiment.yaml")
+        with open(destination, 'w') as f:
+            with StringIO() as s:
+                yaml.dump_all([self.extensions, self], s)
+                f.write(s.getvalue())
+            f.flush()
+        logger.debug(f"Saved experiment file in {destination}")

@@ -1,4 +1,5 @@
 import os
+import getpass
 from flambe.compile.utils import _is_url
 from typing import List
 
@@ -8,6 +9,9 @@ try:
     from pip._internal.operations import freeze
 except ImportError:  # pip < 10.0
     from pip.operations import freeze
+
+
+DEFAULT_USER_PROVIDER = getpass.getuser
 
 
 def _contains_path(nested_dict) -> bool:

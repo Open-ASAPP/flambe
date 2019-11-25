@@ -360,8 +360,11 @@ class Trainer(Component):
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Compile all objects and push Modules to the device
-        for k, obj in kwargs.items():
-            obj = obj() if isinstance(obj, Schema) else obj
+        def move_to_device(obj: Any):
             if isinstance(obj, torch.nn.Module):
                 obj.to(device)
+
+        # Compile all objects and push Modules to the device
+        for k, obj in kwargs.items():
+            if isinstance(obj, Schema):
+                obj.post_init_hooks.append(move_to_device)

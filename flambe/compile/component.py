@@ -100,6 +100,7 @@ class Schema(MutableMapping[str, Any]):
         self.component_subclass: Type[C] = component_subclass
         self.factory_method: Optional[str] = _flambe_custom_factory_name
         self.keywords: Dict[str, Any] = keywords
+        self.post_init_hooks: Sequence[Callable] = []
         self._compiled: Optional[C] = None
         self._extensions: Dict[str, str] = {}
         # Flag changes getattr functionality (for dot notation access)
@@ -120,6 +121,8 @@ class Schema(MutableMapping[str, Any]):
         self._compiled = compiled
         compiled._schema = self  # type: ignore
         compiled._created_with_tag = self._created_with_tag  # type: ignore
+        for hook in self.post_init_hooks:
+            hook(compiled)
         return compiled
 
     def add_extensions_metadata(self, extensions: Dict[str, str]) -> None:
@@ -709,56 +712,6 @@ class FunctionCallLink(Link):
 K = TypeVar('K')
 
 
-def activate_links(data: K) -> Any:
-    """Iterate through items in dictionary and activate any `Link`s
-
-    Parameters
-    ----------
-    kwargs : Dict[str, Any]
-        A dictionary of kwargs that may contain instances of `Link`
-
-    Returns
-    -------
-    Dict[str, Any]
-        Copy of the original dictionay with all Links activated
-
-    Examples
-    -------
-    Process a dictionary with Links
-
-    >>> class A(Component):
-    ...     def __init__(self, x=2):
-    ...         self.x = x
-    ...
-    >>> a = A(x=1)
-    >>> kwargs = {'kw1': 0, 'kw2': Link("ref_for_a.x", obj=a)}
-    >>> activate_links(kwargs)
-    {'kw1': 0, 'kw2': 1}
-
-    """
-    if isinstance(data, Link):
-        return data()
-    elif isinstance(data, Mapping) and not isinstance(data, Schema):
-        out_dict = {}
-        for kw, val in data.items():
-            out_dict[kw] = activate_links(val)
-        return out_dict
-    elif isinstance(data, Sequence) and not isinstance(data, str):
-        out_list = []
-        for val in data:
-            out_list.append(activate_links(val))
-        return out_list
-    return data
-
-
-def activate_stash_refs(kwargs: Dict[str, Any], stash: Dict[str, Any]) -> Dict[str, Any]:
-    """Activate the pickled data links using the loaded stash"""
-    return {
-        kw: kwargs[kw](stash) if isinstance(kwargs[kw], PickledDataLink) else kwargs[kw]
-        for kw in kwargs
-    }
-
-
 def fill_defaults(kwargs: Dict[str, Any], function: Callable[..., Any]) -> Dict[str, Any]:
     """Use function signature to add missing kwargs to a dictionary"""
     signature = inspect.signature(function)
@@ -1336,25 +1289,6 @@ class Component(Registrable):
         return Schema(cls, _flambe_custom_factory_name=factory_name, **kwargs)
 
     @classmethod
-    def setup_dependencies(cls: Type[C], kwargs: Dict[str, Any]) -> None:
-        """Add default links to kwargs for cls; hook called in compile
-
-        For example, you may want to connect model parameters to the
-        optimizer by default, without requiring users to specify this
-        link in the config explicitly
-
-        Parameters
-        ----------
-        cls : Type[C]
-            Class on which method is called
-        kwargs : Dict[str, Any]
-            Current kwargs that should be mutated directly to include
-            links
-
-        """
-        return
-
-    @classmethod
     def precompile(cls: Type[C], **kwargs: Any) -> None:
         """Change kwargs before compilation occurs.
 
@@ -1430,19 +1364,18 @@ class Component(Registrable):
         """
         extensions: Dict[str, str] = _flambe_extensions or {}
         stash: Dict[str, Any] = _flambe_stash or {}
-        # Set additional links / default links
-        cls.setup_dependencies(kwargs)
-        # Activate links all links
-        processed_kwargs = activate_links(kwargs)  # TODO maybe add to helper for collections
-        processed_kwargs = activate_stash_refs(processed_kwargs, stash)
-        # Modify kwargs, optionally compiling and updating any of them
-        cls.precompile(**processed_kwargs)
+        # Allow objects to do custom operations such as adding hooks
+        cls.precompile(**kwargs)
         # Recursively compile any remaining un-compiled kwargs
 
         def helper(obj: Any) -> Any:
             if isinstance(obj, Schema):
                 obj.add_extensions_metadata(extensions)
                 out = obj(stash)  # type: ignore
+            elif isinstance(obj, Link):
+                out = obj()
+            elif isinstance(obj, PickledDataLink):
+                out = obj(stash)
             # string passes as sequence
             elif isinstance(obj, list) or isinstance(obj, tuple):
                 out = []
@@ -1456,7 +1389,7 @@ class Component(Registrable):
                 out = obj
             return out
 
-        newkeywords = helper(processed_kwargs)
+        newkeywords = helper(kwargs)
         # Check for remaining yaml types
         for kw in newkeywords:
             if isinstance(newkeywords[kw], YAML_TYPES):

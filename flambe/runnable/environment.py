@@ -23,7 +23,9 @@ class RemoteEnvironment(Registrable):
         orchestrator (usually private IPs)
     user: str
         The username of all machines. This implementations assumes
-        same usename for all machines
+        same username for all machines
+    local_user: str
+        The username of the local process that launched the cluster
     public_orchestrator_ip: Optional[str]
         The public orchestrator IP, if available.
     public_factories_ips: Optional[List[str]]
@@ -36,6 +38,7 @@ class RemoteEnvironment(Registrable):
                  orchestrator_ip: str,
                  factories_ips: List[str],
                  user: str,
+                 local_user: str,
                  public_orchestrator_ip: Optional[str] = None,
                  public_factories_ips: Optional[List[str]] = None,
                  **kwargs) -> None:
@@ -43,6 +46,7 @@ class RemoteEnvironment(Registrable):
         self.orchestrator_ip = orchestrator_ip
         self.factories_ips = factories_ips
         self.user = user
+        self.local_user = local_user
 
         self.public_orchestrator_ip = public_orchestrator_ip
         self.public_factories_ips = public_factories_ips

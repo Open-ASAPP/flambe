@@ -33,6 +33,6 @@ pipeline:
       params: !@ b1[model].trainable_params
     max_steps: 1
     iter_per_step: 1
-    # extra_validation_metrics:
-    #   - !@ b1[metric_fn]
-    #   - !@ b1[metric_fn]
+    extra_validation_metrics:
+      - !@ b1[metric_fn]
+      - !@ b1[metric_fn]

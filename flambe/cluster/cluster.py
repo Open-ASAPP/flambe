@@ -548,7 +548,7 @@ class Cluster(Runnable):
         Parameters
         ----------
         content: Dict[str, str]
-            The dict of key -> name
+            The dict of resources key -> local path
         dest: str
             The orchestator's destination folder
         all_hosts: bool
@@ -578,7 +578,7 @@ class Cluster(Runnable):
                 elif os.path.isfile(c):
                     base = os.path.basename(c)
 
-                new_c = os.path.join(dest, base)
+                new_c = os.path.join(dest, k, base)
                 self.orchestrator.send_rsync(c, new_c)
                 logger.debug(f"Content {k}: {c} sent to cluster")
 

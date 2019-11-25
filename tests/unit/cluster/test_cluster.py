@@ -153,7 +153,7 @@ def test_get_remote_env(mock_get_home_path, get_cluster):
     mock_get_home_path.return_value = "/path/to/home"
     c = get_cluster()
 
-    env = c.get_remote_env()
+    env = c.get_remote_env(user_provider=lambda: 'foobar')
 
     assert len(env.factories_ips) == c.factories_num
     for f in c.factories:

@@ -25,8 +25,22 @@ def get_experiment():
     return wrapped
 
 
+@pytest.fixture
+def get_env():
+    def wrapped(**kwargs):
+        env = RemoteEnvironment(
+            key=kwargs.get('key', 'my-key'),
+            orchestrator_ip=kwargs.get('orchestrator_ip', '1.1.1.1'),
+            factories_ips=kwargs.get('factories_ips', ['1.1.1.1']),
+            user=kwargs.get('user', 'ubuntu'),
+            local_user=kwargs.get('local_user', 'some_user'),
+        )
+        return env
+    return wrapped
+
+
 @mock.patch('flambe.experiment.experiment.getpass.getuser')
-def test_get_user(mock_user, get_experiment):
+def test_get_user(mock_user, get_experiment, get_env):
     mock_user.return_value = 'foobar'
 
     exp = get_experiment()
@@ -35,13 +49,6 @@ def test_get_user(mock_user, get_experiment):
 
     mock_user.reset_mock()
 
-    env = RemoteEnvironment(
-        key='my-key',
-        orchestrator_ip='1.1.1.1',
-        factories_ips=['1.1.1.1'],
-        user='ubuntu',
-        local_user='barfoo'
-    )
-    exp = get_experiment(env=env)
+    exp = get_experiment(env=get_env(local_user='barfoo'))
     assert exp.get_user() == 'barfoo'
     mock_user.assert_not_called()

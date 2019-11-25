@@ -21,7 +21,8 @@ def get_experiment():
                           env=kwargs.get('env', None),
                           max_failures=kwargs.get('max_failures', 1),
                           stop_on_failure=kwargs.get('stop_on_failure', True),
-                          merge_plot=kwargs.get('merge_plot', True))
+                          merge_plot=kwargs.get('merge_plot', True),
+                          user_provider=kwargs.get('user_provider', None))
     return wrapped
 
 
@@ -39,16 +40,9 @@ def get_env():
     return wrapped
 
 
-@mock.patch('flambe.experiment.experiment.getpass.getuser')
-def test_get_user(mock_user, get_experiment, get_env):
-    mock_user.return_value = 'foobar'
-
-    exp = get_experiment()
+def test_get_user(get_experiment, get_env):
+    exp = get_experiment(user_provider=lambda: "foobar")
     assert exp.get_user() == 'foobar'
-    mock_user.assert_called_once()
-
-    mock_user.reset_mock()
 
     exp = get_experiment(env=get_env(local_user='barfoo'))
     assert exp.get_user() == 'barfoo'
-    mock_user.assert_not_called()

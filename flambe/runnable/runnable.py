@@ -30,7 +30,7 @@ class Runnable(MappedRegistrable):
         self.extensions: Dict[str, str] = {}
         self.content: Optional[str] = None
 
-        self.user_provider = kwargs.get('user_provider', DEFAULT_USER_PROVIDER)
+        self.user_provider = user_provider or DEFAULT_USER_PROVIDER
 
     def inject_content(self, content: str) -> None:
         """Inject the original YAML string that was used

@@ -3,7 +3,7 @@ import functools
 
 import ruamel.yaml
 
-from flambe.compile.registrable import Registrable, get_registry
+from flambe.compile.registrable import get_registry
 
 
 def from_yaml(constructor: Any, node: Any, factory_name: str) -> Any:
@@ -54,16 +54,31 @@ def sync_registry_with_yaml(yaml, registry):
                                              transform_from(entry.from_yaml, full_tag, factory))
 
 
+def erase_registry_from_yaml(yaml, registry):
+    pass
+
+
+class synced_yaml:
+
+    def __init__(self, registry):
+        self.registry = registry
+        self.yaml = None
+
+    def __enter__(self):
+        self.yaml = YAML()
+        sync_registry_with_yaml(self.yaml, self.registry)
+        return self.yaml
+
+    def __exit__(self):
+        erase_registry_from_yaml(self.yaml, self.registry)
+
+
 def load_config(yaml_config: Union[TextIO, str]) -> Any:
-    yaml = ruamel.yaml.YAML()
-    sync_registry_with_yaml(yaml, get_registry())
-    result = yaml.load(yaml_config)
-    # TODO see if de-sync necessary
+    with synced_yaml(get_registry()) as yaml:
+        result = yaml.load(yaml_config)
     return result
 
 
-def dump_to_config(obj: Any, stream: TextIO):
-    yaml = ruamel.yaml.YAML()
-    sync_registry_with_yaml(yaml, get_registry())
-    # TODO see if de-sync necessary
-    yaml.dump(obj, stream)
+def dump_config(obj: Schema, stream):
+    with synced_yaml(get_registry()) as yaml:
+        yaml.dump(obj)

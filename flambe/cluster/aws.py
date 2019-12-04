@@ -109,6 +109,8 @@ class AWSCluster(Cluster):
         etc. Defaults to None.
         IMPORTANT: the commands need to be idempotent and they shouldn't
         expect user input.
+    iam_role: str
+        IAM role to apply to all hosts (orchestrator + all factories).
 
 
     """
@@ -132,7 +134,8 @@ class AWSCluster(Cluster):
                  orchestrator_timeout: int = -1,
                  factories_timeout: int = 1,
                  volume_size: int = 100,
-                 setup_cmds: Optional[List[str]] = None) -> None:
+                 setup_cmds: Optional[List[str]] = None,
+                 iam_role: str = None) -> None:
         super().__init__(name, factories_num, key, username, setup_cmds)
 
         self.factories_type = factories_type
@@ -168,6 +171,7 @@ class AWSCluster(Cluster):
             raise ValueError("Only gp2 and io1 drives available.")
 
         self.volume_type = volume_type
+        self.iam_role = iam_role
 
     def _get_boto_session(self, region_name: Optional[str]) -> boto3.Session:
         """Get the boto3 Session from which the resources
@@ -262,6 +266,7 @@ class AWSCluster(Cluster):
         self.update_tags()
         self.remove_existing_events()
         self.create_cloudwatch_events()
+        self.set_iam_role()
 
     def _existing_cluster(self) -> Tuple[Any, List[Any]]:
         """Whether there is an existing cluster that matches name.
@@ -1022,3 +1027,48 @@ class AWSCluster(Cluster):
 
         """
         return self._get_ami(_type, '0.0.0')
+
+    def set_iam_role(self) -> None:
+        """
+        Sets IAM role on all instances.
+        """
+        if self.iam_role is None:
+            return
+
+
+        for i in self._get_all_hosts():
+            boto_ins = self._get_boto_instance_by_host(i.host)
+            self._set_iam_role(boto_ins.id)
+
+        logger.info(cl.BL(f"IAM role '{self.iam_role}' attached to all instances"))
+
+    def _set_iam_role(self, instance_id: str):
+        ret = self.ec2_cli.describe_iam_instance_profile_associations(
+            Filters=[
+                {
+                    'Name': 'instance-id',
+                    'Values': [
+                        instance_id,
+                    ]
+                },
+            ])
+
+        associations = ret['IamInstanceProfileAssociations']
+        if len(associations) > 1:
+            raise errors.ClusterError(
+                f"Instance {instance_id} has multiple roles which is invalid"
+            )
+        if len(associations) == 1:
+            self.ec2_cli.replace_iam_instance_profile_association(
+                IamInstanceProfile={
+                    'Name': self.iam_role
+                },
+                AssociationId=associations[0]['AssociationId']
+            )
+        else:
+            self.ec2_cli.associate_iam_instance_profile(
+                IamInstanceProfile={
+                    'Name': self.iam_role
+                },
+                InstanceId=instance_id
+            )

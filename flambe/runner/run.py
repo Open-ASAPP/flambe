@@ -119,7 +119,8 @@ if __name__ == '__main__':
                              'when using this flag as it could have undesired effects.')
     parser.add_argument('-s', '--secrets',
                         type=str, default=os.path.join(FLAMBE_GLOBAL_FOLDER, "secrets.ini"))
-    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode, overriding config.yaml setting')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Enable debug mode, overriding config.yaml setting')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose console output')
     args = parser.parse_args()
 

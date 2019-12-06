@@ -8,6 +8,7 @@ from flambe.compile import yaml
 from flambe.runnable import Runnable
 from flambe.runnable.error import MissingSecretsError
 from flambe.runnable.utils import is_dev_mode
+from flambe.runner.utils import get_size_MB
 from flambe.cluster import const
 from flambe.cluster.instance import errors
 from flambe.cluster import errors as man_errors
@@ -42,6 +43,9 @@ logger = logging.getLogger(__name__)
 GPUFactoryInsT = TypeVar("GPUFactoryInsT", bound=GPUFactoryInstance)
 CPUFactoryInsT = TypeVar("CPUFactoryInsT", bound=CPUFactoryInstance)
 FactoryInsT = Union[GPUFactoryInsT, CPUFactoryInsT]
+
+
+UPLOAD_WARN_LIMIT_MB = 10
 
 
 class Cluster(Runnable):
@@ -571,6 +575,11 @@ class Cluster(Runnable):
             c = os.path.expanduser(c)
             base: str = ""
             if os.path.exists(c):
+
+                size = get_size_MB(c)
+                if size > UPLOAD_WARN_LIMIT_MB:
+                    logger.info(cl.YE(f"Uploading may take time for ({int(size)} MB) '{c}'"))
+
                 if os.path.isdir(c):
                     if not c.endswith(os.sep):
                         c = f"{c}{os.sep}"

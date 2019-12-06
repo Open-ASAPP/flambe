@@ -39,7 +39,8 @@ def main(args: argparse.Namespace) -> None:
         print(cl.BL(f"VERSION: {flambe.__version__}\n"))
 
     if args.debug and args.cluster is not None:
-        raise ValueError('Will not run on cluster in debug mode. Please disable debug mode or run locally.')
+        raise ValueError('Will not run on cluster in debug mode. ' +
+                         'Please disable debug mode or run locally.')
 
     # Pass original module for ray / pickle
     make_component(torch.nn.Module, only_module='torch.nn')
@@ -96,7 +97,8 @@ def main(args: argparse.Namespace) -> None:
                 else:
                     raise ValueError("Only ClusterRunnables can be executed in a cluster.")
         else:
-            runnable, _ = ex.preprocess(secrets=args.secrets, install_ext=args.install_extensions)
+            runnable, _ = ex.preprocess(secrets=args.secrets,
+                                        install_ext=args.install_extensions)
             runnable.run(force=args.force, verbose=args.verbose, debug=args.debug)
 
 

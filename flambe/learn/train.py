@@ -266,7 +266,10 @@ class Trainer(Component):
         sign = (-1)**(self.lower_is_better)
         if self._best_metric is None or (sign * val_metric > sign * self._best_metric):
             self._best_metric = val_metric
-            self._best_model = {k: t.cpu().detach() for k, t in self.model.state_dict().items()}
+            best_model_state = self.model.state_dict()
+            for k, t in best_model_state.items():
+                best_model_state[k] = t.cpu().detach()
+            self._best_model = best_model_state
 
         # Update scheduler
         if self.scheduler is not None:

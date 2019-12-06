@@ -375,8 +375,8 @@ class Experiment(ClusterRunnable):
                               'debug': self.debug}
                     # Filter out the tensorboard logger as we handle
                     # general and tensorboard-specific logging ourselves
-                    tune_loggers = list(filter(lambda l: l != tf2_compat_logger and \
-                            not issubclass(l, TFLogger), DEFAULT_LOGGERS))
+                    tune_loggers = list(filter(lambda l: l != tf2_compat_logger and  # noqa: E741
+                                               not issubclass(l, TFLogger), DEFAULT_LOGGERS))
                     tune_experiment = ray.tune.Experiment(name=block_id,
                                                           run=TuneAdapter,
                                                           trial_name_creator=trial_name_creator,

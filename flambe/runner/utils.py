@@ -53,6 +53,6 @@ def check_system_reqs() -> None:
 
     # Check if extensions folder is getting big
     extensions_folder = os.path.join(FLAMBE_GLOBAL_FOLDER, "extensions")
-    if get_size_MB(extensions_folder) > WARN_LIMIT_MB:
+    if os.path.exists(extensions_folder) and get_size_MB(extensions_folder) > WARN_LIMIT_MB:
         logger.warning(f"Extensions folder exceeds {WARN_LIMIT_MB} MB")
         print_extensions_cache_size_warning(extensions_folder, WARN_LIMIT_MB)

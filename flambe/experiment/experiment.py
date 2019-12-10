@@ -13,7 +13,7 @@ from io import StringIO
 import ray
 from ray.tune.suggest import SearchAlgorithm
 from ray.tune.schedulers import TrialScheduler
-from ray.tune.logger import DEFAULT_LOGGERS, TFLogger
+from ray.tune.logger import DEFAULT_LOGGERS, TFLogger, tf2_compat_logger
 
 from flambe.compile import Schema, Component, yaml
 from flambe.runnable import ClusterRunnable
@@ -368,8 +368,8 @@ class Experiment(ClusterRunnable):
                               'debug': debug}
                     # Filter out the tensorboard logger as we handle
                     # general and tensorboard-specific logging ourselves
-                    tune_loggers = list(filter(lambda l: not issubclass(l, TFLogger),
-                                               DEFAULT_LOGGERS))
+                    tune_loggers = list(filter(lambda l: l != tf2_compat_logger and  # noqa: E741
+                                               not issubclass(l, TFLogger), DEFAULT_LOGGERS))
                     tune_experiment = ray.tune.Experiment(name=block_id,
                                                           run=TuneAdapter,
                                                           trial_name_creator=trial_name_creator,

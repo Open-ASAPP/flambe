@@ -10,6 +10,10 @@ jobs:
               # when lock file changes, use increasingly general patterns to restore cache
               - flambe-cache-{{ .Branch }}
               - flambe-cache-
+        - run:
+            command: |
+                apt-get update
+                apt-get install -y python3-dev
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
@@ -28,6 +32,10 @@ jobs:
         - image: python:3.6
       steps:
         - checkout
+        - run:
+            command: |
+                apt-get update
+                apt-get install -y python3-dev
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
@@ -46,6 +54,10 @@ jobs:
         - image: python:3.6
       steps:
         - checkout
+        - run:
+            command: |
+                apt-get update
+                apt-get install -y python3-dev
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:

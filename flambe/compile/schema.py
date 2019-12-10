@@ -1,5 +1,5 @@
 import inspect
-from typing import MutableMapping, Any, Callable, Optional, Dict, Sequence, Tuple, List
+from typing import MutableMapping, Any, Callable, Optional, Dict, Sequence, Tuple, List, Iterable
 from warnings import warn
 
 from ruamel.yaml.comments import (CommentedMap, CommentedOrderedMap, CommentedSet,
@@ -32,6 +32,26 @@ class Schema(MutableMapping[str, Any]):
             self.factory_method = getattr(self.callable, factory_name)
         self.kwargs = function_defaults(self.factory_method).update(kwargs)
         self.created_with_tag = tag
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.kwargs[key] = value
+
+    def __getitem__(self, key: str) -> Any:
+        return self.kwargs[key]
+
+    def __delitem__(self, key: str) -> None:
+        del self.kwargs[key]
+
+    def __iter__(self) -> Iterable[str]:
+        yield from self.kwargs
+
+    def __len__(self) -> int:
+        return len(self.kwargs)
+
+    def __call__(self,
+                 path: Optional[List[str]] = None,
+                 cache: Optional[Dict[str, Any]] = None):
+        self.initialize(path, cache)
 
     @classmethod
     def from_yaml(cls, callable: Callable, constructor: Any, node: Any, factory_name: str) -> Any:
@@ -80,9 +100,6 @@ class Schema(MutableMapping[str, Any]):
                   f"keyword args:\n{initialized_kwargs}")
             raise te
         return cache[path]
-
-    def __call__(self):
-        self.initialize()
 
     def extract_copy(self, new_root: 'Schema') -> 'Schema':
         if self is new_root:

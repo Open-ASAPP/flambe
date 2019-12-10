@@ -120,7 +120,9 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--secrets',
                         type=str, default=os.path.join(FLAMBE_GLOBAL_FOLDER, "secrets.ini"))
     parser.add_argument('-d', '--debug', action='store_true',
-                        help='Enable debug mode, overriding config.yaml setting')
+                        help='Enable debug mode. Each runnable specifies the debug behavior. ' +
+                             'For example for an Experiment, Ray will run in a single thread ' +
+                             'allowing user breakpoints')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose console output')
     args = parser.parse_args()
 

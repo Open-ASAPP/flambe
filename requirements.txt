@@ -19,7 +19,7 @@ dill==0.2.9
 gensim==3.7.3
 pip~=19.1
 awscli==1.16.202
-transformers==2.1.1
+transformers~=2.2.1
 jinja2~=2.10.1
 fastBPE==0.1.0
 ninja~=1.9.0

@@ -1,87 +1,12 @@
-from typing import Optional, Type, Any
+from typing import Optional, Any
 
 import torch
-import transformers as pt
+from transformers import AutoModel
 
-from flambe.field import Field
 from flambe.nn import Module
 
 
-class TransformerTextField(Field):
-
-    _cls: Type[pt.tokenization_utils.PreTrainedTokenizer]
-
-    def __init__(self,
-                 alias: str,
-                 cache_dir: Optional[str] = None,
-                 max_len_truncate: Optional[int] = None,
-                 add_special_tokens: bool = True, **kwargs) -> None:
-        """Initialize from a pretrained tokenizer.
-
-        Parameters
-        ----------
-        alias: str
-            Alias of a pretrained tokenizer.
-        cache_dir: str, optional
-            A directory where to cache the downloaded vocabularies.
-        max_len_truncate: int, optional
-            If given, truncates the length of the tokenized sequence.
-
-        """
-        self._tokenizer = self._cls.from_pretrained(alias, cache_dir=cache_dir, **kwargs)
-        self.max_len_truncate = max_len_truncate
-        self.add_special_tokens = add_special_tokens
-
-    @property
-    def padding_idx(self) -> int:
-        """Get the padding index.
-
-        Returns
-        -------
-        int
-            The padding index in the vocabulary
-
-        """
-        pad_token = self._tokenizer.pad_token
-        return self._tokenizer.convert_tokens_to_ids(pad_token)
-
-    @property
-    def vocab_size(self) -> int:
-        """Get the vocabulary length.
-
-        Returns
-        -------
-        int
-            The length of the vocabulary
-
-        """
-        return len(self._tokenizer)
-
-    def process(self, example: str) -> torch.Tensor:  # type: ignore
-        """Process an example, and create a Tensor.
-
-        Parameters
-        ----------
-        example: str
-            The example to process, as a single string
-
-        Returns
-        -------
-        torch.Tensor
-            The processed example, tokenized and numericalized
-
-        """
-        tokens = self._tokenizer.encode(example, add_special_tokens=self.add_special_tokens)
-
-        if self.max_len_truncate is not None:
-            tokens = tokens[:self.max_len_truncate]
-
-        return torch.tensor(tokens)
-
-
-class TransformerEmbedder(Module):
-
-    _cls: Type[pt.modeling_utils.PreTrainedModel]
+class PretrainedTransformerEmbedder(Module):
 
     def __init__(self,
                  alias: str,
@@ -105,7 +30,10 @@ class TransformerEmbedder(Module):
         """
         super().__init__()
 
-        embedder = self._cls.from_pretrained(alias, cache_dir=cache_dir, **kwargs)
+        if 'gpt2' in alias and pool:
+            raise ValueError('GPT2 does not support pooling.')
+
+        embedder = AutoModel.from_pretrained(alias, cache_dir=cache_dir, **kwargs)
         self.config = embedder.config
         self._embedder = embedder
         self.padding_idx = padding_idx

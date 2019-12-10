@@ -578,7 +578,11 @@ class Cluster(Runnable):
 
                 size = get_size_MB(c)
                 if size > UPLOAD_WARN_LIMIT_MB:
-                    logger.info(cl.YE(f"Uploading '{c}' ({int(size)} MB) which may take a while; if this is a surprise, double check you want to be transferring this file. Note we automatically sync resources, extensions (and any files in your flambe installation if installed with '-e')"))
+                    logger.info(cl.YE(
+                        f"Uploading '{c}' ({int(size)} MB) which may take a while. " +
+                        "Double check you want to be transferring this file " +
+                        "(note we automatically sync extensions and experiment resources " +
+                        "and potentially the flambe repo if installed in dev mode)"))
 
                 if os.path.isdir(c):
                     if not c.endswith(os.sep):

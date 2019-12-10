@@ -7,6 +7,14 @@ from flambe.nn import Module
 
 
 class PretrainedTransformerEmbedder(Module):
+    """Embedder intergation of the transformers library.
+
+    Instantiate this object using any alias available in the
+    `transformers` library. More information can be found here:
+
+    https://huggingface.co/transformers/
+
+    """
 
     def __init__(self,
                  alias: str,

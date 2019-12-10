@@ -7,13 +7,21 @@ from flambe.field import Field
 
 
 class PretrainedTransformerField(Field):
+    """Field intergation of the transformers library.
+
+    Instantiate this object using any alias available in the
+    `transformers` library. More information can be found here:
+
+    https://huggingface.co/transformers/
+
+    """
 
     def __init__(self,
                  alias: str,
                  cache_dir: Optional[str] = None,
                  max_len_truncate: Optional[int] = None,
                  add_special_tokens: bool = True, **kwargs) -> None:
-        """Initialize from a pretrained tokenizer.
+        """Initialize a pretrained tokenizer.
 
         Parameters
         ----------
@@ -23,6 +31,8 @@ class PretrainedTransformerField(Field):
             A directory where to cache the downloaded vocabularies.
         max_len_truncate: int, optional
             If given, truncates the length of the tokenized sequence.
+        add_special_tokens: bool, optional
+            Add the special tokens to the inputs. Default ``True``.
 
         """
         self._tokenizer = AutoTokenizer.from_pretrained(alias, cache_dir=cache_dir, **kwargs)

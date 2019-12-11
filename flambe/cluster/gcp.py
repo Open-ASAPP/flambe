@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
-from libcloud.compute.drivers.gce import GCENodeDriver
 from libcloud.common.google import GoogleBaseError
 
 from flambe.cluster.errors import ClusterError
@@ -30,6 +29,8 @@ class GCPCluster(Cluster):
                  project_id: str,
                  zone: str = 'us-central1-a',
                  factory_image: Optional[str] = None,
+                 gpu_type: Optional[str] = None,
+                 gpu_count: int = 1,
                  orchestrator_image: Optional[str] = None,
                  setup_cmds: Optional[List[str]] = None) -> None:
         super().__init__(name, factories_num, ssh_key, ssh_username, setup_cmds)
@@ -40,17 +41,53 @@ class GCPCluster(Cluster):
         self.service_account_key = service_account_key
         self.project_id = project_id
         self.zone = zone
+        self.conn = self.driver(
+            self.service_account_email,
+            key=self.service_account_key,
+            datacenter=self.zone,
+            project=self.project_id
+        )
 
         self.factory_image = factory_image
         if self.factory_image is None:
-            conn = self._get_connection()
-            self.factory_image = conn.ex_get_image_from_family(
+            self.factory_image = self.conn.ex_get_image_from_family(
                 'pytorch-1-1-cpu', ex_project_list=['deeplearning-platform-release'])
         self.orchestrator_image = orchestrator_image
         if self.orchestrator_image is None:
-            conn = self._get_connection()
-            self.orchestrator_image = conn.ex_get_image_from_family(
+            self.orchestrator_image = self.conn.ex_get_image_from_family(
                 'pytorch-1-1-cpu', ex_project_list=['deeplearning-platform-release'])
+        self.gpu_type = gpu_type
+        self.gpu_count = gpu_count
+
+    def _create_cpu_factory(self, name: str) -> CPUFactoryInstance:
+        node = self.conn.create_node(name, self.factory_type, self.factory_image)
+        return CPUFactoryInstance(
+            node.public_ips[0],
+            node.private_ips[0],
+            self.username,
+            self.key,
+            self.config,
+            self.debug,
+        )
+
+    def _create_gpu_factory(self, name: str) -> GPUFactoryInstance:
+        node = self.conn.create_node(
+            name,
+            self.factory_type,
+            self.factory_image,
+            ex_accelerator_type=self.gpu_type,
+            ex_accelerator_count=self.gpu_count,
+            ex_on_host_maintenance='TERMINATE',
+            ex_automatic_restart=True,
+        )
+        return GPUFactoryInstance(
+            node.public_ips[0],
+            node.private_ips[0],
+            self.username,
+            self.key,
+            self.config,
+            self.debug,
+        )
 
     def load_all_instances(self) -> None:
         conn = self.driver(
@@ -71,13 +108,18 @@ class GCPCluster(Cluster):
             )
 
             # launch factories
-            logger.info("Launching the factories")
-            future_factory_nodes = executor.map(
-                lambda i: conn.create_node(
-                    self.get_factory_basename() + f'-{i+1}',
-                    self.factory_type, self.factory_image),
-                range(self.factories_num)
-            )
+            if self.gpu_type is None:
+                logger.info("Launching the CPU factories")
+                future_factories = executor.map(
+                    self._create_cpu_factory,
+                    [self.get_factory_basename() + f'-{i+1}' for i in range(self.factories_num)],
+                )
+            else:
+                logger.info("Launching the GPU factories")
+                future_factories = executor.map(
+                    self._create_gpu_factory,
+                    [self.get_factory_basename() + f'-{i+1}' for i in range(self.factories_num)],
+                )
             try:
                 orchestrator_node = future_orchestrator_node.result()
                 self.orchestrator = OrchestratorInstance(
@@ -89,15 +131,7 @@ class GCPCluster(Cluster):
                     self.debug,
                 )
 
-                for factory_node in future_factory_nodes:
-                    self.factories.append(CPUFactoryInstance(
-                        factory_node.public_ips[0],
-                        factory_node.private_ips[0],
-                        self.username,
-                        self.key,
-                        self.config,
-                        self.debug,
-                    ))
+                self.factories = [f for f in future_factories]
 
             except GoogleBaseError as e:
                 raise ClusterError(f"Error creating nodes. Original error: {e}")
@@ -110,11 +144,3 @@ class GCPCluster(Cluster):
 
     def rollback_env(self) -> None:
         return super().rollback_env()
-
-    def _get_connection(self) -> GCENodeDriver:
-        return self.driver(
-            self.service_account_email,
-            key=self.service_account_key,
-            datacenter=self.zone,
-            project=self.project_id
-        )

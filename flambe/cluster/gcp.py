@@ -1,6 +1,6 @@
 import logging
 
-from typing import Optional, List
+from typing import Optional, List, Tuple, Union
 from concurrent.futures import ThreadPoolExecutor
 
 from libcloud.compute.types import Provider
@@ -89,7 +89,54 @@ class GCPCluster(Cluster):
             self.debug,
         )
 
+    def _get_existing_instances(self) -> Tuple[
+        Optional[OrchestratorInstance],
+            List[Union[CPUFactoryInstance, GPUFactoryInstance]]]:
+        nodes = self.conn.list_nodes()
+        orchestrator = None
+        factories: List[Union[CPUFactoryInstance, GPUFactoryInstance]] = []
+
+        for node in nodes:
+            if node.name == self.get_orchestrator_name():
+                if orchestrator:
+                    raise ClusterError(
+                        f'Found more than one orchestrator with the same name: {node.name}')
+                orchestrator = OrchestratorInstance(
+                    node.public_ips[0],
+                    node.private_ips[0],
+                    self.username,
+                    self.key,
+                    self.config,
+                    self.debug,
+                )
+            elif node.name.startswith(self.get_factory_basename()):
+                factory = CPUFactoryInstance(
+                    node.public_ips[0],
+                    node.private_ips[0],
+                    self.username,
+                    self.key,
+                    self.config,
+                    self.debug,
+                )
+                if factory.contains_gpu():
+                    factories.append(GPUFactoryInstance(
+                        factory.host, factory.private_host, factory.username,
+                        self.key, self.config, self.debug))
+                else:
+                    factories.append(factory)
+
+        return orchestrator, factories
+
     def load_all_instances(self) -> None:
+        orchestrator, factories = self._get_existing_instances()
+        if orchestrator is not None and len(factories) == self.factories_num:
+            logger.info('Found an existing cluster')
+            self.orchestrator = orchestrator
+            self.factories = factories
+            return
+
+        # TODO: handle partially launched cluster
+
         with ThreadPoolExecutor() as executor:
             # launch the orchestrator
             logger.info("Launching the orchestrator")

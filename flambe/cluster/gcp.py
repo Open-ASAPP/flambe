@@ -1,11 +1,19 @@
+import logging
+
 from typing import Optional, List
+from concurrent.futures import ThreadPoolExecutor
 
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.drivers.gce import GCENodeDriver
+from libcloud.common.google import GoogleBaseError
 
+from flambe.cluster.errors import ClusterError
 from flambe.cluster.cluster import Cluster
 from flambe.cluster.instance import OrchestratorInstance, CPUFactoryInstance, GPUFactoryInstance
+
+
+logger = logging.getLogger(__name__)
 
 
 class GCPCluster(Cluster):
@@ -52,30 +60,47 @@ class GCPCluster(Cluster):
             project=self.project_id
         )
 
-        # launch an orchestrator
-        orchestrator_node = conn.create_node(
-            self.get_orchestrator_name(), self.orchestrator_type, self.orchestrator_image)
-        self.orchestrator = OrchestratorInstance(
-            orchestrator_node.public_ips[0],
-            orchestrator_node.private_ips[0],
-            self.username,
-            self.key,
-            self.config,
-            self.debug,
-        )
+        with ThreadPoolExecutor() as executor:
+            # launch the orchestrator
+            logger.info("Launching the orchestrator")
+            future_orchestrator_node = executor.submit(
+                conn.create_node,
+                self.get_orchestrator_name(),
+                self.orchestrator_type,
+                self.orchestrator_image
+            )
 
-        # launch factories
-        for i in range(self.factories_num):
-            factory_node = conn.create_node(
-                self.get_factory_basename() + f'-{i+1}', self.factory_type, self.factory_image)
-            self.factories.append(CPUFactoryInstance(
-                factory_node.public_ips[0],
-                factory_node.private_ips[0],
-                self.username,
-                self.key,
-                self.config,
-                self.debug,
-            ))
+            # launch factories
+            logger.info("Launching the factories")
+            future_factory_nodes = executor.map(
+                lambda i: conn.create_node(
+                    self.get_factory_basename() + f'-{i+1}',
+                    self.factory_type, self.factory_image),
+                range(self.factories_num)
+            )
+            try:
+                orchestrator_node = future_orchestrator_node.result()
+                self.orchestrator = OrchestratorInstance(
+                    orchestrator_node.public_ips[0],
+                    orchestrator_node.private_ips[0],
+                    self.username,
+                    self.key,
+                    self.config,
+                    self.debug,
+                )
+
+                for factory_node in future_factory_nodes:
+                    self.factories.append(CPUFactoryInstance(
+                        factory_node.public_ips[0],
+                        factory_node.private_ips[0],
+                        self.username,
+                        self.key,
+                        self.config,
+                        self.debug,
+                    ))
+
+            except GoogleBaseError as e:
+                raise ClusterError(f"Error creating nodes. Original error: {e}")
 
     def get_orchestrator_name(self) -> str:
         return f"{self.name}-orchestrator"

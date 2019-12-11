@@ -21,8 +21,8 @@ pipeline:
         alias: 'bert-base-uncased'
         pool: True
       output_layer: !SoftmaxLayer
-        input_size: !@ teacher[embedder].hidden_size
-        output_size: !@ dataset.label.vocab_size
+        input_size: !@ finetune[model][embedder].hidden_size
+        output_size: !@ finetune[dataset].label.vocab_size
     loss_fn: !torch.NLLLoss
     metric_fn: !Accuracy
     optimizer: !torch.Adam

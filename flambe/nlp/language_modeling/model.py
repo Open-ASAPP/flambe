@@ -84,7 +84,7 @@ class LanguageModel(Module):
             # Flatten to compute loss across batch and sequence
             flat_mask = mask.view(-1).byte()
             flat_encodings = encoding.view(-1, encoding.size(2))[flat_mask]
-            flat_targets = target.view(-1)[flat_mask]
+            flat_targets = target.contiguous().view(-1)[flat_mask]
             flat_pred = self.output_layer(self.drop(flat_encodings))
             return flat_pred, flat_targets
         else:

@@ -25,7 +25,7 @@ pipeline:
         output_size: !@ dataset.label.vocab_size
     loss_fn: !torch.NLLLoss
     metric_fn: !Accuracy
-    optimizer: !AdamW
+    optimizer: !torch.Adam
       params: !@ finetune[model].trainable_params
       lr: 0.00005
     max_steps: 1

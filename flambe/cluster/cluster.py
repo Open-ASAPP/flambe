@@ -581,7 +581,7 @@ class Cluster(Runnable):
                     logger.info(cl.YE(
                         f"Uploading '{c}' ({int(size)} MB) which may take a while. " +
                         "Double check you want to be transferring this file " +
-                        "(note we automatically sync extensions and experiment resources " +
+                        "(note we automatically sync extensions, experiment resources " +
                         "and potentially the flambe repo if installed in dev mode)"))
 
                 if os.path.isdir(c):

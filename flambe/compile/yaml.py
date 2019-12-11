@@ -1,9 +1,11 @@
 from typing import Callable, Optional, Any, Union, TextIO
 import functools
+from warnings import warn
 
 import ruamel.yaml
 
 from flambe.compile.registrable import get_registry
+from flambe.compile.registered_types import Tagged
 
 
 def from_yaml(constructor: Any, node: Any, factory_name: str) -> Any:
@@ -19,10 +21,18 @@ def to_yaml(representer: Any, node: Any, tag: str) -> Any:
 def transform_to(to_yaml_fn: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(to_yaml_fn)
     def wrapped(representer: Any, node: Any) -> Any:
-        if hasattr(node, '_created_with_tag'):
+        if isinstance(node, Tagged):
             tag = node._created_with_tag
         else:
-            tag = Registrable.get_default_tag(type(node))
+            warn("No tag recorded for {node}, using default instead. "
+                 "This may be incorrect.")
+            if isinstance(node, object):
+                callable = type(node)
+            elif isinstance(node, functools.partial):
+                callable = node.func
+            else:
+                raise Exception()
+            tag = get_registry().get_default_tag(callable)
         return to_yaml_fn(representer, node, tag=tag)
     return wrapped
 
@@ -55,7 +65,7 @@ def sync_registry_with_yaml(yaml, registry):
 
 
 def erase_registry_from_yaml(yaml, registry):
-    pass
+    pass  # TODO might need this because of the problems we've seen
 
 
 class synced_yaml:
@@ -65,12 +75,15 @@ class synced_yaml:
         self.yaml = None
 
     def __enter__(self):
-        self.yaml = YAML()
+        self.yaml = ruamel.yaml.YAML()
         sync_registry_with_yaml(self.yaml, self.registry)
         return self.yaml
 
     def __exit__(self):
         erase_registry_from_yaml(self.yaml, self.registry)
+
+
+# TODO should we tighten signatures (below) Any -> schema?
 
 
 def load_config(yaml_config: Union[TextIO, str]) -> Any:
@@ -79,6 +92,6 @@ def load_config(yaml_config: Union[TextIO, str]) -> Any:
     return result
 
 
-def dump_config(obj: Schema, stream):
+def dump_config(obj: Any, stream):
     with synced_yaml(get_registry()) as yaml:
         yaml.dump(obj)

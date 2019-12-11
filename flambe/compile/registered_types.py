@@ -8,7 +8,14 @@ from flambe.compile.registry import register_class, transform_from_yaml, transfo
 from flambe.compile.schema import Schema
 
 
-class Registrable:
+class Tagged:
+
+    def __new__(self, *args, **kwargs):
+        self = super().__new__(*args, **kwargs)
+        self._created_with_tag = None
+
+
+class Registrable(Tagged):
     """Subclasses automatically registered as yaml tags
 
     Automatically registers subclasses with the yaml loader by

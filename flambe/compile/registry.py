@@ -84,6 +84,11 @@ class Registry(metaclass=Singleton):
     def read(self):
         pass
 
+    def default_tag(self, callable: Callable) -> str:
+        namespaces = self.callable_to_namespaces[callable]
+        entry = self.namespaces[namespaces[0]][callable]
+        return entry.default_tag
+
     def add_tag(self,
                 class_: Type,
                 tag: str,
@@ -137,7 +142,7 @@ class Registry(metaclass=Singleton):
     def pretty_str(self) -> str:
         output = ""
         for reg_entry in self:
-            pass
+            pass  # TODO
 
 
 def get_registry():

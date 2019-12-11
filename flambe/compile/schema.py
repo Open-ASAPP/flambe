@@ -89,10 +89,6 @@ class Schema(MutableMapping[str, Any]):
                 msg = f"keyword '{k}' is still yaml type {type(v)}\n"
                 msg += f"This could be because of a typo or the class is not registered properly"
                 warn(msg)
-
-        # if isinstance(self.callable, Component):
-        #     # TODO run hooks
-        #     pass
         try:
             cache[path] = self.factory_method(**initialized_kwargs)
         except TypeError as te:
@@ -110,6 +106,15 @@ class Schema(MutableMapping[str, Any]):
         #  on each link if schematic path not child of ipath, do copy-by-value strategy
         #  else update schematic path
         # return new root
+
+    def extract_search_space(self) -> Dict[str, Any]:
+        raise NotImplementedError()
+
+    def iter_variants(self) -> 'Schema':
+        raise NotImplementedError()
+
+    def __repr__(self) -> str:
+        return str(self)  # TODO
 
 
 class LinkError(Exception):

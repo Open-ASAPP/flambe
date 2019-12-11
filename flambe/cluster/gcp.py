@@ -48,10 +48,11 @@ class GCPCluster(Cluster):
             project=self.project_id
         )
 
-        self.factory_image = factory_image
-        if self.factory_image is None:
+        if factory_image is None:
             self.factory_image = self.conn.ex_get_image_from_family(
                 'pytorch-1-1-cpu', ex_project_list=['deeplearning-platform-release'])
+        else:
+            self.factory_image = factory_image
         self.orchestrator_image = orchestrator_image
         if self.orchestrator_image is None:
             self.orchestrator_image = self.conn.ex_get_image_from_family(

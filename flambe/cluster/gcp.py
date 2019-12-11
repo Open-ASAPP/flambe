@@ -90,18 +90,11 @@ class GCPCluster(Cluster):
         )
 
     def load_all_instances(self) -> None:
-        conn = self.driver(
-            self.username,
-            key=self.service_account_key,
-            datacenter=self.zone,
-            project=self.project_id
-        )
-
         with ThreadPoolExecutor() as executor:
             # launch the orchestrator
             logger.info("Launching the orchestrator")
             future_orchestrator_node = executor.submit(
-                conn.create_node,
+                self.conn.create_node,
                 self.get_orchestrator_name(),
                 self.orchestrator_type,
                 self.orchestrator_image

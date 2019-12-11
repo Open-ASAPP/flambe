@@ -11,7 +11,7 @@ pipeline:
       transform:
         text: !PretrainedTransformerField
           alias: 'bert-base-uncased'
-        label: !LabelFiel
+        label: !LabelField
     train_sampler: !BaseSampler
       batch_size: 16
     val_sampler: !BaseSampler

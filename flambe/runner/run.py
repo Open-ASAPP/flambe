@@ -44,7 +44,6 @@ def main(args: argparse.Namespace) -> None:
             raise ValueError('Will not run on cluster in debug mode. ' +
                              'Please disable debug mode or run locally.')
 
-
     # Pass original module for ray / pickle
     make_component(torch.nn.Module, only_module='torch.nn')
     # torch.optim.Optimizer exists, ignore mypy

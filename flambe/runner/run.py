@@ -38,9 +38,12 @@ def main(args: argparse.Namespace) -> None:
         print(cl.RA(ASCII_LOGO))
         print(cl.BL(f"VERSION: {flambe.__version__}\n"))
 
-    if args.debug and args.cluster is not None:
-        raise ValueError('Will not run on cluster in debug mode. ' +
-                         'Please disable debug mode or run locally.')
+    if args.debug:
+        print(cl.YE(f"Debug mode activated\n"))
+        if args.cluster is not None:
+            raise ValueError('Will not run on cluster in debug mode. ' +
+                             'Please disable debug mode or run locally.')
+
 
     # Pass original module for ray / pickle
     make_component(torch.nn.Module, only_module='torch.nn')

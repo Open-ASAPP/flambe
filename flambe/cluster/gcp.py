@@ -33,6 +33,18 @@ class GCPCluster(Cluster):
                  gpu_count: int = 1,
                  orchestrator_image: Optional[str] = None,
                  setup_cmds: Optional[List[str]] = None) -> None:
+        if setup_cmds is None:
+            setup_cmds = []
+        if factory_image is None or orchestrator_image is None:
+            # we're using GCP's pytorch images which do not activate
+            # its conda environment for non-login and non-interactive
+            # shells like the ssh shell Paramiko gives us, so we need
+            # to source the script correctly so that we get the correct
+            # python version.
+            # NOTE: we need to prepend b/c there's a check for skipping
+            # non-interactive shells
+            setup_cmds = ["if ! grep '\\. /etc/profile.d/anaconda.sh' ~/.bashrc; "
+                          "then sed -i '1s;^;. /etc/profile.d/anaconda.sh\\n;' ~/.bashrc; fi"]
         super().__init__(name, factories_num, ssh_key, ssh_username, setup_cmds)
         self.factory_type = factory_type
         self.orchestrator_type = orchestrator_type

@@ -1,4 +1,4 @@
-python3: &python3
+python37setup: &python37setup
     command: |
         apt-get update
         apt-get install -y python3-dev
@@ -17,7 +17,7 @@ jobs:
               - flambe-cache-{{ .Branch }}
               - flambe-cache-
         - run:
-            <<: *python3
+            <<: *python37setup
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
@@ -37,7 +37,7 @@ jobs:
       steps:
         - checkout
         - run:
-            <<: *python3
+            <<: *python37setup
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
@@ -57,7 +57,7 @@ jobs:
       steps:
         - checkout
         - run:
-            <<: *python3
+            <<: *python37setup
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:

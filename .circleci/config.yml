@@ -1,3 +1,9 @@
+python37setup: &python37setup
+    command: |
+        apt-get update
+        apt-get install -y python3-dev
+
+
 version: 2
 jobs:
   unit_tests:
@@ -10,6 +16,8 @@ jobs:
               # when lock file changes, use increasingly general patterns to restore cache
               - flambe-cache-{{ .Branch }}
               - flambe-cache-
+        - run:
+            <<: *python37setup
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
@@ -28,6 +36,8 @@ jobs:
         - image: python:3.6
       steps:
         - checkout
+        - run:
+            <<: *python37setup
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:
@@ -46,6 +56,8 @@ jobs:
         - image: python:3.6
       steps:
         - checkout
+        - run:
+            <<: *python37setup
         - run: python3 -m pip install --user tox awscli
         - run: python3 -m awscli configure set region us-east-1
         - run:

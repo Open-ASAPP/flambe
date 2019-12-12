@@ -67,9 +67,11 @@ class GCPCluster(Cluster):
             project=self.project_id
         )
 
+        self.factory_metadata = None
         if factory_image is None:
             self.factory_image = self.conn.ex_get_image_from_family(
                 'pytorch-1-1-cpu', ex_project_list=['deeplearning-platform-release'])
+            self.factory_metadata = {'install-nvidia-driver': 'True'}
         else:
             self.factory_image = factory_image
         self.orchestrator_image = orchestrator_image
@@ -95,6 +97,7 @@ class GCPCluster(Cluster):
             name,
             self.factory_type,
             self.factory_image,
+            ex_metadata=self.factory_metadata,
             ex_accelerator_type=self.gpu_type,
             ex_accelerator_count=self.gpu_count,
             ex_on_host_maintenance='TERMINATE',

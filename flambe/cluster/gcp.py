@@ -10,6 +10,7 @@ from libcloud.common.google import GoogleBaseError
 from flambe.cluster.errors import ClusterError
 from flambe.cluster.cluster import Cluster
 from flambe.cluster.instance import OrchestratorInstance, CPUFactoryInstance, GPUFactoryInstance
+from flambe.logging import coloredlogs as cl
 
 
 logger = logging.getLogger(__name__)
@@ -149,7 +150,7 @@ class GCPCluster(Cluster):
     def load_all_instances(self) -> None:
         orchestrator, factories = self._get_existing_instances()
         if orchestrator is not None and len(factories) == self.factories_num:
-            logger.info('Found an existing cluster')
+            logger.info(cl.GR('Found an existing cluster'))
             self.orchestrator = orchestrator
             self.factories = factories
             return
@@ -158,7 +159,7 @@ class GCPCluster(Cluster):
 
         with ThreadPoolExecutor() as executor:
             # launch the orchestrator
-            logger.info("Launching the orchestrator")
+            logger.info(cl.GR("Launching the orchestrator"))
             future_orchestrator_node = executor.submit(
                 self.conn.create_node,
                 self.get_orchestrator_name(),
@@ -168,13 +169,13 @@ class GCPCluster(Cluster):
 
             # launch factories
             if self.gpu_type is None:
-                logger.info("Launching the CPU factories")
+                logger.info(cl.GR("Launching the CPU factories"))
                 future_factories = executor.map(
                     self._create_cpu_factory,
                     [self.get_factory_basename() + f'-{i+1}' for i in range(self.factories_num)],
                 )
             else:
-                logger.info("Launching the GPU factories")
+                logger.info(cl.GR("Launching the GPU factories"))
                 future_factories = executor.map(
                     self._create_gpu_factory,
                     [self.get_factory_basename() + f'-{i+1}' for i in range(self.factories_num)],

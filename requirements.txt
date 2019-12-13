@@ -23,4 +23,4 @@ pytorch-transformers==1.1.0
 jinja2~=2.10.1
 fastBPE==0.1.0
 ninja~=1.9.0
-apache-libcloud~=2.6.1
+apache-libcloud~=2.7.0

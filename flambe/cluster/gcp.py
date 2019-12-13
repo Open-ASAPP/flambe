@@ -33,6 +33,7 @@ class GCPCluster(Cluster):
                  gpu_type: Optional[str] = None,
                  gpu_count: int = 1,
                  orchestrator_image: Optional[str] = None,
+                 disk_type: str = 'pd-standard',
                  setup_cmds: Optional[List[str]] = None) -> None:
         if setup_cmds is None:
             setup_cmds = []
@@ -80,9 +81,11 @@ class GCPCluster(Cluster):
                 'pytorch-1-1-cpu', ex_project_list=['deeplearning-platform-release'])
         self.gpu_type = gpu_type
         self.gpu_count = gpu_count
+        self.disk_type = disk_type
 
     def _create_cpu_factory(self, name: str) -> CPUFactoryInstance:
-        node = self.conn.create_node(name, self.factory_type, self.factory_image)
+        node = self.conn.create_node(name, self.factory_type, self.factory_image,
+                                     ex_disk_type=self.disk_type)
         return CPUFactoryInstance(
             node.public_ips[0],
             node.private_ips[0],
@@ -97,6 +100,7 @@ class GCPCluster(Cluster):
             name,
             self.factory_type,
             self.factory_image,
+            ex_disk_typee=self.disk_type,
             ex_metadata=self.factory_metadata,
             ex_accelerator_type=self.gpu_type,
             ex_accelerator_count=self.gpu_count,
@@ -167,7 +171,8 @@ class GCPCluster(Cluster):
                 self.conn.create_node,
                 self.get_orchestrator_name(),
                 self.orchestrator_type,
-                self.orchestrator_image
+                self.orchestrator_image,
+                ex_disk_type=self.disk_type,
             )
 
             # launch factories

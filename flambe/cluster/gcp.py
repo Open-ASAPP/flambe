@@ -84,8 +84,13 @@ class GCPCluster(Cluster):
         self.disk_type = disk_type
 
     def _create_cpu_factory(self, name: str) -> CPUFactoryInstance:
-        node = self.conn.create_node(name, self.factory_type, self.factory_image,
-                                     ex_disk_type=self.disk_type)
+        node = self.conn.create_node(
+            name,
+            self.factory_type,
+            self.factory_image,
+            ex_disk_type=self.disk_type,
+            ex_tags='flambe-factory',
+        )
         return CPUFactoryInstance(
             node.public_ips[0],
             node.private_ips[0],
@@ -106,6 +111,7 @@ class GCPCluster(Cluster):
             ex_accelerator_count=self.gpu_count,
             ex_on_host_maintenance='TERMINATE',
             ex_automatic_restart=True,
+            ex_tags='flambe-factory',
         )
         return GPUFactoryInstance(
             node.public_ips[0],
@@ -173,6 +179,7 @@ class GCPCluster(Cluster):
                 self.orchestrator_type,
                 self.orchestrator_image,
                 ex_disk_type=self.disk_type,
+                ex_tags='flambe-orchestrator',
             )
 
             # launch factories

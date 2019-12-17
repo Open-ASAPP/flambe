@@ -105,7 +105,7 @@ class GCPCluster(Cluster):
             name,
             self.factory_type,
             self.factory_image,
-            ex_disk_typee=self.disk_type,
+            ex_disk_type=self.disk_type,
             ex_metadata=self.factory_metadata,
             ex_accelerator_type=self.gpu_type,
             ex_accelerator_count=self.gpu_count,

@@ -34,6 +34,7 @@ class GCPCluster(Cluster):
                  gpu_count: int = 1,
                  orchestrator_image: Optional[str] = None,
                  disk_type: str = 'pd-standard',
+                 disk_size: int = 100,
                  setup_cmds: Optional[List[str]] = None) -> None:
         if setup_cmds is None:
             setup_cmds = []
@@ -82,6 +83,7 @@ class GCPCluster(Cluster):
         self.gpu_type = gpu_type
         self.gpu_count = gpu_count
         self.disk_type = disk_type
+        self.disk_size = disk_size
 
     def _create_cpu_factory(self, name: str) -> CPUFactoryInstance:
         node = self.conn.create_node(
@@ -89,6 +91,7 @@ class GCPCluster(Cluster):
             self.factory_type,
             self.factory_image,
             ex_disk_type=self.disk_type,
+            ex_disk_size=self.disk_size,
             ex_tags='flambe-factory',
         )
         return CPUFactoryInstance(
@@ -106,6 +109,7 @@ class GCPCluster(Cluster):
             self.factory_type,
             self.factory_image,
             ex_disk_type=self.disk_type,
+            ex_disk_size=self.disk_size,
             ex_metadata=self.factory_metadata,
             ex_accelerator_type=self.gpu_type,
             ex_accelerator_count=self.gpu_count,
@@ -179,6 +183,7 @@ class GCPCluster(Cluster):
                 self.orchestrator_type,
                 self.orchestrator_image,
                 ex_disk_type=self.disk_type,
+                ex_disk_size=self.disk_size,
                 ex_tags='flambe-orchestrator',
             )
 

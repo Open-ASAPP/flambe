@@ -53,7 +53,8 @@ class GCPCluster(Cluster):
                           "then sed -i '1s;^;. /etc/profile.d/anaconda.sh\\n;' ~/.bashrc; fi",
                           "if ! grep 'PATH=~/\\.local/bin:$PATH' ~/.bashrc; "
                           "then sed -i '1s;^;PATH=~/\\.local/bin:$PATH\\n;' ~/.bashrc; fi",
-                          "python3 -m pip install --user --upgrade google_compute_engine"]
+                          "python3 -m pip install --user --upgrade google_compute_engine",
+                          "sudo apt-get install psmisc"]
         super().__init__(name, factories_num, ssh_key, ssh_username, setup_cmds)
         self.factory_type = factory_type
         self.orchestrator_type = orchestrator_type

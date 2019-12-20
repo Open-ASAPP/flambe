@@ -211,8 +211,10 @@ class Trainer(Component):
                         clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
 
                     log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
-                    log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm, global_step)
-                    log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm, global_step)
+                    log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm, 
+                        global_step)
+                    log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm, 
+                        global_step)
 
                     # Optimize
                     self.optimizer.step()

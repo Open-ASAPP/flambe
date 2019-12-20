@@ -445,7 +445,7 @@ class TabularDataset(Dataset):
 
         """
         # Get all paths
-        if os.path.isdir(path):
+        if isinstance(path, str) and os.path.isdir(path):
             file_paths = [os.path.join(path, name) for name in os.listdir(path)]
             file_paths = sorted(file_paths)
         else:

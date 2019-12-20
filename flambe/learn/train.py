@@ -184,45 +184,49 @@ class Trainer(Component):
 
         tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
 
-        with torch.enable_grad():
-            for i in range(self.iter_per_step):
-                # Zero the gradients and clear the accumulated loss
-                self.optimizer.zero_grad()
-                accumulated_loss = 0.0
-                for j, batch in enumerate(self._train_iterator):
-                    if j + 1 >= self.batches_per_iter:
-                        break
-                    batch = self._batch_to_device(batch)
+        try:
+            with torch.enable_grad():
+                for i in range(self.iter_per_step):
+                    print(f"iter {i}")
+                    # Zero the gradients and clear the accumulated loss
+                    self.optimizer.zero_grad()
+                    accumulated_loss = 0.0
+                    for _ in range(self.batches_per_iter):
+                        # Get next batch
+                        batch = next(self._train_iterator)
+                        batch = self._batch_to_device(batch)
 
-                    # Compute loss
-                    loss = self._compute_loss(batch) / self.batches_per_iter
-                    accumulated_loss += loss.item()
-                    loss.backward()
+                        # Compute loss
+                        loss = self._compute_loss(batch) / self.batches_per_iter
+                        accumulated_loss += loss.item()
+                        loss.backward()
 
-                # Log loss
-                global_step = (self.iter_per_step * self._step) + i
+                    # Log loss
+                    global_step = (self.iter_per_step * self._step) + i
 
-                # Clip gradients if necessary
-                if self.max_grad_norm:
-                    clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
-                if self.max_grad_abs_val:
-                    clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
+                    # Clip gradients if necessary
+                    if self.max_grad_norm:
+                        clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                    if self.max_grad_abs_val:
+                        clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
 
-                log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
-                log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm, global_step)
-                log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm, global_step)
+                    log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
+                    log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm, global_step)
+                    log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm, global_step)
 
-                # Optimize
-                self.optimizer.step()
+                    # Optimize
+                    self.optimizer.step()
 
-                # Update iter scheduler
-                if self.iter_scheduler is not None:
-                    learning_rate = self.iter_scheduler.get_lr()[0]  # type: ignore
-                    log(f'{tb_prefix}Training/LR', learning_rate, global_step)
-                    self.iter_scheduler.step()  # type: ignore
+                    # Update iter scheduler
+                    if self.iter_scheduler is not None:
+                        learning_rate = self.iter_scheduler.get_lr()[0]  # type: ignore
+                        log(f'{tb_prefix}Training/LR', learning_rate, global_step)
+                        self.iter_scheduler.step()  # type: ignore
 
-            # Zero the gradients when exiting a train step
-                self.optimizer.zero_grad()
+                # Zero the gradients when exiting a train step
+                    self.optimizer.zero_grad()
+        except StopIteration:
+            pass
 
     def _aggregate_preds(self, data_iterator: Iterator) -> Tuple[torch.Tensor, torch.Tensor]:
         """Aggregate the predicitons and targets for the dataset.

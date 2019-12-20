@@ -423,7 +423,8 @@ class TabularDataset(Dataset):
         Parameters
         ----------
         path : str
-            Path to data, could be a directory or a file
+            Path to data, could be a directory, a file, or a
+            smart_open link
         sep: str
             Separator to pass to the `read_csv` method
         header: Optional[Union[str, int]]

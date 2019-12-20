@@ -189,9 +189,9 @@ class Trainer(Component):
                 # Zero the gradients and clear the accumulated loss
                 self.optimizer.zero_grad()
                 accumulated_loss = 0.0
-                for _ in range(self.batches_per_iter):
-                    # Get next batch
-                    batch = next(self._train_iterator)
+                for j, batch in enumerate(self._train_iterator):
+                    if j >= self.batches_per_iter:
+                        break
                     batch = self._batch_to_device(batch)
 
                     # Compute loss

@@ -146,9 +146,12 @@ class Trainer(Component):
         self._best_model: Dict[str, torch.Tensor] = dict()
         self.register_attrs('_step', '_best_metric', '_best_model')
 
-        n_epochs = math.ceil(epoch_per_step * max_steps)
+        self.n_epochs = math.ceil(epoch_per_step * max_steps)
 
-        self._train_iterator = self.train_sampler.sample(dataset.train, n_epochs)
+        self._create_train_iterator()
+
+    def _create_train_iterator(self):
+        self._train_iterator = self.train_sampler.sample(self.dataset.train, self.n_epochs)
 
     def _batch_to_device(self, batch: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, ...]:
         """Move the current batch on the correct device.
@@ -184,51 +187,52 @@ class Trainer(Component):
 
         tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
 
-        try:
-            with torch.enable_grad():
-                for i in range(self.iter_per_step):
-                    print(f"iter {i}")
-                    # Zero the gradients and clear the accumulated loss
-                    self.optimizer.zero_grad()
-                    accumulated_loss = 0.0
-                    for _ in range(self.batches_per_iter):
-                        # Get next batch
+        with torch.enable_grad():
+            for i in range(self.iter_per_step):
+                if i % 100 == 0:
+                    print(f"{datetime.datetime.now()}    iter {i}")
+                # Zero the gradients and clear the accumulated loss
+                self.optimizer.zero_grad()
+                accumulated_loss = 0.0
+                for _ in range(self.batches_per_iter):
+                    # Get next batch
+                    try:
                         batch = next(self._train_iterator)
-                        batch = self._batch_to_device(batch)
+                    except StopIteration:
+                        self._create_train_iterator()
+                    batch = self._batch_to_device(batch)
 
-                        # Compute loss
-                        loss = self._compute_loss(batch) / self.batches_per_iter
-                        accumulated_loss += loss.item()
-                        loss.backward()
+                    # Compute loss
+                    loss = self._compute_loss(batch) / self.batches_per_iter
+                    accumulated_loss += loss.item()
+                    loss.backward()
 
-                    # Log loss
-                    global_step = (self.iter_per_step * self._step) + i
+                # Log loss
+                global_step = (self.iter_per_step * self._step) + i
 
-                    # Clip gradients if necessary
-                    if self.max_grad_norm:
-                        clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
-                    if self.max_grad_abs_val:
-                        clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
+                # Clip gradients if necessary
+                if self.max_grad_norm:
+                    clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+                if self.max_grad_abs_val:
+                    clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
 
-                    log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
-                    log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm,
-                        global_step)
-                    log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm,
-                        global_step)
+                log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
+                log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm,
+                    global_step)
+                log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm,
+                    global_step)
 
-                    # Optimize
-                    self.optimizer.step()
+                # Optimize
+                self.optimizer.step()
 
-                    # Update iter scheduler
-                    if self.iter_scheduler is not None:
-                        learning_rate = self.iter_scheduler.get_lr()[0]  # type: ignore
-                        log(f'{tb_prefix}Training/LR', learning_rate, global_step)
-                        self.iter_scheduler.step()  # type: ignore
+                # Update iter scheduler
+                if self.iter_scheduler is not None:
+                    learning_rate = self.iter_scheduler.get_lr()[0]  # type: ignore
+                    log(f'{tb_prefix}Training/LR', learning_rate, global_step)
+                    self.iter_scheduler.step()  # type: ignore
 
-                # Zero the gradients when exiting a train step
-                    self.optimizer.zero_grad()
-        except StopIteration:
-            pass
+            # Zero the gradients when exiting a train step
+                self.optimizer.zero_grad()
 
     def _aggregate_preds(self, data_iterator: Iterator) -> Tuple[torch.Tensor, torch.Tensor]:
         """Aggregate the predicitons and targets for the dataset.

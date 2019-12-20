@@ -190,7 +190,7 @@ class Trainer(Component):
                 self.optimizer.zero_grad()
                 accumulated_loss = 0.0
                 for j, batch in enumerate(self._train_iterator):
-                    if j >= self.batches_per_iter:
+                    if j + 1 >= self.batches_per_iter:
                         break
                     batch = self._batch_to_device(batch)
 

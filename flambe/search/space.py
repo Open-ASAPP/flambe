@@ -101,7 +101,8 @@ class Space(object):
         categorical variables.
 
         hp_dict: Dictionary of hyperparameter values.
-        return_as_list: Whether or not to return the hyperparameters as a list.
+        return_as_list: Whether or not to return the
+            hyperparameters as a list.
         '''
         normalized = {}
         for name in hp_dict.keys():

@@ -7,17 +7,21 @@ class HyperBandScheduler(Scheduler):
 
     def __init__(self, step_budget, max_steps, min_steps=1, drop_rate=3, verbose=False):
         '''
-        n_workers: The maximum number of trials to be released in parallel.
+        n_workers: The maximum number of trials to be released in
+            parallel.
         results_file: String to path that results will be logged.
         results_keys: The names of the results that will be stored.
         target_result: The key result for searchers to focus on.
-        max_steps: Maximum number of resources to allocate to a single trial.
-        min_steps: Minimum number of resources to allocate to a single trial.
-        n_bracket_runs: Number of iterations of the outer loop of HyperBand
-        to run.
-        drop_rate: The factor by which trials are ended after each successive
-        halving iteration.
-        res_is_int: Whether or not to truncate resources to nearest integer.
+        max_steps: Maximum number of resources to allocate to a single
+            trial.
+        min_steps: Minimum number of resources to allocate to a single
+            trial.
+        n_bracket_runs: Number of iterations of the outer loop of
+        HyperBandto run.
+        drop_rate: The factor by which trials are ended after each
+        successive halving iteration.
+        res_is_int: Whether or not to truncate resources to nearest
+        integer.
         verbose: Whether or not to print out results.
         '''
         super().__init__(max_steps, verbose)

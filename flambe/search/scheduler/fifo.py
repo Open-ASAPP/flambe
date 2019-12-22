@@ -12,7 +12,8 @@ class BlackBoxScheduler(Scheduler):
         results_file: String to path that results will be logged.
         results_keys: The names of the results that will be stored.
         target_result: The key result for searchers to focus on.
-        n_workers: The maximum number of trials to be released in parallel.
+        n_workers: The maximum number of trials to be released in
+        parallel.
         verbose: Whether or not to print out the results.
         '''
         super().__init__(max_steps, verbose)

@@ -24,7 +24,8 @@ class BayesOptGPSearcher(ModelBasedSearcher):
         space: A hypertune.space.Space object.
         min_points_in_model: Minimum number of points
                              before model-based searching starts.
-        aq_func: Aquisition function type; possibilities: "ei", "ucb", "poi".
+        aq_func: Aquisition function type; possibilities:
+            "ei", "ucb", "poi".
         kappa: Acquisition function parameter `kappa`.
         xi: Acquisition function parameter `xi`.
         seed: Seed for the searcher.
@@ -109,11 +110,16 @@ class BayesOptKDESearcher(ModelBasedSearcher):
                  random_fraction=1 / 3, bandwidth_factor=3, min_bandwidth=1e-3):
         '''
         space: A hypertune.space.Space object.
-        min_points_per_model: Integer denoting minimum number of points before model building.
-        top_n_frac: Fraction of points to use for building the "good" model.
-        num_samples: Number of samples for optimizing the acquisition function.
-        random_fraction: Fraction of time to return a randomly generated sample.
-        bandwidth_factor: Algorithm parameter for encouraging exploration.
+        min_points_per_model: Integer denoting minimum number of
+            points before model building.
+        top_n_frac: Fraction of points to use for building the
+            "good" model.
+        num_samples: Number of samples for optimizing the acquisition
+            function.
+        random_fraction: Fraction of time to return a randomly generated
+            sample.
+        bandwidth_factor: Algorithm parameter for encouraging
+            exploration.
         min_bandwidth: Minimum bandwidth.
         '''
 

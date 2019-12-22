@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import _LRScheduler, ReduceLROnPlateau
 from torch.nn.utils.clip_grad import clip_grad_norm_, clip_grad_value_
 
 from flambe.dataset import Dataset
-from flambe.compile import Schema, State, Component
+from flambe.compile import Schema, State, Component, Link
 from flambe.learn.utils import select_device
 from flambe.nn import Module
 from flambe.sampler import Sampler
@@ -369,5 +369,5 @@ class Trainer(Component):
 
         # Compile all objects and push Modules to the device
         for k, obj in kwargs.items():
-            if isinstance(obj, Schema):
+            if isinstance(obj, (Schema, Link)):
                 obj.post_init_hooks.append(move_to_device)

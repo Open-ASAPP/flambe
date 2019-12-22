@@ -11,7 +11,6 @@ def get_experiment():
         return Experiment(name=kwargs.get('name', 'test'),
                           pipeline=kwargs.get('pipeline', {}),
                           resume=kwargs.get('resume', False),
-                          debug=kwargs.get('debug', False),
                           devices=kwargs.get('devices', None),
                           save_path=kwargs.get('save_path', None),
                           resources=kwargs.get('resources', None),

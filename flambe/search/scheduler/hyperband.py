@@ -69,13 +69,10 @@ class HyperBandScheduler(Scheduler):
                 if trial_id is None:
                     # Create new trial
                     trial_id, trial = self._create_trial(int(n_res_init))
-                    assert trial is not None
-                    assert trial_id not in trials.keys()
                     trials[trial_id] = trial
                 else:
                     # Resume previously paused trial
                     trial = trials[trial_id]
-                    assert trial.is_paused()
                     # n_res_curr = len(trial.metrics)
                     # n_res_total = n_res_init * (self.drop_rate**bracket.n_halvings)
                     # TODO trial.append_steps(int(n_res_total - n_res_curr))
@@ -142,7 +139,6 @@ class Bracket:
 
     def record_finished(self, trial, result):
         self.finished.append((trial, result))
-        assert len(self.finished) <= self.n_trials
 
     @property
     def has_pending(self):
@@ -157,7 +153,6 @@ class Bracket:
         return (self.n_halvings == self.max_halvings) & (self.n_trials == len(self.finished))
 
     def execute_halving(self, n_active):
-        assert self.is_ready_for_halving
         trials_sorted = sorted(self.finished, key=lambda x: x[1], reverse=True)
         trials_sorted = [x[0] for x in trials_sorted]
         active_trials = trials_sorted[:n_active]

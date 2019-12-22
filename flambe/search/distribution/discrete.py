@@ -20,7 +20,6 @@ class Discrete(Numerical):
             self.probs = np.array([1 / self.n_options] * self.n_options)
         else:
             self.probs = np.array(probs)
-            assert len(self.options) == len(self.probs)
 
     def round_to_options(self, val):
         '''

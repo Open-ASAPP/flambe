@@ -31,13 +31,10 @@ class Space(object):
         self.n_vars = len(self.dists)
 
         self.var_types = [dist.var_type for dist in self.dists]
-        self.var_bounds = [(dist.var_min, dist.var_max) if dist.is_numerical
+        self.var_bounds = [(dist.var_min, dist.var_max) if dist.is_numerical  # type: ignore
                            else (np.nan, np.nan) for dist in self.dists]
 
         self.name2idx = {name: i for i, name in enumerate(self.var_names)}
-
-        # Check that all var names are unique
-        assert len(self.name2idx.keys()) == self.n_vars
 
     def sample(self):
         '''

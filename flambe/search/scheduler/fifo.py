@@ -43,7 +43,6 @@ class BlackBoxScheduler(Scheduler):
                 self.done = True
                 break
             else:
-                assert trial_id not in trials.keys()
                 trials[trial_id] = trial
                 n -= 1
                 self.num_released += 1

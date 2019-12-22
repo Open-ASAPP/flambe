@@ -105,5 +105,4 @@ class ModelBasedSearcher(Searcher):
         hp_results: List of hyperparameters and associated results.
         '''
         for params_id, result in results.items():
-            assert self.data[params_id]['result'] is None
             self.data[params_id]['result'] = result

@@ -21,7 +21,6 @@ class Choice(Distribution):
             self.probs = np.array([1 / self.n_options] * self.n_options)
         else:
             self.probs = np.array(probs)
-            assert len(self.options) == len(self.probs)
 
     def sample(self):
         '''

@@ -38,6 +38,12 @@ def main(args: argparse.Namespace) -> None:
         print(cl.RA(ASCII_LOGO))
         print(cl.BL(f"VERSION: {flambe.__version__}\n"))
 
+    if args.debug:
+        print(cl.YE(f"Debug mode activated\n"))
+        if args.cluster is not None:
+            raise ValueError('Will not run on cluster in debug mode. ' +
+                             'Please disable debug mode or run locally.')
+
     # Pass original module for ray / pickle
     make_component(torch.nn.Module, only_module='torch.nn')
     # torch.optim.Optimizer exists, ignore mypy
@@ -59,7 +65,7 @@ def main(args: argparse.Namespace) -> None:
                 runnable, extensions = ex.preprocess(import_ext=False,
                                                      check_tags=False,
                                                      secrets=args.secrets)
-                cluster.run(force=args.force)
+                cluster.run(force=args.force, debug=args.debug)
                 if isinstance(runnable, ClusterRunnable):
                     cluster = cast(Cluster, cluster)
 
@@ -93,8 +99,9 @@ def main(args: argparse.Namespace) -> None:
                 else:
                     raise ValueError("Only ClusterRunnables can be executed in a cluster.")
         else:
-            runnable, _ = ex.preprocess(secrets=args.secrets, install_ext=args.install_extensions)
-            runnable.run(force=args.force, verbose=args.verbose)
+            runnable, _ = ex.preprocess(secrets=args.secrets,
+                                        install_ext=args.install_extensions)
+            runnable.run(force=args.force, verbose=args.verbose, debug=args.debug)
 
 
 if __name__ == '__main__':
@@ -114,6 +121,10 @@ if __name__ == '__main__':
                              'when using this flag as it could have undesired effects.')
     parser.add_argument('-s', '--secrets',
                         type=str, default=os.path.join(FLAMBE_GLOBAL_FOLDER, "secrets.ini"))
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Enable debug mode. Each runnable specifies the debug behavior. ' +
+                             'For example for an Experiment, Ray will run in a single thread ' +
+                             'allowing user breakpoints')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose console output')
     args = parser.parse_args()
 

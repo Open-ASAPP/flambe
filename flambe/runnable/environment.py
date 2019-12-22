@@ -59,7 +59,8 @@ class RemoteEnvironment(Registrable):
                   'factories_ips': node.factories_ips,
                   'public_orchestrator_ip': node.public_orchestrator_ip,
                   'public_factories_ips': node.public_factories_ips,
-                  'user': node.user}
+                  'user': node.user,
+                  'local_user': node.local_user}
         return representer.represent_mapping(tag, kwargs)
 
     @classmethod

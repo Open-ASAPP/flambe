@@ -594,6 +594,7 @@ class Link(Registrable):
         self.target_leaf: Optional[Schema] = None
         self.local = local
         self.resolved: Optional[Any] = None
+        self.post_init_hooks: Sequence[Callable] = []
 
     @property
     def root_schema(self) -> str:
@@ -642,6 +643,8 @@ class Link(Registrable):
             for attr in self.attr_path:
                 current_obj = getattr(current_obj, attr)
         self.resolved = current_obj
+        for hook in self.post_init_hooks:
+            hook(current_obj)
         return current_obj
 
     @classmethod

@@ -60,11 +60,6 @@ class Experiment(ClusterRunnable):
     resume: Union[str, List[str]]
         If a string is given, resume all blocks up until the given
         block_id. If a list is given, resume all blocks in that list.
-    debug: bool
-        If debug is True, then a debugger will be available at the
-        beginning of each Component block of the pipeline. Defaults
-        to False.
-        ATTENTION: debug only works when running locally.
     save_path: Optional[str]
         A directory where to save the experiment.
     devices: Dict[str, int]
@@ -100,7 +95,6 @@ class Experiment(ClusterRunnable):
                  name: str,
                  pipeline: Dict[str, Schema],
                  resume: Optional[Union[str, Sequence[str]]] = None,
-                 debug: bool = False,
                  devices: Dict[str, int] = None,
                  save_path: Optional[str] = None,
                  resources: Optional[Dict[str, Union[str, ClusterResource]]] = None,
@@ -136,7 +130,6 @@ class Experiment(ClusterRunnable):
         )
 
         self.resume = resume
-        self.debug = debug
         self.devices = devices
         self.resources = resources or dict()
         self.pipeline = pipeline
@@ -194,7 +187,7 @@ class Experiment(ClusterRunnable):
 
         return ret
 
-    def run(self, force: bool = False, verbose: bool = False, **kwargs):
+    def run(self, force: bool = False, verbose: bool = False, debug: bool = False, **kwargs):
         """Run an Experiment"""
 
         logger.info(cl.BL("Launching local experiment"))
@@ -265,7 +258,7 @@ class Experiment(ClusterRunnable):
 
         # Initialize ray cluster
         kwargs = {"logging_level": logging.ERROR, "include_webui": False}
-        if self.debug:
+        if debug:
             kwargs['local_mode'] = True
 
         if self.env:
@@ -372,7 +365,7 @@ class Experiment(ClusterRunnable):
                               'global_vars': resources,
                               'verbose': verbose,
                               'custom_modules': list(self.extensions.keys()),
-                              'debug': self.debug}
+                              'debug': debug}
                     # Filter out the tensorboard logger as we handle
                     # general and tensorboard-specific logging ourselves
                     tune_loggers = list(filter(lambda l: l != tf2_compat_logger and  # noqa: E741
@@ -510,11 +503,6 @@ class Experiment(ClusterRunnable):
             The force value provided to Flambe
 
         """
-        if self.debug:
-            raise error.ParsingRunnableError(
-                f"Remote experiments don't support debug mode. " +
-                "Remove 'debug: True' for running this experiment in a cluster."
-            )
 
         if cluster.existing_flambe_execution() or cluster.existing_ray_cluster():
             if not force:

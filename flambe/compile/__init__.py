@@ -1,13 +1,21 @@
-from flambe.compile.registrable import RegistrationError, Registrable, alias, yaml, \
-    register, registrable_factory, registration_context, MappedRegistrable
-from flambe.compile.component import Schema, Component, Link, dynamic_component
+from flambe.compile.registry import RegistrationError, get_registry, get_class_namespace, \
+    register_class, registrable_factory
+from flambe.compile.schema import LinkError, MalformedLinkError, UnpreparedLinkError, \
+    create_link_str, parse_link_str, Variants, Link, Schema
+from flambe.registered_types import Tagged, Registrable, RegisteredStatelessMap, RegisteredMap, \
+    Schematic
+from flambe.compile.yaml import sync_registry_with_yaml, erase_registry_from_yaml, synced_yaml, \
+    load_config, dump_config
+from flambe.compile.component import Component
 from flambe.compile.utils import make_component, all_subclasses
 from flambe.compile.serialization import save, load, save_state_to_file, load_state_from_file, \
     State
 
 
-__all__ = ['RegistrationError', 'Registrable', 'alias', 'Schema',
-           'Link', 'Component', 'yaml', 'register', 'dynamic_component',
-           'make_component', 'all_subclasses', 'registrable_factory',
-           'registration_context', 'save', 'load', 'State',
-           'save_state_to_file', 'load_state_from_file', 'MappedRegistrable']
+__all__ = ['RegistrationError', 'get_registry', 'get_class_namespace', 'register_class',
+           'registrable_factory', 'LinkError', 'MalformedLinkError', 'UnpreparedLinkError',
+           'create_link_str', 'parse_link_str', 'Variants', 'Link', 'Schema', 'Tagged',
+           'Registrable', 'RegisteredStatelessMap', 'RegisteredMap', 'Schematic',
+           'sync_registry_with_yaml', 'erase_registry_from_yaml', 'synced_yaml', 'load_config',
+           'dump_config', 'Component', 'make_component', 'all_subclasses', 'save', 'load',
+           'save_state_to_file', 'load_state_from_file', 'State']

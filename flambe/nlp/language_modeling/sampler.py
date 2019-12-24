@@ -13,7 +13,10 @@ class CorpusSampler(Sampler):
 
     This object is useful for iteration over a large corpus of
     text in an ordered way. It takes as input a dataset with
-    a single example containing the sequence of tokens.
+    a single example containing the sequence of tokens and will yield
+    batches that contain both source sequences of tensors corresponding
+    to the Corpus's text, and these same sequences shifted by one as
+    the target.
 
     """
 

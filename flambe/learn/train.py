@@ -200,6 +200,7 @@ class Trainer(Component):
                         batch = next(self._train_iterator)
                     except StopIteration:
                         self._create_train_iterator()
+                        batch = next(self._train_iterator)
                     batch = self._batch_to_device(batch)
 
                     # Compute loss

@@ -35,7 +35,7 @@ any number of features.
           :class:`~flambe.dataset.Dataset`.
 
 
-In this example, we apply a :class:`~flambe.nlp.transformers.bert.BertTextField`
+In this example, we apply a :class:`~flambe.nlp.transformers.PretrainedTransformerField`
 and a :class:`~flambe.field.LabelField`.
 
 
@@ -43,7 +43,7 @@ and a :class:`~flambe.field.LabelField`.
 
     dataset: !SSTDataset
         transform:
-            text: !BertTextField
+            text: !PretrainedTransformerField
                 alias: 'bert-base-uncased'
             label: !LabelField
 
@@ -56,7 +56,7 @@ and a :class:`~flambe.field.LabelField`.
         transform:
             text:
                 columns: 0
-                field: !BertTextField
+                field: !PretrainedTransformerField
                     alias: 'bert-base-uncased'
             label:
                 columns: 1
@@ -64,13 +64,13 @@ and a :class:`~flambe.field.LabelField`.
 
 Next we define our model. We use the :class:`~flambe.nlp.classification.TextClassifier`
 object, which takes an :class:`~flambe.nn.Embedder`, and an output layer. Here,
-we use the :class:`~flambe.nlp.transformer.BertEmbedder`
+we use the :class:`~flambe.nlp.transformers.PretrainedTransformerEmbedder`
 
 .. code-block:: yaml
 
     teacher: !TextClassifier
 
-      embedder: !BertEmbedder
+      embedder: !PretrainedTransformerEmbedder
         pool: True
 
       output_layer: !SoftmaxLayer
@@ -143,7 +143,7 @@ may also decide to perform different preprocessing for the student model:
 
     dataset: !SSTDataset
       transform:
-        teacher_text: !BERTTextField.from_alias
+        teacher_text: !PretrainedTransformerField
           alias: 'bert-base-uncased'
           lower: true
         label: !LabelField
@@ -197,12 +197,12 @@ Full configuration
 
     dataset: !SSTDataset
       transform:
-        text: !BertTextField
+        text: !PretrainedTransformerField
           alias: 'bert-base-uncased'
         label: !LabelField
 
     teacher: !TextClassifier
-      embedder: !BertEmbedder
+      embedder: !PretrainedTransformerEmbedder
         alias: 'bert-base-uncased'
         pool: True
       output_layer: !SoftmaxLayer

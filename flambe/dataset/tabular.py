@@ -423,7 +423,8 @@ class TabularDataset(Dataset):
         Parameters
         ----------
         path : str
-            Path to data, could be a directory or a file
+            Path to data, could be a directory, a file, or a
+            smart_open link
         sep: str
             Separator to pass to the `read_csv` method
         header: Optional[Union[str, int]]
@@ -445,7 +446,7 @@ class TabularDataset(Dataset):
 
         """
         # Get all paths
-        if os.path.isdir(path):
+        if isinstance(path, str) and os.path.isdir(path):
             file_paths = [os.path.join(path, name) for name in os.listdir(path)]
             file_paths = sorted(file_paths)
         else:

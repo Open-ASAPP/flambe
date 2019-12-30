@@ -189,8 +189,6 @@ class Trainer(Component):
 
         with torch.enable_grad():
             for i in range(self.iter_per_step):
-                if i % 100 == 0:
-                    print(f"{datetime.datetime.now()}    iter {i}")
                 # Zero the gradients and clear the accumulated loss
                 self.optimizer.zero_grad()
                 accumulated_loss = 0.0

@@ -49,7 +49,7 @@ which will treat ``train.py`` as an executable module. You can do so by running:
 
 .. code-block:: bash
 
-    python -m my_project.train --arg1 value1 --arg2 value2
+    python -m my_project.train arg1 arg2 --kwarg1 value1 --kwarg2 value2
 
 .. attention:: You will need to modify the imports in your script to use either relative imports or
                import from the top level package. In this example, this can be done by replacing
@@ -70,15 +70,16 @@ Once you have done the above step, you can use your script in Flambé as follows
     ---
 
     !Experiment
-    
+
     name: example
 
     pipeline:
       stage_0: !Script
         script: my_project.train  # my_project is the name of the module
-        args:
-          arg1: !g [1, 5]  # Run a grid search over any arguments to your script
-          arg2: 'foo'
+        args: ['arg1', 'arg2']
+        kwargs:
+          kwarg1: !g [1, 5]  # Run a grid search over any arguments to your script
+          kwarg2: 'foo'
 
 That's it! You can now execute this configuration file, with the regular command:
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 import sys
 import runpy
 from copy import deepcopy
@@ -27,7 +27,8 @@ class Script(Component):
 
     def __init__(self,
                  script: str,
-                 args: Dict[str, Any],
+                 args: List[Any],
+                 kwargs: Optional[Dict[str, Any]] = None,
                  output_dir_arg: Optional[str] = None) -> None:
         """Initialize a Script.
 
@@ -35,8 +36,10 @@ class Script(Component):
         ----------
         path: str
             The script module
-        args: Dict[str, Any]
-            Argument dictionary
+        args: List[Any]
+            Argument List
+        kwargs: Optional[Dict[str, Any]]
+            Keyword argument dictionary
         output_dir_arg: str, optional
             The name of the argument corresponding to the output
             directory, should there be one.
@@ -44,9 +47,13 @@ class Script(Component):
         """
         self.script = script
         self.args = args
+        if kwargs is None:
+            self.kwargs: Dict[str, Any] = {}
+        else:
+            self.kwargs = kwargs
 
         if output_dir_arg is not None:
-            self.args[output_dir_arg] = get_trial_dir()
+            self.kwargs[output_dir_arg] = get_trial_dir()
 
     def run(self) -> bool:
         """Run the evaluation.
@@ -57,9 +64,10 @@ class Script(Component):
             Report dictionary to use for logging
 
         """
-        parser_args = {f'--{k}': v for k, v in self.args.items()}
+        parser_kwargs = {f'--{k}': v for k, v in self.kwargs.items()}
         # Flatten the arguments into a single list to pass to sys.argv
-        parser_args_flat = [str(item) for items in parser_args.items() for item in items]
+        parser_args_flat = [str(item) for item in self.args]
+        parser_args_flat += [str(item) for items in parser_kwargs.items() for item in items]
 
         sys_save = deepcopy(sys.argv)
         sys.argv = [''] + parser_args_flat  # add dummy sys[0]

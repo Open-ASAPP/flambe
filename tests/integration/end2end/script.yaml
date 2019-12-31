@@ -7,6 +7,7 @@ name: script_test
 pipeline:
   stage_0: !Script
     script: flambe_script.train
-    args:
-      arg1: !g [1, 5]
-      arg2: 'foo'
+    args: ['arg1', 'arg2']
+    kwargs:
+      kwarg1: !g [1, 5]  # Run a grid search over any arguments to your script
+      kwarg2: 'foo'

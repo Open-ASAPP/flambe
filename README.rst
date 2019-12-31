@@ -10,7 +10,7 @@
 
 |
 
-.. image:: https://circleci.com/gh/asappresearch/flambe.svg?style=svg
+.. image:: https://img.shields.io/circleci/build/github/asappresearch/flambe
     :target: https://circleci.com/gh/asappresearch/flambe
 
 .. image:: https://readthedocs.org/projects/flambe/badge/?version=latest

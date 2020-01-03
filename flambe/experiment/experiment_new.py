@@ -72,42 +72,37 @@ class Stage(object):
         self.reductions = reductions
 
     def run(self):
+        # Get full pipeline
         pipeline = ray.get(self.full_pipeline_id)
         # Fetch dependencies
         results = ray.get(self.dependencies)
-
-        # Mask out failed trials and apply reductions
-        successful = []
-        for trials in results:
-            # Filter errors out
-            trials = filter(lambda t: not t.is_error(), trials)
-            # Select topk
-            filtered = [r for r in self.reductions if r.source == result.stage_name]
-            if filtered:
-                min_reduction = min(r.k for r in filtered)
-                trials = sorted(trials, key=lambda x: trials.best_metric(), reverse=True)[:k]
-                successful.append(result.topk(min_reduction))
-            else:
-                successful.append(result)
-
-        # Perform merging for conditional dependencies
-        for result in successful:
-            pass
-
+        # Take an intersection with the other sub-pipelines
+        pipeline.merge_intersect(*results)
+        # Mask out failures
+        pipeline.remove(trial_to_failure)
+        # Reduce
+        pipeline.sort_options(trial_to_metric)
+        pipeline.reduce()
         # Run remaining searches in parallel
-        out_ids = []
-        for pipeline in successful:
+        result_ids = []
+        for variant in pipeline.iter_variants():
             # Construct and execute the search
-            search = ray.remote(Search)(pipeline,
-                                        self.algorithm,
-                                        self.cpus_per_trial,
-                                        self.gpus_per_trial)
-            result = search.remote().run()
-
-            # Upload results
-            result_id = ray.put(result)
-            out_ids.append(result_id)
-        return out_ids
+            search = Search.remote(variant,
+                                   self.algorithm,
+                                   self.cpus_per_trial,
+                                   self.gpus_per_trial)
+            sampled_variants_id = search.run.remote()
+            # Remote run will return id mapping to list of variants
+            result_ids.append(sampled_variants_id)
+        # Each id maps to list of variant schemas
+        list_of_variants = ray.get(result_ids)
+        # Flatten list of lists of variants
+        all_variant_schemas = [item for sublist in list_of_variants for item in sublist]
+        # Merge all together into parallel options
+        pipeline.merge_union(*all_variant_schemas)
+        # Put final merged pipeline in ray and return result id
+        final_result_id = ray.put(pipeline)
+        return final_result_id
 
 
 class Experiment(object):

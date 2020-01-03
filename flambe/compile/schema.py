@@ -367,13 +367,34 @@ class Schema(MutableMapping[str, Any]):
             self.set_param(path, value)
 
     def iter_variants(self) -> 'Schema':
-        for path, item in traverse(self, yield_schema='never'):
-            if isinstance(item, Variants):
-                for value in item:
-                    variant_schema = copy.deepcopy(self)
+        """Yield variants selecting the parallel options from each"""
+        for selection_index in range(self.num_options):
+            variant_schema = copy.deepcopy(self)
+            for path, item in traverse(self, yield_schema='never'):
+                if isinstance(item, Variants):
+                    value = item[selection_index]
                     variant_schema.set_param(path, value)
-                    yield from variant_schema.iter_variants()
-        yield self
+            yield variant_schema
+
+    def merge_union(self, *others) -> None:
+        """Merge into self keeping all options in parallel"""
+        raise NotImplementedError()
+
+    def merge_intersect(self, *others) -> None:
+        """Merge into self keeping options that appear in all others"""
+        raise NotImplementedError()
+
+    def remove(self, lookup_fn: Callable['Schema', bool]) -> None:
+        """Remove options according to lookup function"""
+        raise NotImplementedError()
+
+    def sort_options(self, objective_fn: Callable['Schema', bool]) -> None:
+        """Sort options according to objectiv function"""
+        raise NotImplementedError()
+
+    def reduce(self) -> None:
+        """Remove options based on top-k reduce values in Links"""
+        raise NotImplementedError()
 
     def __repr__(self) -> str:
         return str(self)  # TODO

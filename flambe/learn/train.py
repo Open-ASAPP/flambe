@@ -146,9 +146,12 @@ class Trainer(Component):
         self._best_model: Dict[str, torch.Tensor] = dict()
         self.register_attrs('_step', '_best_metric', '_best_model')
 
-        n_epochs = math.ceil(epoch_per_step * max_steps)
+        self.n_epochs = math.ceil(epoch_per_step * max_steps)
 
-        self._train_iterator = self.train_sampler.sample(dataset.train, n_epochs)
+        self._create_train_iterator()
+
+    def _create_train_iterator(self):
+        self._train_iterator = self.train_sampler.sample(self.dataset.train, self.n_epochs)
 
     def _batch_to_device(self, batch: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, ...]:
         """Move the current batch on the correct device.
@@ -191,7 +194,11 @@ class Trainer(Component):
                 accumulated_loss = 0.0
                 for _ in range(self.batches_per_iter):
                     # Get next batch
-                    batch = next(self._train_iterator)
+                    try:
+                        batch = next(self._train_iterator)
+                    except StopIteration:
+                        self._create_train_iterator()
+                        batch = next(self._train_iterator)
                     batch = self._batch_to_device(batch)
 
                     # Compute loss
@@ -209,8 +216,10 @@ class Trainer(Component):
                     clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
 
                 log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
-                log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm, global_step)
-                log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm, global_step)
+                log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm,
+                    global_step)
+                log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm,
+                    global_step)
 
                 # Optimize
                 self.optimizer.step()

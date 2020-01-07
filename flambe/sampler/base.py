@@ -306,4 +306,5 @@ class BaseSampler(Sampler):
             The number of batches that would be created per epoch
 
         """
-        return math.ceil(len(data) / self.batch_size)
+        downsample = self.downsample or 1
+        return math.ceil(downsample * len(data) / self.batch_size)

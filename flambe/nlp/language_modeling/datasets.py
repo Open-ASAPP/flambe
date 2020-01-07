@@ -80,8 +80,9 @@ class Wiki103(TabularDataset):
     WIKI_URL = "https://s3.amazonaws.com/research.metamind.io/wikitext/wikitext-103-v1.zip"
 
     def __init__(self,  # nosec
-                 split_by_sentence: bool = False,
+                 split_by_line: bool = False,
                  end_of_line_token: Optional[str] = '<eol>',  # nosec
+                 remove_headers: bool = False,
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
         """Initialize the Wiki103 built-in.
@@ -96,8 +97,9 @@ class Wiki103(TabularDataset):
         see TabularDataset for other arguments.
 
         """
-        self.split_by_sentence = split_by_sentence
+        self.split_by_line = split_by_line
         self.eol = end_of_line_token
+        self.remove_headers = remove_headers
         response = requests.get(self.WIKI_URL, stream=True)
         with ZipFile(BytesIO(response.content), 'r') as z:
             train = self._process(z.read('wikitext-103/wiki.train.tokens'))
@@ -122,16 +124,23 @@ class Wiki103(TabularDataset):
 
         """
         decoded_text = file.decode('utf-8')
-        # Replace end of line tokens
-        if self.eol is not None and not self.split_by_sentence:
-            decoded_text = decoded_text.replace('\n', self.eol)
+        decoded_lines = decoded_text.split('\n')
 
-        # Split by sentence or unroll
-        if self.split_by_sentence:
-            nltk.download('punkt', quiet=True)
-            text = [(sent.strip(),) for sent in nltk.tokenize.sent_tokenize(decoded_text)]
+        # Remove titles of Wikipedia articles if desired
+        if self.remove_headers:
+            filtered_lines = []
+            for line in decoded_lines:
+                line_strip = line.strip()
+                if len(line_strip) > 0:
+                    if line_strip[0] != '=' and line_strip[-1] != '=':
+                        filtered_lines.append(line)
+            decoded_lines = filtered_lines
+
+        eol = self.eol or ''
+        if self.split_by_line:
+            text = [(line.lstrip() + eol,) for line in decoded_lines]
         else:
-            text = [(decoded_text,)]
+            text = [(eol.join(decoded_lines),)]
 
         return text
 

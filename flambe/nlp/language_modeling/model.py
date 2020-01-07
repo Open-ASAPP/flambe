@@ -82,9 +82,9 @@ class LanguageModel(Module):
             encoding = outputs[0]
         else:
             encoding = outputs
-        mask = (data != self.pad_index).float()
 
         if target is not None:
+            mask = (target != self.pad_index).float()
             # Flatten to compute loss across batch and sequence
             flat_mask = mask.view(-1).byte()
             flat_encodings = encoding.view(-1, encoding.size(2))[flat_mask]

@@ -42,7 +42,9 @@ class TextField(Field):
                  embeddings_format: str = 'glove',
                  embeddings_binary: bool = False,
                  unk_init_all: bool = False,
-                 drop_unknown: bool = False) -> None:
+                 drop_unknown: bool = False,
+                 max_seq_len: Optional[int] = None,
+                 truncate_end: bool = False) -> None:
         """Initialize the TextField.
 
         Parameters
@@ -99,6 +101,8 @@ class TextField(Field):
         self.embedding_matrix: Optional[torch.Tensor] = None
         self.unk_init_all = unk_init_all
         self.drop_unknown = drop_unknown
+        self.max_seq_len = max_seq_len
+        self.truncate_end = truncate_end
 
         self.unk_numericals: Set[int] = set()
 
@@ -238,4 +242,11 @@ class TextField(Field):
 
             numericals.append(numerical)
 
-        return torch.tensor(numericals).long()
+        ret = torch.tensor(numericals).long()
+
+        if self.max_seq_len is not None:
+            if self.truncate_end:
+                ret = ret[-self.max_seq_len:]
+            else:
+                ret = ret[:self.max_seq_len]
+        return ret

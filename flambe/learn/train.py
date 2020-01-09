@@ -93,7 +93,7 @@ class Trainer(Component):
         max_grad_abs_val: float, optional
             Maximum absolute value of all gradient vector components
             after clipping.
-        extra_validation_metrics: Optional[List[Metric]]
+        extra_validation_metrics: Optional[Dict[str, Metric]]
             A list with extra metrics to show in each step
             but which don't guide the training procedures
             (i.e model selection through early stopping)
@@ -111,7 +111,7 @@ class Trainer(Component):
         self.lower_is_better = lower_is_better
         self.max_grad_norm = max_grad_norm
         self.max_grad_abs_val = max_grad_abs_val
-        self.extra_validation_metrics = extra_validation_metrics or []
+        self.extra_validation_metrics = extra_validation_metrics or {}
 
         # By default, no prefix applied to tb logs
         self.tb_log_prefix = None
@@ -296,8 +296,8 @@ class Trainer(Component):
         log(f'{tb_prefix}Validation/Loss', val_loss, self._step)
         log(f'{tb_prefix}Validation/{self.metric_fn}', val_metric, self._step)
         log(f'{tb_prefix}Best/{self.metric_fn}', self._best_metric, self._step)  # type: ignore
-        for metric in self.extra_validation_metrics:
-            log(f'{tb_prefix}Validation/{metric}',
+        for metric_name, metric in self.extra_validation_metrics.items():
+            log(f'{tb_prefix}Validation/{metric_name}',
                 metric(preds, targets).item(), self._step)  # type: ignore
 
     def run(self) -> bool:

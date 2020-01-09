@@ -45,7 +45,7 @@ class Trainer(Component):
                  lower_is_better: bool = False,
                  max_grad_norm: Optional[float] = None,
                  max_grad_abs_val: Optional[float] = None,
-                 extra_validation_metrics: Optional[List[Metric]] = None) -> None:
+                 extra_validation_metrics: Optional[Dict[str, Metric]] = None) -> None:
         """Initialize an instance of Trainer
 
         Parameters

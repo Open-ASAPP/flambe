@@ -21,7 +21,7 @@ from ruamel.yaml.comments import (CommentedMap, CommentedOrderedMap, CommentedSe
 
 from flambe.compile.serialization import load_state_from_file, State, load as flambe_load, \
     save as flambe_save
-from flambe.compile.registrable import registrable_factory
+from flambe.compile.registry import registrable_factory
 from flambe.compile.schema import Schematic
 from flambe.compile.const import STATE_DICT_DELIMETER, FLAMBE_SOURCE_KEY, FLAMBE_CLASS_KEY, \
     FLAMBE_CONFIG_KEY, FLAMBE_DIRECTORIES_KEY, KEEP_VARS_KEY, VERSION_KEY, FLAMBE_STASH_KEY

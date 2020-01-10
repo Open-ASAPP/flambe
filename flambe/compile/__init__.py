@@ -1,9 +1,9 @@
 from flambe.compile.registry import RegistrationError, get_registry, get_class_namespace, \
     register_class, registrable_factory
 from flambe.compile.schema import LinkError, MalformedLinkError, UnpreparedLinkError, \
-    create_link_str, parse_link_str, Variants, Link, Schema
-from flambe.registered_types import Tagged, Registrable, RegisteredStatelessMap, RegisteredMap, \
-    Schematic
+    create_link_str, parse_link_str, Variants, Link, Schema, Schematic
+from flambe.compile.registered_types import Tagged, Registrable, RegisteredStatelessMap, \
+    RegisteredMap
 from flambe.compile.yaml import sync_registry_with_yaml, erase_registry_from_yaml, synced_yaml, \
     load_config, dump_config
 from flambe.compile.component import Component

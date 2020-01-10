@@ -1,11 +1,12 @@
 # from __future__ import annotations
+from collections import abc
 from abc import ABC, abstractmethod
 from typing import Sequence, Any, Union, Dict
 
 import numpy as np
 from ray.tune import grid_search
 
-from flambe.compile import Registrable, alias
+from flambe.compile import Registrable
 
 
 Number = Union[float, int]
@@ -57,8 +58,7 @@ class Options(Registrable, ABC):
             return factory(args)
 
 
-@alias('g')
-class GridSearchOptions(Sequence[Any], Options):
+class GridSearchOptions(abc.Sequence, Options, tag_override='g'):
     """Discrete set of values used for grid search
 
     Defines a finite, discrete set of values to be substituted
@@ -86,8 +86,7 @@ class GridSearchOptions(Sequence[Any], Options):
         return 'gridoptions(' + repr(self.elements) + ')'
 
 
-@alias('s')
-class SampledUniformSearchOptions(Sequence[Number], Options):
+class SampledUniformSearchOptions(abc.Sequence, Options, tag_override='s'):
     """Yields k values from the range (low, high)
 
     Randomly yields k values from the range (low, high) to be
@@ -133,8 +132,7 @@ class SampledUniformSearchOptions(Sequence[Number], Options):
         return representer.represent_sequence('!g', node.elements)
 
 
-@alias('cluster')
-class ClusterResource(Registrable):
+class ClusterResource(Registrable, tag_override='cluster'):
 
     def __init__(self, location: str) -> None:
         self.location = location

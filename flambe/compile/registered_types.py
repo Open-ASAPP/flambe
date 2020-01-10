@@ -4,15 +4,16 @@ from warnings import warn
 
 from ruamel.yaml import ScalarNode
 
-from flambe.compile.registry import register_class, transform_from_yaml, transform_to_yaml
-from flambe.compile.schema import Schema
+from flambe.compile.registry import register_class
+# from flambe.compile.schema import Schema
 
 
 class Tagged:
 
-    def __new__(self, *args, **kwargs):
-        self = super().__new__(*args, **kwargs)
+    def __new__(cls, *args, **kwargs):
+        self = super().__new__(cls, *args, **kwargs)
         self._created_with_tag = None
+        return self
 
 
 class Registrable(Tagged):
@@ -75,12 +76,3 @@ class RegisteredMap(RegisteredStatelessMap, should_register=False):
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
         """Represent all current values in __dict__"""
         return representer.represent_mapping(tag, node.__dict__)
-
-
-class Schematic(Registrable):
-
-    def __init_subclass__(cls: Type['Registrable'],
-                          **kwargs: Mapping[str, Any]) -> None:
-        from_yaml_fn = transform_from_yaml(Schema.from_yaml, callable=cls)
-        to_yaml_fn = transform_to_yaml(Schema.to_yaml)
-        super().__init_subclass__(from_yaml=from_yaml_fn, to_yaml=to_yaml_fn, **kwargs)

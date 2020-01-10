@@ -1,8 +1,12 @@
 import inspect
-from typing import MutableMapping, Any, Callable, Optional, Dict, Sequence, Tuple, List, Iterable
+from reprlib import recursive_repr
+from typing import MutableMapping, Any, Callable, Optional, Dict, Sequence, Tuple, List, \
+                   Iterable, Type, Mapping
 from warnings import warn
 import copy
+import functools
 
+from ruamel.yaml import ScalarNode
 from ruamel.yaml.comments import (CommentedMap, CommentedOrderedMap, CommentedSet,
                                   CommentedKeySeq, CommentedSeq, TaggedScalar,
                                   CommentedKeyMap)
@@ -252,7 +256,8 @@ class Schema(MutableMapping[str, Any]):
             if not isinstance(self.callable, type):
                 raise Exception(f'Cannot specify factory name on non-class callable {callable}')
             self.factory_method = getattr(self.callable, factory_name)
-        self.kwargs = function_defaults(self.factory_method).update(kwargs)
+        self.kwargs = function_defaults(self.factory_method)
+        self.kwargs.update(kwargs)
         self.created_with_tag = tag
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -273,12 +278,28 @@ class Schema(MutableMapping[str, Any]):
     def __call__(self,
                  path: Optional[List[str]] = None,
                  cache: Optional[Dict[str, Any]] = None):
-        self.initialize(path, cache)
+        return self.initialize(path, cache)
 
     @classmethod
-    def from_yaml(cls, callable: Callable, constructor: Any, node: Any, factory_name: str) -> Any:
+    def from_yaml(cls,
+                  constructor: Any,
+                  node: Any,
+                  factory_name: str,
+                  tag: str,
+                  callable: Callable) -> Any:
         """Use constructor to create an instance of cls"""
-        pass
+        if inspect.isabstract(callable):
+            msg = f"You're trying to initialize an abstract class {cls}. " \
+                  + "If you think it's concrete, double check you've spelled " \
+                  + "all the method names correctly."
+            raise Exception(msg)
+        if isinstance(node, ScalarNode):
+            nothing = constructor.construct_yaml_null(node)
+            if nothing is not None:
+                raise Exception(f"Non-null scalar argument to {cls.__name__} will be ignored")
+            return cls(callable, {}, factory_name, tag)
+        kwargs, = list(constructor.construct_yaml_map(node))
+        return cls(callable, kwargs, factory_name, tag)
 
     @classmethod
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
@@ -291,18 +312,18 @@ class Schema(MutableMapping[str, Any]):
                  fn: Optional[Callable] = None,
                  yield_schema: Optional[str] = None) -> Iterable[Tuple[str, Any]]:
         current_path = current_path or tuple()
-        fn = fn or lambda x: x
+        fn = fn or (lambda x: x)
         if isinstance(obj, Link):
             yield (current_path, obj)
         elif isinstance(obj, Schema):
             if yield_schema is None or yield_schema == 'before':
-                yield fn(obj)
+                yield (current_path, fn(obj))
                 yield from traverse(obj.kwargs, current_path, fn, yield_schema)
             elif yield_schema == 'only':
-                yield fn(obj)
+                yield (current_path, fn(obj))
             elif yield_schema == 'after':
                 yield from traverse(obj.kwargs, current_path, fn, yield_schema)
-                yield fn(obj)
+                yield (current_path, fn(obj))
             elif yield_schema == 'never':
                 yield from traverse(obj.kwargs, current_path, fn, yield_schema)
         elif isinstance(obj, dict):
@@ -331,7 +352,7 @@ class Schema(MutableMapping[str, Any]):
             return cache[path]
 
         initialized = copy.deepcopy(self)
-        for path, obj in traverse(self, yield_schema='only'):
+        for path, obj in self.traverse(self.kwargs, yield_schema='only'):
             if isinstance(obj, Link):
                 initialized.set_param(path, obj(cache))
             elif isinstance(obj, Schema):
@@ -384,11 +405,11 @@ class Schema(MutableMapping[str, Any]):
         """Merge into self keeping options that appear in all others"""
         raise NotImplementedError()
 
-    def remove(self, lookup_fn: Callable['Schema', bool]) -> None:
+    def remove(self, lookup_fn: Callable[['Schema'], bool]) -> None:
         """Remove options according to lookup function"""
         raise NotImplementedError()
 
-    def sort_options(self, objective_fn: Callable['Schema', bool]) -> None:
+    def sort_options(self, objective_fn: Callable[['Schema'], bool]) -> None:
         """Sort options according to objectiv function"""
         raise NotImplementedError()
 
@@ -396,5 +417,33 @@ class Schema(MutableMapping[str, Any]):
         """Remove options based on top-k reduce values in Links"""
         raise NotImplementedError()
 
+    @recursive_repr()
     def __repr__(self) -> str:
-        return str(self)  # TODO
+        kwargs = ", ".join("{}={!r}".format(k, v) for k, v in sorted(self.kwargs.items()))
+        format_string = "{module}.{cls}({callable}, {kwargs})"
+        return format_string.format(module=self.__class__.__module__,
+                                    cls=self.__class__.__qualname__,
+                                    tag=self.created_with_tag,
+                                    callable=self.callable,
+                                    factory_method=self.factory_method,
+                                    kwargs=kwargs)
+
+
+def add_callable_from_yaml(from_yaml_fn: Callable, callable: Callable) -> Callable:
+    """Add callable to call on from_yaml"""
+    @functools.wraps(from_yaml_fn)
+    def wrapped(constructor: Any, node: Any, factory_name: str, tag: str) -> Any:
+        obj = from_yaml_fn(constructor, node, factory_name, tag, callable)
+        return obj
+    return wrapped
+
+
+class Schematic(Registrable, should_register=False):
+
+    def __init_subclass__(cls: Type['Registrable'],
+                          **kwargs: Mapping[str, Any]) -> None:
+        # Schema from_yaml function is generic, so need to add
+        # class information
+        from_yaml_fn = add_callable_from_yaml(Schema.from_yaml, callable=cls)
+        to_yaml_fn = Schema.to_yaml
+        super().__init_subclass__(from_yaml=from_yaml_fn, to_yaml=to_yaml_fn, **kwargs)

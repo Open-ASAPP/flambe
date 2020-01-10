@@ -2,11 +2,11 @@ from abc import abstractmethod
 import configparser
 from typing import Dict, Optional, Callable
 
-from flambe.compile import MappedRegistrable
+from flambe.compile import RegisteredMap
 from flambe.runnable.utils import DEFAULT_USER_PROVIDER
 
 
-class Runnable(MappedRegistrable):
+class Runnable(RegisteredMap):
     """Base class for all runnables.
 
     A runnable contains a single run method that needs to

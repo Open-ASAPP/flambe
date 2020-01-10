@@ -8,7 +8,7 @@ import tempfile
 import dill
 import torch
 
-from flambe.compile.registrable import yaml
+from flambe.compile.yaml import load_config
 from flambe.compile.downloader import download_manager
 from flambe.compile.extensions import import_modules, is_installed_module, install_extensions, \
     setup_default_modules
@@ -454,50 +454,7 @@ def load(path: str,
     yaml_config = state._metadata[''][FLAMBE_CONFIG_KEY]
     stash = state._metadata[''][FLAMBE_STASH_KEY] \
         if FLAMBE_STASH_KEY in state._metadata[''] else None
-    setup_default_modules()
-    yamls = list(yaml.load_all(yaml_config))
-
-    if yamls is None:
-        raise LoadError("Cannot load schema from empty config. This object may not have been saved"
-                        " for any of the following reasons:\n - The object was not created from a"
-                        "config or with compile method\n - The object originally linked to other"
-                        "objects that cannot be represented in YAML")
-    if len(yamls) > 2:
-        raise LoadError(f"{os.path.join(path, CONFIG_FILE_NAME)} should contain an (optional) "
-                        "extensions section and the main object.")
-    if len(yamls) == 2:
-        if yamls[0] is not None:
-            extensions = dict(yamls[0])
-            custom_modules = extensions.keys()
-            for x in custom_modules:
-                if not is_installed_module(x):
-                    if auto_install:
-                        logger.warn(f"auto_install==True, installing missing Module "
-                                    f"{x}: {extensions[x]}")
-                        install_extensions({x: extensions[x]})
-                        logger.debug(f"Installed module {x} from {extensions[x]}")
-                    else:
-                        raise ImportError(
-                            f"Module {x} is required and not installed. Please 'pip install'"
-                            "the package containing the module or set auto_install flag"
-                            " to True."
-                        )
-                import_modules([x])
-                logger.debug(f"Automatically imported {x}")
-
-            # Reload with extensions' module imported (and registered)
-            schema = list(yaml.load_all(yaml_config))[1]
-
-            # Set the extensions to the schema so that they are
-            # passed when compiling the component.
-            schema.add_extensions_metadata(extensions)
-        else:
-            schema = yamls[1]
-    elif len(yamls) == 1:
-        schema = yamls[0]
-    else:
-        raise LoadError("No config found at location; cannot load. Try just loading state with "
-                        "the function 'load_state_from_file'")
+    schema = load_config(yaml_config)
 
     if schema is None:
         raise LoadError("Cannot load schema from empty config. This object may not have been saved"

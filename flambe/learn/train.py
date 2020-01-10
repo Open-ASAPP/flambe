@@ -94,9 +94,11 @@ class Trainer(Component):
             Maximum absolute value of all gradient vector components
             after clipping.
         extra_validation_metrics: Optional[Dict[str, Metric]]
-            A list with extra metrics to show in each step
+            A dict with extra metrics to show in each step
             but which don't guide the training procedures
             (i.e model selection through early stopping)
+            The key of the metric will be used for displaying
+            the values in tensorboard.
 
         """
         self.dataset = dataset

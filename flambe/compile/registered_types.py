@@ -4,16 +4,14 @@ from warnings import warn
 
 from ruamel.yaml import ScalarNode
 
-from flambe.compile.registry import register_class
+from flambe.compile.registry import register_class, get_registry
 # from flambe.compile.schema import Schema
 
 
 class Tagged:
 
-    def __new__(cls, *args, **kwargs):
-        self = super().__new__(cls, *args, **kwargs)
-        self._created_with_tag = None
-        return self
+    def __init__(self, *args, **kwargs):
+        self._created_with_tag: Optional[str] = None
 
 
 class Registrable(Tagged):

@@ -30,18 +30,10 @@ def to_yaml(representer: Any, node: Any, tag: str) -> Any:
 def transform_to(to_yaml_fn: Callable[..., Any]) -> Callable[..., Any]:
     @functools.wraps(to_yaml_fn)
     def wrapped(representer: Any, node: Any) -> Any:
-        if isinstance(node, Tagged):
+        if hasattr(node, '_created_with_tag'):
             tag = node._created_with_tag
         else:
-            warn(f"No tag recorded for {node}, using default instead. "
-                 "This may be incorrect.")
-            if isinstance(node, object):
-                callable = type(node)
-            elif isinstance(node, functools.partial):
-                callable = node.func
-            else:
-                raise Exception()
-            tag = get_registry().get_default_tag(callable)
+            raise Exception('')
         return to_yaml_fn(representer, node, tag=tag)
     return wrapped
 
@@ -285,7 +277,10 @@ def dump_config(obj: Any, stream: Any, extensions: Optional[Dict[str, str]] = No
 
     """
     registry = get_registry()
+    extensions = extensions or {}
     _check_extensions(extensions, registry, strict=True)
+    # TODO check that all top level modules in object hierarchy are in
+    #  the registry
     with synced_yaml(registry) as yaml:
         if len(extensions) > 0:
             yaml.dump_all([extensions, obj], stream)

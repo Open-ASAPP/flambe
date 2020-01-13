@@ -258,6 +258,11 @@ class Schema(MutableMapping[str, Any]):
             self.factory_method = getattr(self.callable, factory_name)
         self.kwargs = function_defaults(self.factory_method)
         self.kwargs.update(kwargs)
+        if tag is None:
+            if isinstance(node, functools.partial):
+                tag = node.func.__name__
+            elif isinstance(node, object):
+                tag = type(node).__name__
         self.created_with_tag = tag
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -318,22 +323,22 @@ class Schema(MutableMapping[str, Any]):
         elif isinstance(obj, Schema):
             if yield_schema is None or yield_schema == 'before':
                 yield (current_path, fn(obj))
-                yield from traverse(obj.kwargs, current_path, fn, yield_schema)
+                yield from Schema.traverse(obj.kwargs, current_path, fn, yield_schema)
             elif yield_schema == 'only':
                 yield (current_path, fn(obj))
             elif yield_schema == 'after':
-                yield from traverse(obj.kwargs, current_path, fn, yield_schema)
+                yield from Schema.traverse(obj.kwargs, current_path, fn, yield_schema)
                 yield (current_path, fn(obj))
             elif yield_schema == 'never':
-                yield from traverse(obj.kwargs, current_path, fn, yield_schema)
+                yield from Schema.traverse(obj.kwargs, current_path, fn, yield_schema)
         elif isinstance(obj, dict):
             for k, v in obj.items():
                 next_path = current_path + (k,)
-                yield from traverse(v, next_path, fn, yield_schema)
+                yield from Schema.traverse(v, next_path, fn, yield_schema)
         elif isinstance(obj, (list, tuple)):
             for i, e in enumerate(obj):
                 next_path = current_path[:] + (i,)
-                yield from traverse(e, next_path, fn, yield_schema)
+                yield from Schema.traverse(e, next_path, fn, yield_schema)
         else:
             yield (current_path, obj)
 

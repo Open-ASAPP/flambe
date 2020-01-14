@@ -27,11 +27,22 @@ def get_files(path: str) -> Iterable[str]:
         The list of files (each file with its path from
         the given parameter)
 
+    Raise
+    -----
+    ValueError
+        In case the path does not exist
+
     """
-    for dirpath, dirnames, filenames in os.walk(path):
-        for f in filenames:
-            fp = os.path.join(dirpath, f)
-            yield fp
+    if not os.path.exists(path):
+        raise ValueError(f"{path} does not exist")
+
+    def _wrapped():
+        for dirpath, dirnames, filenames in os.walk(path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                yield fp
+
+    return _wrapped()
 
 
 def get_size_MB(path: str) -> float:

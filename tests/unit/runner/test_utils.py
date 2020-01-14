@@ -40,3 +40,8 @@ def test_get_files():
         open(f2, 'w+').close()
 
         assert list(utils.get_files(t)) == [f1, f2]
+
+
+def test_get_files_invalid():
+    with pytest.raises(ValueError):
+        utils.get_files('/some/non/existent/path/to/test')

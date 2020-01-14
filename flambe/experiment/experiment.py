@@ -26,6 +26,7 @@ from flambe.experiment.options import ClusterResource
 from flambe.runnable import RemoteEnvironment
 from flambe.runnable import error
 from flambe.runnable import utils as run_utils
+from flambe.runner.utils import get_files
 from flambe.experiment.progress import ProgressState
 from flambe.experiment.tune_adapter import TuneAdapter
 from flambe.logging import coloredlogs as cl
@@ -194,11 +195,8 @@ class Experiment(ClusterRunnable):
 
         # Check if save_path/name already exists + is not empty
         # + force and resume are False
-        if (
-            os.path.exists(self.full_save_path) and
-            os.listdir(self.full_save_path) and
-            not self.resume and not force
-        ):
+        if not self.resume and not force and os.path.exists(self.full_save_path) \
+                and list(get_files(self.full_save_path)):
             raise error.ParsingRunnableError(
                 f"Results from an experiment with the same name were located in the save path " +
                 f"{self.full_save_path}. To overide this results, please use '--force' " +

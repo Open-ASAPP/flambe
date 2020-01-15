@@ -1,6 +1,7 @@
 import pytest
 from ruamel.yaml.compat import StringIO
 
+from flambe.compile.registry import get_registry
 from flambe.compile.yaml import load_config, dump_config
 from flambe.compile.schema import Schema
 from flambe.compile.registered_types import Registrable
@@ -9,12 +10,16 @@ from flambe.metric import AUC
 
 @pytest.fixture
 def make_classes():
+    registry = get_registry()
+    registry.reset()
 
     class A(Registrable):
 
         def __init__(self, akw1=0, akw2=None):
             self.akw1 = akw1
             self.akw2 = akw2
+            if not hasattr(self, '_created_with_tag'):
+                self._created_with_tag = '!A'
 
         @classmethod
         def from_yaml(cls, constructor, node, factory_name, tag):
@@ -30,6 +35,8 @@ def make_classes():
         def __init__(self, bkw1=0, bkw2=''):
             self.bkw1 = bkw1
             self.bkw2 = bkw2
+            if not hasattr(self, '_created_with_tag'):
+                self._created_with_tag = '!B'
 
         @classmethod
         def from_yaml(cls, constructor, node, factory_name, tag):
@@ -60,7 +67,7 @@ class TestLoadConfig:
   akw2: !B
     bkw1: 2
     bkw2: hello world
-    """
+"""
         config = load_config(txt)
         a = config['a']
         assert a.akw1 == 8
@@ -79,7 +86,7 @@ akw1: 8
 akw2: !B
   bkw1: 2
   bkw2: hello world
-    """
+"""
 
         b = B(2, "hello world")
         a = A(8, b)
@@ -98,7 +105,7 @@ class TestConfigRoundtrip:
   akw2: !B
     bkw1: 2
     bkw2: hello world
-    """
+"""
         config = load_config(txt)
         with StringIO() as s:
             dump_config(config, s)

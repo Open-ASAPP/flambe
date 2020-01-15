@@ -82,13 +82,19 @@ def sync_registry_with_yaml(yaml, registry):
                                              transform_from(entry.from_yaml, full_tag, None))
             for factory in entry.factories:
                 full_tag = _combine_tag(namespace, tag, factory)
-                print(f"****   ****   adding tag {full_tag}")
                 yaml.constructor.add_constructor(full_tag,
                                                  transform_from(entry.from_yaml, full_tag, factory))
 
 
 def erase_registry_from_yaml(yaml, registry):
-    pass  # TODO might need this because of the problems we've seen
+    for namespace, entry in registry:
+        del yaml.representer.yaml_representers[entry.callable]
+        for tag in entry.tags:
+            full_tag = _combine_tag(namespace, tag)
+            del yaml.constructor.yaml_constructors[full_tag]
+            for factory in entry.factories:
+                full_tag = _combine_tag(namespace, tag, factory)
+                del yaml.constructor.yaml_constructors[full_tag]
 
 
 class synced_yaml:
@@ -195,6 +201,22 @@ def _check_extensions(extensions: Dict[str, str], registry: Registry, strict: bo
     return all_modules_registered
 
 
+def _load_extensions(yaml_config: Any) -> Dict[str, str]:
+    vanilla_yaml = ruamel.yaml.YAML()
+    try:
+        yamls = list(vanilla_yaml.load_all(yaml_config))
+    except TypeError as e:
+        # TODO
+        raise MalformedConfig('TODO more info on this error type')
+    if len(yamls) > 2:
+        raise ValueError(f"{len(yamls)} yaml streams found in file {yaml_config}. "
+                         "A file should contain an (optional) extensions section " +
+                         "and the main runnable object (<= 2 streams separated by '---').")
+    extensions: Dict[str, str] = {}
+    if len(yamls) == 2:
+        extensions = dict(yamls[0])
+    return extensions
+
 # TODO should we tighten signatures (below) Any -> schema?
 
 
@@ -208,7 +230,7 @@ def load_config(yaml_config: Union[TextIO, str]) -> Any:
     Parameters
     ----------
     yaml_config: Union[TextIO, str]
-        Description of parameter `obj`.
+        flambe config as a string, or file path pointing to config
 
     Returns
     -------
@@ -226,19 +248,7 @@ def load_config(yaml_config: Union[TextIO, str]) -> Any:
         separated by '---'
 
     """
-    vanilla_yaml = ruamel.yaml.YAML()
-    try:
-        yamls = list(vanilla_yaml.load_all(yaml_config))
-    except TypeError as e:
-        # TODO
-        raise MalformedConfig('TODO more info on this error type')
-    if len(yamls) > 2:
-        raise ValueError(f"{len(yamls)} yaml streams found in file {yaml_config}. "
-                         "A file should contain an (optional) extensions section " +
-                         "and the main runnable object (<= 2 streams separated by '---').")
-    extensions: Dict[str, str] = {}
-    if len(yamls) == 2:
-        extensions = dict(yamls[0])
+    extensions = _load_extensions(yaml_config)
     for module in extensions.keys():
         if not is_installed_module(module):
             raise ImportError(
@@ -286,3 +296,36 @@ def dump_config(obj: Any, stream: Any, extensions: Optional[Dict[str, str]] = No
             yaml.dump_all([extensions, obj], stream)
         else:
             yaml.dump(obj, stream)
+
+
+def load_extensions(yaml_config: Union[TextIO, str]) -> Dict[str, str]:
+    """Load extensions from a flambe YAML config file
+
+    Extensions should be the first document in a two document YAML file
+    where the sections are separated by '---'. If no extensions section
+    is present, an empty dictionary will be returned.
+
+    Parameters
+    ----------
+    yaml_config : Union[TextIO, str]
+        flambe config as a string, or file path pointing to config
+
+    Returns
+    -------
+    Dict[str, str]
+        A mapping from module names to package names (and versions).
+        Default is None.
+
+    Raises
+    -------
+    FileNotFoundError
+        If the specified file is not found
+    MalformedConfig
+        TODO
+    ValueError
+        If the file does not contain 1 or 2 YAML documents
+        separated by '---'
+
+    """
+    extensions = _load_extensions(yaml_config)
+    return extensions

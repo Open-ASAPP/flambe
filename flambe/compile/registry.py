@@ -1,4 +1,4 @@
-from typing import Type, TypeVar, Callable, Mapping, Dict, List, Any, Optional, Set, NamedTuple, Sequence, Iterable, Union
+from typing import Type, TypeVar, Callable, Mapping, Dict, List, Any, Optional, Set, NamedTuple, Sequence, Iterable, Union, Set
 from abc import abstractmethod, ABC
 from collections import defaultdict
 import functools
@@ -19,8 +19,8 @@ class RegistryEntry(NamedTuple):
 
     callable: Callable
     default_tag: str
-    tags: List[str]
-    factories: List[str]
+    tags: Set[str]
+    factories: Set[str]
     from_yaml: Callable  # TODO tighten interface
     to_yaml: Callable
 
@@ -41,18 +41,28 @@ class Registry(metaclass=Singleton):
     def __init__(self):
         self.namespaces: Dict[str, SubRegistry] = defaultdict(dict)
         self.callable_to_namespace: Dict[Callable, str] = {}
+        self.namespace_to_tags: Dict[str, Set[str]] = defaultdict(set)
+
+    def reset(self):
+        self.namespaces = defaultdict(dict)
+        self.callable_to_namespace = {}
+        self.namespace_to_tags = defaultdict(set)
 
     def create(self,
                callable: Callable,
                namespace: str = ROOT_NAMESPACE,
-               tags: Optional[Union[str, List[str]]] = None,
+               tags: Optional[Union[str, Sequence[str]]] = None,
                factories: Optional[Sequence[str]] = None,
-               from_yaml: Optional[Callable] = None,
-               to_yaml: Optional[Callable] = None):
-        if callable in self.callable_to_namespace and \
-                namespace == self.callable_to_namespace[callable]:
-            raise RegistrationError(f"Can't create entry for existing callable {callable.__name__}"
-                                    f"in namespace {namespace}. Try updating instead")
+               from_yaml: Optional[Callable[[Any, Any], Any]] = None,
+               to_yaml: Optional[Callable[[Any, Any], Any]] = None):
+        if callable in self.callable_to_namespace:
+            if namespace == self.callable_to_namespace[callable]:
+                raise ValueError(f"Can't create entry for existing callable {callable.__name__} "
+                                 f"in namespace {namespace}. Try updating instead.")
+            else:
+                raise ValueError(f"Can't create entry for existing callable {callable.__name__} "
+                                 f" already in another namespace: {namespace}. "
+                                 "Try updating instead.")
         if tags is not None and isinstance(tags, list) and len(tags) < 1:
             raise ValueError('At least one tag must be specified. If the default (class name) '
                              'desired, pass in nothing or None.')
@@ -77,14 +87,21 @@ class Registry(metaclass=Singleton):
             raise ValueError(missing_methods_err)
         tags = [tags] if isinstance(tags, str) else tags
         default_tag = tags[0]
+        tags = set(tags)
+        already_existing_tags = self.namespace_to_tags[namespace] & tags
+        if len(already_existing_tags) > 0:
+            raise ValueError('The following specified tags already exist in namespace: '
+                             f'{already_existing_tags}')
         factories = factories or []
+        factories = set(factories)
         new_entry = RegistryEntry(callable, default_tag, tags, factories, from_yaml, to_yaml)
         self.namespaces[namespace][callable] = new_entry
         self.callable_to_namespace[callable] = namespace
+        self.namespace_to_tags[namespace] |= tags
 
     def default_tag(self, callable: Callable) -> str:
         namespace = self.callable_to_namespace[callable]
-        entry = self.namespaces[namespaces][callable]
+        entry = self.namespaces[namespace][callable]
         return entry.default_tag
 
     def add_tag(self,
@@ -92,7 +109,7 @@ class Registry(metaclass=Singleton):
                 tag: str,
                 namespace: str = ROOT_NAMESPACE):
         try:
-            self.namespaces[namespace][callable].tags.append(tag)
+            self.namespaces[namespace][callable].tags.add(tag)
         except KeyError:
             pass
 
@@ -101,7 +118,7 @@ class Registry(metaclass=Singleton):
                     factory: str,
                     namespace: str = ROOT_NAMESPACE):
         try:
-            self.namespaces[namespace][callable].factories.append(factory)
+            self.namespaces[namespace][callable].factories.add(factory)
         except KeyError:
             pass
 
@@ -141,6 +158,12 @@ class Registry(metaclass=Singleton):
             # print(self.namespaces[namespace][callable])
             yield (namespace, self.namespaces[namespace][callable])
 
+    def __contains__(self, value: Any) -> bool:
+        return value in self.callable_to_namespace
+
+    def __len__(self) -> int:
+        return len(self.callable_to_namespace)
+
     def pretty_str(self) -> str:
         s = ['Flambe Registry']
         for namespace in self.namespaces:
@@ -151,6 +174,10 @@ class Registry(metaclass=Singleton):
             for entry in self.namespaces[namespace].values():
                 s.append(f"    '{entry.default_tag}'")
                 s.append(f"      callable: {entry.callable}")
+                s.append(f"      other tags:")
+                for tag in entry.tags:
+                    if tag != entry.default_tag:
+                        s.append(f"        {tag}")
                 s.append(f"      factories:")
                 for factory in entry.factories:
                     s.append(f"        {factory}")

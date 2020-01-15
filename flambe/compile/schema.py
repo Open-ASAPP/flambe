@@ -12,6 +12,7 @@ from ruamel.yaml.comments import (CommentedMap, CommentedOrderedMap, CommentedSe
                                   CommentedKeyMap)
 
 from flambe.compile.common import function_defaults
+from flambe.compile.registry import get_registry
 from flambe.compile.registered_types import Registrable
 
 
@@ -248,6 +249,7 @@ class Schema(MutableMapping[str, Any]):
                  factory_name: Optional[str] = None,
                  tag: Optional[str] = None):
         self.callable = callable
+        # TODO auto-register logic
         if factory_name is None:
             if not isinstance(self.callable, type):
                 raise NotImplementedError('Using non-class callables with Schema is not yet supported')

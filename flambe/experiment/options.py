@@ -58,7 +58,7 @@ class Options(Registrable, ABC):
             return factory(args)
 
 
-class GridSearchOptions(abc.Sequence, Options, tag_override='g'):
+class GridSearchOptions(abc.Sequence, Options, tag_override='g_legacy'):
     """Discrete set of values used for grid search
 
     Defines a finite, discrete set of values to be substituted

@@ -454,14 +454,14 @@ class Schema(MutableMapping[str, Any]):
 
     @recursive_repr()
     def __repr__(self) -> str:
-        kwargs = ", ".join("{}={!r}".format(k, v) for k, v in sorted(self.kwargs.items()))
-        format_string = "{module}.{cls}({callable}, {kwargs})"
+        args = ", ".join("{}={!r}".format(k, v) for k, v in sorted(self.bound_arguments.arguments.items()))
+        format_string = "{module}.{cls}({callable}, {args})"
         return format_string.format(module=self.__class__.__module__,
                                     cls=self.__class__.__qualname__,
                                     tag=self.created_with_tag,
                                     callable=self.callable,
                                     factory_method=self.factory_method,
-                                    kwargs=kwargs)
+                                    args=args)
 
 
 def add_callable_from_yaml(from_yaml_fn: Callable, callable: Callable) -> Callable:

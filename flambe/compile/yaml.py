@@ -6,7 +6,7 @@ import ruamel.yaml
 
 from flambe.compile.registry import get_registry, Registry
 from flambe.compile.registered_types import Tagged
-from flambe.compile.extensions import import_modules
+from flambe.compile.extensions import import_modules, is_installed_module
 
 
 TAG_DELIMETER = '.'
@@ -230,7 +230,8 @@ def load_config(yaml_config: Union[TextIO, str]) -> Any:
     Parameters
     ----------
     yaml_config: Union[TextIO, str]
-        flambe config as a string, or file path pointing to config
+        flambe config as a string, or file pointer (result from
+        file.read())
 
     Returns
     -------
@@ -239,8 +240,6 @@ def load_config(yaml_config: Union[TextIO, str]) -> Any:
 
     Raises
     -------
-    FileNotFoundError
-        If the specified file is not found
     MalformedConfig
         TODO
     ValueError
@@ -258,11 +257,41 @@ def load_config(yaml_config: Union[TextIO, str]) -> Any:
             )
     # TODO torch setup ?
     # setup_default_modules()
+    # registry.add_extensions(extensions)
     import_modules(extensions.keys())
     registry = get_registry()
     with synced_yaml(registry) as yaml:
         _check_tags(yaml, yaml_config, registry, strict=True)
         result = list(yaml.load_all(yaml_config))[-1]
+    return result
+
+
+def load_config_from_file(file_path: str) -> Any:
+    """Load config after reading it from the file path
+
+    Parameters
+    ----------
+    file_path : str
+        Location of YAML config file.
+
+    Returns
+    -------
+    Any
+        Initialized object defined by the YAML config
+
+    Raises
+    -------
+    FileNotFoundError
+        If the specified file is not found
+    MalformedConfig
+        TODO
+    ValueError
+        If the file does not contain either 1 or 2 YAML documents
+        separated by '---'
+
+    """
+    with open(file_path) as f:
+        result = load_config(f.read())
     return result
 
 

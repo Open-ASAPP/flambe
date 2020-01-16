@@ -11,8 +11,7 @@ from ruamel.yaml.comments import (CommentedMap, CommentedOrderedMap, CommentedSe
                                   CommentedKeySeq, CommentedSeq, TaggedScalar,
                                   CommentedKeyMap)
 
-from flambe.compile.common import function_defaults
-from flambe.compile.registry import get_registry
+from flambe.compile.registry import get_registry, get_class_namespace
 from flambe.compile.registered_types import Registrable
 
 
@@ -245,26 +244,42 @@ class Schema(MutableMapping[str, Any]):
 
     def __init__(self,
                  callable: Callable,
-                 kwargs: Dict[str, Any],
+                 args: Optional[Sequence[Any]] = None,
+                 kwargs: Optional[Dict[str, Any]] = None,
                  factory_name: Optional[str] = None,
                  tag: Optional[str] = None):
+        if not isinstance(callable, type):
+            raise NotImplementedError('Using non-class callables with Schema is not yet supported')
         self.callable = callable
-        # TODO auto-register logic
+        registry = get_registry()
+        if callable not in registry:
+            # TODO auto-register logic? for functions?
+            pass
+            # registry.create(callable,
+            #                 namespace=get_class_namespace(callable),
+            #                 factories=[factory_name],
+            #                 from_yaml=add_callable_from_yaml(Schema.from_yaml, callable=callable),
+            #                 to_yaml=Schema.to_yaml)
         if factory_name is None:
-            if not isinstance(self.callable, type):
-                raise NotImplementedError('Using non-class callables with Schema is not yet supported')
             self.factory_method = callable
         else:
             if not isinstance(self.callable, type):
-                raise Exception(f'Cannot specify factory name on non-class callable {callable}')
+                raise ValueError(f'Cannot specify factory name on non-class callable {callable}')
             self.factory_method = getattr(self.callable, factory_name)
-        self.kwargs = function_defaults(self.factory_method)
-        self.kwargs.update(kwargs)
+        args = args or []
+        kwargs = kwargs or {}
+        s = inspect.signature(self.factory_method)
+        self.bound_arguments = s.bind(*args, **kwargs)
+        self.bound_arguments.apply_defaults()
+        for k, v in self.bound_arguments.arguments.items():
+            if s.parameters[k].kind not in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                                            inspect.Parameter.KEYWORD_ONLY]:
+                raise TypeError(f'Argument type {s.parameters[k].kind} not supported')
         if tag is None:
-            if isinstance(node, functools.partial):
-                tag = node.func.__name__
-            elif isinstance(node, object):
-                tag = type(node).__name__
+            if isinstance(self.callable, type):
+                tag = type(self.callable).__name__
+            else:
+                tag = self.callable.__name__
         self.created_with_tag = tag
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -304,9 +319,10 @@ class Schema(MutableMapping[str, Any]):
             nothing = constructor.construct_yaml_null(node)
             if nothing is not None:
                 raise Exception(f"Non-null scalar argument to {cls.__name__} will be ignored")
-            return cls(callable, {}, factory_name, tag)
+            return cls(callable, factory_name=factory_name, tag=tag)
         kwargs, = list(constructor.construct_yaml_map(node))
-        return cls(callable, kwargs, factory_name, tag)
+        # TODO support constructing sequence for positional args
+        return cls(callable, kwargs=kwargs, factory_name=factory_name, tag=tag)
 
     @classmethod
     def to_yaml(cls, representer: Any, node: Any, tag: str) -> Any:
@@ -341,6 +357,17 @@ class Schema(MutableMapping[str, Any]):
             for i, e in enumerate(obj):
                 next_path = current_path[:] + (i,)
                 yield from Schema.traverse(e, next_path, fn, yield_schema)
+        elif isinstance(obj, inspect.BoundArguments):
+            params = obj.signature.parameters
+            for k, v in obj.arguments.items():
+                if params[k].kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                                      inspect.Parameter.KEYWORD_ONLY]:
+                    next_path = current_path + (k,)
+                    yield from Schema.traverse(v, next_path, fn, yield_schema)
+                elif params[k].kind == inspect.Parameter.VAR_KEYWORD:
+                    raise NotImplementedError('Variable keyword arguments not supported')
+                else:
+                    raise Exception('')
         else:
             yield (current_path, obj)
 
@@ -359,27 +386,28 @@ class Schema(MutableMapping[str, Any]):
             return cache[path]
 
         initialized = copy.deepcopy(self)
-        for path, obj in self.traverse(self.kwargs, yield_schema='only'):
+        for path, obj in self.traverse(self.bound_arguments, yield_schema='only'):
             if isinstance(obj, Link):
                 initialized.set_param(path, obj(cache))
             elif isinstance(obj, Schema):
                 initialized.set_param(path, obj(path, cache))
-        initialized_kwargs = initialized.kwargs
+        initialized_arguments = initialized.bound_arguments
 
-        for k, v in initialized_kwargs.items():
+        for k, v in initialized_arguments.arguments.items():
             if isinstance(v, YAML_TYPES):
                 msg = f"keyword '{k}' is still yaml type {type(v)}\n"
                 msg += f"This could be because of a typo or the class is not registered properly"
                 warn(msg)
         try:
-            cache[path] = self.factory_method(**initialized_kwargs)
+            cache[path] = self.factory_method(*initialized_arguments.args,
+                                              **initialized_arguments.kwargs)
         except TypeError as te:
             print(f"Constructor {self.factory_method} failed with "
-                  f"keyword args:\n{initialized_kwargs}")
+                  f"arguments:\n{initialized_arguments}")
             raise te
         return cache[path]
 
-    def extract_search_space(self) -> Dict[str, Tuple[str]]:
+    def extract_search_space(self) -> Dict[Tuple[str], Any]:
         search_space = {}
 
         for path, item in traverse(self, yield_schema='never'):
@@ -390,7 +418,7 @@ class Schema(MutableMapping[str, Any]):
 
         return search_space
 
-    def set_from_search_space(self, search_space: Dict[str, Tuple[str]]) -> None:
+    def set_from_search_space(self, search_space: Dict[Tuple[str], Any]) -> None:
         for path, value in search_space.items():
             self.set_param(path, value)
 

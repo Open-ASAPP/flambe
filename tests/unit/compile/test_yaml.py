@@ -53,7 +53,7 @@ def make_classes():
 class TestLoadConfig:
 
     def test_load_config(self):
-        config = """!AUC"""
+        config = "!AUC"
         x = load_config(config)
         assert isinstance(x, Schema)
         x = x()

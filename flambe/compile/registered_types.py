@@ -43,7 +43,7 @@ class RegisteredStatelessMap(Registrable, should_register=False):
         return representer.represent_mapping(tag, node._saved_kwargs)
 
     @classmethod
-    def from_yaml(cls, constructor: Any, node: Any, factory_name: str) -> Any:
+    def from_yaml(cls, constructor: Any, node: Any, factory_name: str, tag: str) -> Any:
         """Use constructor to create an instance of cls"""
         if inspect.isabstract(cls):
             msg = f"You're trying to initialize an abstract class {cls.__name__}. " \

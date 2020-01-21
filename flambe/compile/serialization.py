@@ -242,8 +242,6 @@ def save_state_to_file(state: State,
         some files.
 
     """
-    print("State")
-    print(state)
     if os.path.exists(path):
         if os.path.isdir(path):
             dir_contents = os.listdir(path)
@@ -280,8 +278,6 @@ def save_state_to_file(state: State,
             _update_save_tree(save_tree, key.split(STATE_DICT_DELIMETER), state[key])
         for key in state._metadata.keys():
             _update_save_tree_metadata(save_tree, key.split(STATE_DICT_DELIMETER), state._metadata[key])
-        print("Save Tree: ")
-        print(save_tree)
         for node_path, node in _traverse_all_nodes(save_tree):
             current_path = os.path.join(path, *node_path)
             if not os.path.isdir(current_path):

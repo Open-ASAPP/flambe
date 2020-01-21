@@ -10,7 +10,7 @@ import mock
 from ruamel.yaml.compat import StringIO
 from ruamel.yaml import YAML
 
-from typing import Mapping
+from typing import Mapping, Any, Optional
 
 # from flambe.compile import yaml
 from flambe import Component, save_state_to_file, load_state_from_file, load, save
@@ -184,8 +184,14 @@ class ComposableTorchStatefulTorchOnlyChild(Component, torch.nn.Module):
 
 
 class ComposableContainer(Component):
-    def __init__(self, item: Component):
+    def __init__(self, item: Any):
         self.item = item
+
+
+class Org(Component):
+    def __init__(self, item: Any, extra):
+        self.item = item
+        self.torch_only_extra = extra
 
 
 def create_factory(class_):
@@ -307,15 +313,6 @@ item:
         return obj
 
 
-def builder_noncomponent_bridge():
-    a = BasicStateful.compile()
-    b = random.randint(0, 100000)
-    c = BasicStatefulTwo.compile()
-    item = ComposableTorchStatefulTorchOnlyChild.compile(a=a, b=b, c=c)
-    obj = ComposableContainer.compile(item=item)
-    return obj
-
-
 @pytest.fixture
 def complex_multi_layered():
     return complex_builder
@@ -325,9 +322,6 @@ def complex_multi_layered():
 def complex_multi_layered_nontorch_root():
     return complex_builder_nontorch_root
 
-@pytest.fixture
-def noncomponent_bridge():
-    return builder_noncomponent_bridge
 
 @pytest.fixture
 def schema():
@@ -375,7 +369,8 @@ class TestState:
 
     def test_state_custom(self, basic_object_with_state):
         obj = basic_object_with_state(from_config=True)
-        expected_state = {'x': 2019}
+        x = obj.x
+        expected_state = {'x': x}
         assert obj.get_state() == expected_state
 
     # def test_state_custom_nested(nested_object_with_state):
@@ -404,7 +399,8 @@ class TestState:
         obj = alternating_nn_module_with_state(from_config=True)
         t1 = obj.model.linear.weight
         t2 = obj.model.linear.bias
-        expected_state = {'model.leaf.x': 2019, 'model.linear.weight': t1, 'model.linear.bias': t2}
+        x = obj.model.leaf.x
+        expected_state = {'model.leaf.x': x, 'model.linear.weight': t1, 'model.linear.bias': t2}
         root_source_code = dill.source.getsource(RootTorch)
         intermediate_source_code = dill.source.getsource(IntermediateStatefulTorch)
         leaf_source_code = dill.source.getsource(BasicStateful)
@@ -639,32 +635,33 @@ class TestSerializationIntegration:
         check_mapping_equivalence(old_state._metadata, new_state._metadata, exclude_config=False)
 
 
-    def test_module_save_and_load_roundtrip_pytorch_only_bridge(self, noncomponent_bridge):
-        old_obj = noncomponent_bridge()
+    def test_module_save_and_load_roundtrip_pytorch_only_bridge(self):
+        a = BasicStateful.compile()
+        b = random.randint(0, 100000)
+        c = BasicStatefulTwo.compile()
+        item = ComposableTorchStatefulTorchOnlyChild.compile(a=a, b=b, c=c)
+        extra = torch.nn.Linear(2, 2)
+        old_obj = Org.compile(item=item, extra=None)
+        a2 = BasicStateful.compile()
+        b2 = random.randint(0, 100000)
+        c2 = BasicStatefulTwo.compile()
+        item2 = ComposableTorchStatefulTorchOnlyChild.compile(a=a2, b=b2, c=c2)
+        extra2 = torch.nn.Linear(2, 2)
+        new_obj = Org.compile(item=item2, extra=None)
         with tempfile.TemporaryDirectory() as root_path:
-            path = os.path.join(root_path, 'savefile.flambe')
+            path = os.path.join(root_path, 'asavefile2.flambe')
             old_state = old_obj.get_state()
             save_state_to_file(old_state, path)
             new_state = load_state_from_file(path)
-            new_obj = noncomponent_bridge()
             new_obj.load_state(new_state)
             # save(old_obj, path)
             # new_obj = load(path)
         old_state_get = old_obj.get_state()
         new_state_get = new_obj.get_state()
         check_mapping_equivalence(new_state, old_state)
-        print("old state metadata:")
-        print(old_state._metadata)
-        print("new state metadata:")
-        print(new_state._metadata)
-        print("old state metadata for item.torch_only")
-        print(old_state._metadata['item.torch_only'])
-        print("new state metadata for item.torch_only")
-        print(new_state._metadata['item.torch_only'])
         check_mapping_equivalence(old_state._metadata, new_state._metadata, exclude_config=False)
-
         check_mapping_equivalence(new_state_get, old_state_get)
-        # check_mapping_equivalence(old_state_get._metadata, new_state_get._metadata, exclude_config=False)
+        check_mapping_equivalence(old_state_get._metadata, new_state_get._metadata, exclude_config=True)
 
     # def test_module_save_and_load_example_encoder(self):
     #     TORCH_TAG_PREFIX = "torch"

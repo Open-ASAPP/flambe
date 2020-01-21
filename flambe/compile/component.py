@@ -932,7 +932,6 @@ class Component(Registrable):
             Why the exception is raised.
 
         """
-        print(f"Calling hook on class {type(self)}")
         warn_use_state = False
         if FLAMBE_DIRECTORIES_KEY not in state_dict._metadata:
             state_dict._metadata[FLAMBE_DIRECTORIES_KEY] = set()
@@ -961,9 +960,9 @@ class Component(Registrable):
         # modules, parameters or buffers
         # torch.optim.Optimizer does exist so ignore mypy
         for name, attr in self.__dict__.items():
+            current_path = prefix + name
             if isinstance(attr, Component) and not isinstance(attr, (
                     torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler)):  # type: ignore
-                current_path = prefix + name
                 # If self is not nn.Module, need to recurse because
                 # that will not happen elsewhere
                 # If self *is* an nn.Module, don't need to recurse on

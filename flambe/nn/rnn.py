@@ -1,3 +1,5 @@
+# type: ignore[override]
+
 from typing import Optional, Tuple, cast
 import warnings
 import logging

@@ -1,4 +1,4 @@
-from typing import Type, Set, Any, Optional
+from typing import Type, Set, Any, Optional, List
 
 from urllib.parse import urlparse
 
@@ -27,7 +27,8 @@ def all_subclasses(class_: Type[Any]) -> Set[Type[Any]]:
 def make_component(class_: type,
                    tag_namespace: Optional[str] = None,
                    only_module: Optional[str] = None,
-                   parent_component_class: Optional[Type] = None) -> None:
+                   parent_component_class: Optional[Type] = None,
+                   exclude: Optional[List[str]] = None) -> None:
     """Make class and all its children a `Component`
 
     For example a call to `make_component(torch.optim.Adam, "torch")`
@@ -50,6 +51,8 @@ def make_component(class_: type,
         Parent class to use for creating a new component class; should
         be a subclass of :class:``~flambe.compile.Component`` (defaults
         to ``Component``)
+    exclude: List[str], optional
+        A list of modules to ignore
 
     Returns
     -------
@@ -62,6 +65,8 @@ def make_component(class_: type,
     elif not issubclass(parent_component_class, Component):
         raise Exception("Only a subclass of Component should be used for 'parent_component_class'")
     for subclass in all_subclasses(class_):
+        if exclude and any(ex in subclass.__module__ for ex in exclude):
+            continue
         if only_module is None or subclass.__module__.startswith(only_module):
             dynamic_component(subclass, tag=subclass.__name__, tag_namespace=tag_namespace,
                               parent_component_class=parent_component_class)

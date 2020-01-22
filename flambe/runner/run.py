@@ -45,7 +45,8 @@ def main(args: argparse.Namespace) -> None:
                              'Please disable debug mode or run locally.')
 
     # Pass original module for ray / pickle
-    make_component(torch.nn.Module, only_module='torch.nn')
+    exclude = ['torch.nn.quantized', 'torch.nn.qat']
+    make_component(torch.nn.Module, only_module='torch.nn', exclude=exclude)
     # torch.optim.Optimizer exists, ignore mypy
     make_component(torch.optim.Optimizer,  # type: ignore
                    only_module='torch.optim')

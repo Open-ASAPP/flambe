@@ -1,3 +1,4 @@
+# type: ignore[override]
 
 import math
 from typing import Tuple, Union, Optional

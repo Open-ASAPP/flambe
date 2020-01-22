@@ -434,14 +434,20 @@ class TestLoadState:
 
     def test_state_complex_multilayered_nontorch_root(self, complex_multi_layered_nontorch_root):
         TORCH_TAG_PREFIX = "torch"
-        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+        exclude = ['torch.nn.quantized', 'torch.nn.qat']
+        make_component(
+            torch.nn.Module,
+            TORCH_TAG_PREFIX,
+            only_module='torch.nn',
+            exclude=exclude
+        )
 
         obj = complex_multi_layered_nontorch_root(from_config=True)
-        t1 = obj.item.child.linear.weight
+        t1 = obj.item.child.linear.weight.data
         state = obj.get_state()
         new_obj = complex_multi_layered_nontorch_root(from_config=True)
         new_obj.load_state(state)
-        t2 = new_obj.item.child.linear.weight
+        t2 = new_obj.item.child.linear.weight.data
         assert t1.equal(t2)
         check_mapping_equivalence(new_obj.get_state(), obj.get_state())
         check_mapping_equivalence(obj.get_state(), new_obj.get_state())

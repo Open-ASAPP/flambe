@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 
 from typing import Optional, Tuple, Union
-from flambe.nn import Module
+from flambe.nn import Module  # type: ignore[attr-defined]
 
 
 class ImageClassifier(Module):

@@ -9,7 +9,7 @@ from torch.nn.utils.clip_grad import clip_grad_norm_, clip_grad_value_
 from flambe.dataset import Dataset
 from flambe.compile import Schema, State, Component, Link
 from flambe.learn.utils import select_device
-from flambe.nn import Module
+from flambe.nn import Module  # type: ignore[attr-defined]
 from flambe.sampler import Sampler
 from flambe.metric import Metric
 from flambe.logging import log

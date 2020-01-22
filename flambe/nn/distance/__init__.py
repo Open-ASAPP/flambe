@@ -1,3 +1,5 @@
+# type: ignore[attr-defined]
+
 from flambe.nn.distance.distance import DistanceModule, MeanModule
 from flambe.nn.distance.euclidean import EuclideanDistance, EuclideanMean
 from flambe.nn.distance.cosine import CosineDistance, CosineMean

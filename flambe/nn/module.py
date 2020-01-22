@@ -57,8 +57,9 @@ class Module(Component, nn.Module):
         """
         # Only compute over parameters that are being trained
         parameters = filter(lambda p: p.requires_grad and p.grad is not None, self.parameters())
-        norm = math.sqrt(sum([param.grad.norm(p=2).item() ** 2 for param in parameters]))
-
+        norm = math.sqrt(sum(
+            [param.grad.norm(p=2).item() ** 2 for param in parameters])  # type: ignore
+        )
         return norm
 
     @property
@@ -73,8 +74,9 @@ class Module(Component, nn.Module):
         """
         # Only compute over parameters that are being trained
         parameters = filter(lambda p: p.requires_grad, self.parameters())
-        norm = math.sqrt(sum([param.norm(p=2).item() ** 2 for param in parameters]))
-
+        norm = math.sqrt(
+            sum([param.norm(p=2).item() ** 2 for param in parameters])  # type: ignore
+        )
         return norm
 
     def num_parameters(self, trainable=False) -> int:
@@ -92,7 +94,7 @@ class Module(Component, nn.Module):
         else:
             model_params = list(self.parameters())
 
-        return(sum([len(x.view(-1)) for x in model_params]))
+        return(sum([len(x.view(-1)) for x in model_params]))  # type: ignore
 
     def clip_params(self, threshold: float):
         """Clip the parameters to the given range.

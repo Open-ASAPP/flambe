@@ -1,3 +1,5 @@
+# type: ignore[override]
+
 """
 Code taken from the PyTorch source code. Slightly modified to improve
 the interface to the TransformerEncoder, and TransformerDecoder modules.

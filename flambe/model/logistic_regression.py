@@ -1,8 +1,10 @@
+# type: ignore[override]
+
 from typing import Optional, Tuple, Union
 
 from torch import Tensor
 from torch.nn import Sigmoid
-from flambe.nn.module import Module
+from flambe.nn.module import Module  # type: ignore[attr-define]
 from flambe.nn import MLPEncoder
 
 

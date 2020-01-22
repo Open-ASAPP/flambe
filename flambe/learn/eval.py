@@ -5,7 +5,7 @@ import torch
 from flambe.compile import Component
 from flambe.dataset import Dataset
 from flambe.learn.utils import select_device
-from flambe.nn import Module
+from flambe.nn import Module  # type: ignore[attr-defined]
 from flambe.metric import Metric
 from flambe.sampler import Sampler, BaseSampler
 from flambe.logging import log
@@ -49,7 +49,6 @@ class Evaluator(Component):
         self.eval_sampler = eval_sampler or BaseSampler(batch_size=16, shuffle=False)
         self.model = model
         self.metric_fn = metric_fn
-        self.eval_metric = None
         self.dataset = dataset
 
         self.device = select_device(device)
@@ -59,6 +58,9 @@ class Evaluator(Component):
 
         # By default, no prefix applied to tb logs
         self.tb_log_prefix = None
+
+        self.eval_metric = None
+        self.register_attrs('eval_metric')
 
     def run(self, block_name: str = None) -> bool:
         """Run the evaluation.

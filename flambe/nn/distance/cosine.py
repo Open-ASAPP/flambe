@@ -1,3 +1,5 @@
+# type: ignore[override]
+
 import torch
 from torch import Tensor
 from flambe.nn.distance import DistanceModule, MeanModule

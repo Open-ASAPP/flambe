@@ -53,17 +53,12 @@ class SafeExecutionContext:
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 tb: Optional[TracebackType]) -> Optional[bool]:
+                 tb: Optional[TracebackType]):
         """Exit method for the context manager.
 
         This method will catch any exception, and return True. This
         means that all exceptions produced in a SafeExecutionContext
         (used with the context manager) will not continue to raise.
-
-        Returns
-        -------
-        Optional[bool]
-            True, as an exception should not continue to raise.
 
         """
         if exc_type is not None and exc_value is not None:

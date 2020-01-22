@@ -293,7 +293,8 @@ def setup_default_modules():
     from flambe.optim import LRScheduler
     import torch
     import ray
-    make_component(torch.nn.Module, only_module='torch.nn')
+    exclude = ['torch.nn.quantized', 'torch.nn.qat']
+    make_component(torch.nn.Module, only_module='torch.nn', exclude=exclude)
     make_component(torch.optim.Optimizer, only_module='torch.optim')
     make_component(torch.optim.lr_scheduler._LRScheduler,
                    only_module='torch.optim.lr_scheduler', parent_component_class=LRScheduler)

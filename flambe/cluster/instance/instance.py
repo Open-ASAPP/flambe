@@ -126,15 +126,10 @@ class Instance(object):
     def __exit__(self,
                  exc_type: Optional[Type[BaseException]],
                  exc_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> Optional[bool]:
+                 traceback: Optional[TracebackType]):
         """Exit method for the context manager.
 
         This method will catch any uprising exception and raise it.
-
-        Returns
-        -------
-        Optional[bool]
-            If true, exceptions will not be raised.
 
         """
         if exc_value is not None:

@@ -1,3 +1,5 @@
+# type: ignore[override]
+
 from torch import Tensor
 
 from flambe.nn.module import Module

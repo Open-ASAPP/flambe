@@ -1,3 +1,5 @@
+# type: ignore[override]
+
 from typing import Tuple, Dict, Any, Union, Optional
 
 import torch

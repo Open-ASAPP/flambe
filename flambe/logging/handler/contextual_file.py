@@ -48,7 +48,7 @@ class ContextualFileHandler(logging.FileHandler):
         self.encoding = encoding
         self.delay = True
         logging.Handler.__init__(self)
-        self.stream = None
+        self.stream = None  # type: ignore
 
     @property
     def baseFilename(self) -> str:  # type: ignore
@@ -77,7 +77,7 @@ class ContextualFileHandler(logging.FileHandler):
             # Close current stream if it exists
             self.close()
             # Ensure stream is `None` in case close failed
-            self.stream = None
+            self.stream = None  # type: ignore
             new_path = self.current_log_dir
             if not os.path.isdir(new_path):
                 os.makedirs(new_path)

@@ -37,11 +37,9 @@ class BinaryMetric(Metric):
             The computed binary metric
 
         """
-        # Cast because pytorch's byte method returns a Tensor type
         pred = pred.squeeze()
-        target = target.squeeze()
-        pred = (pred > self.threshold).byte()
-        target = target.byte()
+        target = target.squeeze().bool()
+        pred = (pred > self.threshold)
 
         return self.compute_binary(pred, target)
 

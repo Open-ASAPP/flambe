@@ -1,3 +1,5 @@
+# type: ignore[override]
+
 import copy
 from typing import Optional, Dict, Any, Tuple
 

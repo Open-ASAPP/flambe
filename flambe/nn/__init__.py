@@ -1,3 +1,5 @@
+# type: ignore[attr-defined]
+
 from flambe.nn.module import Module
 from flambe.nn.softmax import SoftmaxLayer
 from flambe.nn.mos import MixtureOfSoftmax

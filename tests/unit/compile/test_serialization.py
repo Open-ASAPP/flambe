@@ -556,7 +556,13 @@ class TestSerializationIntegration:
 
     def test_save_to_file_and_load_from_file_roundtrip_complex(self, complex_multi_layered):
         TORCH_TAG_PREFIX = "torch"
-        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+        exclude = ['torch.nn.quantized', 'torch.nn.qat']
+        make_component(
+            torch.nn.Module,
+            TORCH_TAG_PREFIX,
+            only_module='torch.nn',
+            exclude=exclude
+        )
         old_obj = complex_multi_layered(from_config=True)
         # Test that the current state is actually saved, for a
         # Component-only child of torch objects
@@ -580,7 +586,13 @@ class TestSerializationIntegration:
     def test_save_to_file_and_load_from_file_roundtrip_complex_nontorch_root(self,
             complex_multi_layered_nontorch_root, pickle_only, compress_save_file):
         TORCH_TAG_PREFIX = "torch"
-        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+        exclude = ['torch.nn.quantized', 'torch.nn.qat']
+        make_component(
+            torch.nn.Module,
+            TORCH_TAG_PREFIX,
+            only_module='torch.nn',
+            exclude=exclude
+        )
         old_obj = complex_multi_layered_nontorch_root(from_config=True)
         state = old_obj.get_state()
         with tempfile.TemporaryDirectory() as root_path:
@@ -776,7 +788,13 @@ class TestSerializationExtensions:
 
         """
         TORCH_TAG_PREFIX = "torch"
-        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+        exclude = ['torch.nn.quantized', 'torch.nn.qat']
+        make_component(
+            torch.nn.Module,
+            TORCH_TAG_PREFIX,
+            only_module='torch.nn',
+            exclude=exclude
+        )
 
         config = """
         !torch.Linear
@@ -803,7 +821,13 @@ class TestSerializationExtensions:
 
         """
         TORCH_TAG_PREFIX = "torch"
-        make_component(torch.nn.Module, TORCH_TAG_PREFIX, only_module='torch.nn')
+        exclude = ['torch.nn.quantized', 'torch.nn.qat']
+        make_component(
+            torch.nn.Module,
+            TORCH_TAG_PREFIX,
+            only_module='torch.nn',
+            exclude=exclude
+        )
 
         schema = complex_multi_layered_nontorch_root(from_config=True, schema=True)
         schema.add_extensions_metadata({"torch": "torch"})

@@ -412,10 +412,11 @@ def load_state_from_file(path: str,
                         local_metadata[FLAMBE_STASH_KEY] = stash
                     full_prefix = prefix + STATE_DICT_DELIMETER if prefix != '' else prefix
                     _prefix_keys(component_state, full_prefix)
-                    _prefix_keys(component_state._metadata, full_prefix)
                     state.update(component_state)
-                    # Load torch.nn.Module metadata
-                    state._metadata.update(component_state._metadata)
+                    if hasattr(component_state, '_metadata'):
+                        _prefix_keys(component_state._metadata, full_prefix)
+                        # Load torch.nn.Module metadata
+                        state._metadata.update(component_state._metadata)
                     # Load flambe.nn.Module metadata
                     state._metadata[prefix] = local_metadata
                     state._metadata[FLAMBE_DIRECTORIES_KEY].add(prefix)

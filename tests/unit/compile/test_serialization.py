@@ -2,7 +2,6 @@ import pytest
 import tempfile
 from collections import abc, OrderedDict
 import os
-import random
 
 import torch
 import dill
@@ -107,16 +106,16 @@ class Composite(Component):
 
 
 class BasicStateful(Component):
-    def __init__(self):
-        self.x = random.randint(0, 100000)
+    def __init__(self, x):
+        self.x = x
         self.register_attrs('x')
         # self.b = Basic()
 
 
 class BasicStatefulTwo(Component, torch.nn.Module):
-    def __init__(self):
+    def __init__(self, y):
         super().__init__()
-        self.y = random.randint(0, 100000)
+        self.y = y
         self.register_attrs('y')
 
 
@@ -125,11 +124,11 @@ class IntermediateTorch(Component, torch.nn.Module):
         super().__init__()
         self.leaf = Basic()
 
-
+# TODO fix usage for x
 class IntermediateStatefulTorch(Component, torch.nn.Module):
-    def __init__(self):
+    def __init__(self, x):
         super().__init__()
-        self.leaf = BasicStateful()
+        self.leaf = BasicStateful(x=x)
         self.linear = torch.nn.Linear(2, 2)
 
 
@@ -141,9 +140,9 @@ class IntermediateTorchOnly(torch.nn.Module):
 
 
 class RootTorch(Component):
-    def __init__(self):
+    def __init__(self, x):
         super().__init__()
-        self.model = IntermediateStatefulTorch()
+        self.model = IntermediateStatefulTorch(x=x)
         # self.linear = torch.nn.Linear(2, 2)
         self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()))
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, 0.01)
@@ -218,12 +217,28 @@ def nested_object():
 
 @pytest.fixture
 def basic_object_with_state():
-    return create_factory(BasicStateful)
+    def _factory(from_config, x=-1):
+        if from_config:
+            config = f"!BasicStateful\nx: {x}\n"
+            obj = yaml.load(config)()
+            return obj
+        else:
+            obj = BasicStateful(x=x)
+        return obj
+    return _factory
 
 
 @pytest.fixture
 def alternating_nn_module_with_state():
-    return create_factory(RootTorch)
+    def _factory(from_config, x=-1):
+        if from_config:
+            config = f"!RootTorch\nx: {x}\n"
+            obj = yaml.load(config)()
+            return obj
+        else:
+            obj = RootTorch(x=x)
+        return obj
+    return _factory
 
 
 def schema_builder():
@@ -234,13 +249,14 @@ def schema_builder():
     return obj
 
 
-def complex_builder(from_config, schema=False):
+def complex_builder(from_config, schema=False, x=-1):
     if from_config:
         config = """
 !ComposableTorchStateful
 a: !ComposableTorchStateful
   a: !ComposableTorchStateful
-    a: !BasicStateful {}
+    a: !BasicStateful
+      x: {}
     b: 2021
     c: !torch.Linear
       in_features: 2
@@ -254,12 +270,13 @@ c: !torch.Linear
   in_features: 2
   out_features: 2
 """
+        config.format(x)
         obj = yaml.load(config)
         if not schema:
             obj = obj()
         return obj
     else:
-        a1 = BasicStateful()
+        a1 = BasicStateful(x=x)
         b1 = 2021
         c1 = torch.nn.Linear(2, 2)
         a2 = ComposableTorchStateful(a1, b1, c1)
@@ -272,7 +289,7 @@ c: !torch.Linear
         return obj
 
 
-def complex_builder_nontorch_root(from_config, schema=False):
+def complex_builder_nontorch_root(from_config, schema=False, x=-1):
     if from_config:
         config = """
 !ComposableContainer
@@ -280,7 +297,8 @@ item:
   !ComposableTorchStatefulPrime
   a: !ComposableTorchStateful
     a: !ComposableTorchStateful
-      a: !BasicStateful {}
+      a: !BasicStateful
+        x: {}
       b: 2021
       c: !torch.Linear
         in_features: 2
@@ -294,12 +312,13 @@ item:
     in_features: 2
     out_features: 2
 """
+        config.format(x)
         obj = yaml.load(config)
         if not schema:
             obj = obj()
         return obj
     else:
-        a1 = BasicStateful()
+        a1 = BasicStateful(x=x)
         b1 = 2021
         c1 = torch.nn.Linear(2, 2)
         a2 = ComposableTorchStateful(a1, b1, c1)
@@ -396,7 +415,7 @@ class TestState:
     #     assert obj.get_state() == expected_state
 
     def test_state_pytorch_alternating_nested_with_modules(self, alternating_nn_module_with_state):
-        obj = alternating_nn_module_with_state(from_config=True)
+        obj = alternating_nn_module_with_state(from_config=True, x=1)
         t1 = obj.model.linear.weight
         t2 = obj.model.linear.bias
         x = obj.model.leaf.x
@@ -404,7 +423,7 @@ class TestState:
         root_source_code = dill.source.getsource(RootTorch)
         intermediate_source_code = dill.source.getsource(IntermediateStatefulTorch)
         leaf_source_code = dill.source.getsource(BasicStateful)
-        expected_metadata = OrderedDict({FLAMBE_DIRECTORIES_KEY: set(['', 'model', 'model.leaf']), 'keep_vars': False, '': {VERSION_KEY: '0.0.0', FLAMBE_CLASS_KEY: 'RootTorch', FLAMBE_SOURCE_KEY: root_source_code, FLAMBE_CONFIG_KEY: "!RootTorch {}\n"},
+        expected_metadata = OrderedDict({FLAMBE_DIRECTORIES_KEY: set(['', 'model', 'model.leaf']), 'keep_vars': False, '': {VERSION_KEY: '0.0.0', FLAMBE_CLASS_KEY: 'RootTorch', FLAMBE_SOURCE_KEY: root_source_code, FLAMBE_CONFIG_KEY: "!RootTorch\nx: 1\n"},
                                                                                              'model': {VERSION_KEY: '0.0.0', FLAMBE_CLASS_KEY: 'IntermediateStatefulTorch', FLAMBE_SOURCE_KEY: intermediate_source_code, 'version': 1},  # TODO add config back: FLAMBE_CONFIG_KEY: "!IntermediateStatefulTorch {}\n"
                                                                                              'model.leaf': {VERSION_KEY: '0.0.0', FLAMBE_CLASS_KEY: 'BasicStateful', FLAMBE_SOURCE_KEY: leaf_source_code},  # TODO add config back: FLAMBE_CONFIG_KEY: "!BasicStateful {}\n"
                                                                                              'model.linear': {'version': 1}})
@@ -442,10 +461,10 @@ class TestLoadState:
             exclude=exclude
         )
 
-        obj = complex_multi_layered_nontorch_root(from_config=True)
+        obj = complex_multi_layered_nontorch_root(from_config=True, x=1)
         t1 = obj.item.child.linear.weight.data
         state = obj.get_state()
-        new_obj = complex_multi_layered_nontorch_root(from_config=True)
+        new_obj = complex_multi_layered_nontorch_root(from_config=True, x=2)
         new_obj.load_state(state)
         t2 = new_obj.item.child.linear.weight.data
         assert t1.equal(t2)
@@ -510,9 +529,9 @@ class TestSerializationIntegration:
     #     pass
 
     def test_state_and_load_roundtrip_pytorch_alternating(self, alternating_nn_module_with_state):
-        old_obj = alternating_nn_module_with_state(from_config=True)
+        old_obj = alternating_nn_module_with_state(from_config=True, x=1)
         state = old_obj.get_state()
-        new_obj = alternating_nn_module_with_state(from_config=False)
+        new_obj = alternating_nn_module_with_state(from_config=False, x=2)
         new_obj.load_state(state, strict=False)
         old_state = old_obj.get_state()
         new_state = new_obj.get_state()
@@ -542,12 +561,12 @@ class TestSerializationIntegration:
         check_mapping_equivalence(old_state._metadata, new_state._metadata, exclude_config=True)
 
     def test_save_to_file_and_load_from_file_roundtrip_pytorch(self, alternating_nn_module_with_state):
-        old_obj = alternating_nn_module_with_state(from_config=False)
+        old_obj = alternating_nn_module_with_state(from_config=False, x=1)
         state = old_obj.get_state()
         with tempfile.TemporaryDirectory() as path:
             save_state_to_file(state, path)
             state = load_state_from_file(path)
-        new_obj = alternating_nn_module_with_state(from_config=False)
+        new_obj = alternating_nn_module_with_state(from_config=False, x=2)
         new_obj.load_state(state, strict=False)
         old_state = old_obj.get_state()
         new_state = new_obj.get_state()
@@ -563,7 +582,7 @@ class TestSerializationIntegration:
             only_module='torch.nn',
             exclude=exclude
         )
-        old_obj = complex_multi_layered(from_config=True)
+        old_obj = complex_multi_layered(from_config=True, x=1)
         # Test that the current state is actually saved, for a
         # Component-only child of torch objects
         old_obj.child.child.child.x = 24
@@ -574,7 +593,7 @@ class TestSerializationIntegration:
             state_loaded = load_state_from_file(path)
             check_mapping_equivalence(state, state_loaded)
             # assert False
-        new_obj = complex_multi_layered(from_config=True)
+        new_obj = complex_multi_layered(from_config=True, x=2)
         new_obj.load_state(state_loaded, strict=False)
         old_state = old_obj.get_state()
         new_state = new_obj.get_state()
@@ -593,7 +612,7 @@ class TestSerializationIntegration:
             only_module='torch.nn',
             exclude=exclude
         )
-        old_obj = complex_multi_layered_nontorch_root(from_config=True)
+        old_obj = complex_multi_layered_nontorch_root(from_config=True, x=1)
         state = old_obj.get_state()
         with tempfile.TemporaryDirectory() as root_path:
             path = os.path.join(root_path, 'savefile.flambe')
@@ -606,7 +625,7 @@ class TestSerializationIntegration:
             state_loaded = load_state_from_file(path)
             check_mapping_equivalence(state, state_loaded)
             check_mapping_equivalence(state._metadata, state_loaded._metadata)
-        new_obj = complex_multi_layered_nontorch_root(from_config=True)
+        new_obj = complex_multi_layered_nontorch_root(from_config=True, x=2)
         int_state = new_obj.get_state()
         new_obj.load_state(state_loaded, strict=False)
         old_state = old_obj.get_state()
@@ -638,7 +657,7 @@ class TestSerializationIntegration:
                                                     alternating_nn_module_with_state,
                                                     pickle_only,
                                                     compress_save_file):
-        old_obj = alternating_nn_module_with_state(from_config=True)
+        old_obj = alternating_nn_module_with_state(from_config=True, x=1)
         with tempfile.TemporaryDirectory() as root_path:
             path = os.path.join(root_path, 'savefile.flambe')
             save(old_obj, path, compress_save_file, pickle_only)
@@ -654,15 +673,17 @@ class TestSerializationIntegration:
 
 
     def test_module_save_and_load_roundtrip_pytorch_only_bridge(self):
-        a = BasicStateful.compile()
-        b = random.randint(0, 100000)
-        c = BasicStatefulTwo.compile()
+        a = BasicStateful.compile(x=3)
+        b = 100
+        c = BasicStatefulTwo.compile(y=0)
         item = ComposableTorchStatefulTorchOnlyChild.compile(a=a, b=b, c=c)
         extra = torch.nn.Linear(2, 2)
         old_obj = Org.compile(item=item, extra=None)
-        a2 = BasicStateful.compile()
-        b2 = random.randint(0, 100000)
-        c2 = BasicStatefulTwo.compile()
+        # x for a2 should be different from instance a
+        a2 = BasicStateful.compile(x=4)
+        b2 = 101
+        # y for c2 should be different from instance c
+        c2 = BasicStatefulTwo.compile(y=1)
         item2 = ComposableTorchStatefulTorchOnlyChild.compile(a=a2, b=b2, c=c2)
         extra2 = torch.nn.Linear(2, 2)
         new_obj = Org.compile(item=item2, extra=None)

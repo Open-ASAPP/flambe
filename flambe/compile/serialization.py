@@ -49,9 +49,10 @@ class State(OrderedDict):
 # Private Helpers
 
 def _convert_to_tree(metadata: Dict[str, Any]) -> SaveTreeNode:
-    new_state = OrderedDict()
-    new_state._metadata = {}
-    tree = SaveTreeNode(state=new_state, version=metadata[''][VERSION_KEY],
+    root_state: Dict[str, Any] = OrderedDict()
+    # PyTorch / flambe states need this property
+    root_state._metadata = {}  # type: ignore
+    tree = SaveTreeNode(state=root_state, version=metadata[''][VERSION_KEY],
                         class_name=metadata[''][FLAMBE_CLASS_KEY],
                         source_code=metadata[''][FLAMBE_SOURCE_KEY],
                         config=metadata[''].get(FLAMBE_CONFIG_KEY, ''),
@@ -74,8 +75,8 @@ def _convert_to_tree(metadata: Dict[str, Any]) -> SaveTreeNode:
             if key not in current_dict.children:
                 # nested key not yet created
                 m = metadata[prefix]
-                new_state = OrderedDict()
-                new_state._metadata = {}
+                new_state: Dict[str, Any] = OrderedDict()
+                new_state._metadata = {}  # type: ignore
                 current_dict.children[key] = SaveTreeNode(state=new_state,
                                                           version=m[VERSION_KEY],
                                                           class_name=m[FLAMBE_CLASS_KEY],
@@ -96,30 +97,26 @@ def _convert_to_tree(metadata: Dict[str, Any]) -> SaveTreeNode:
     return tree
 
 
-def _update_save_tree(save_tree: SaveTreeNode, key: Sequence[str], value: Any) -> None:
+def _fetch_tree_item(save_tree: SaveTreeNode, key: Sequence[str]) -> Tuple[str, SaveTreeNode]:
     current = save_tree
     last_i = 0
     for i, _ in enumerate(key):
         current_key = STATE_DICT_DELIMETER.join(key[last_i:i + 1])
-        # current_state_key = key[i]
         if current_key in current.children:
             current = current.children[current_key]  # type: ignore
-            last_i = i+1
+            last_i = i + 1
             current_key = STATE_DICT_DELIMETER.join(key[last_i:i + 1])
+    return current_key, current
+
+
+def _update_save_tree(save_tree: SaveTreeNode, key: Sequence[str], value: Any) -> None:
+    current_key, current = _fetch_tree_item(save_tree, key)
     current.state[current_key] = value
 
 
 def _update_save_tree_metadata(save_tree: SaveTreeNode, key: Sequence[str], value: Any) -> None:
-    current = save_tree
-    last_i = 0
-    for i, _ in enumerate(key):
-        current_key = STATE_DICT_DELIMETER.join(key[last_i:i + 1])
-        # current_state_key = key[i]
-        if current_key in current.children:
-            current = current.children[current_key]  # type: ignore
-            last_i = i+1
-            current_key = STATE_DICT_DELIMETER.join(key[last_i:i + 1])
-    current.state._metadata[current_key] = value
+    current_key, current = _fetch_tree_item(save_tree, key)
+    current.state._metadata[current_key] = value  # type: ignore
 
 
 def _traverse_all_nodes(save_tree: SaveTreeNode,
@@ -277,7 +274,8 @@ def save_state_to_file(state: State,
         for key in state.keys():
             _update_save_tree(save_tree, key.split(STATE_DICT_DELIMETER), state[key])
         for key in state._metadata.keys():
-            _update_save_tree_metadata(save_tree, key.split(STATE_DICT_DELIMETER), state._metadata[key])
+            _update_save_tree_metadata(save_tree, key.split(STATE_DICT_DELIMETER),
+                                       state._metadata[key])
         for node_path, node in _traverse_all_nodes(save_tree):
             current_path = os.path.join(path, *node_path)
             if not os.path.isdir(current_path):

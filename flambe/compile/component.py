@@ -981,8 +981,8 @@ class Component(Registrable):
             # nn.Module, because otherwise this hook is being called
             # via nn.Module.state_dict, and will already recurse to
             # all children modules
-            if ((not isinstance(self, torch.nn.Module)) and isinstance(attr, torch.nn.Module)
-                    and (not isinstance(attr, Component))):
+            if not isinstance(self, torch.nn.Module) and isinstance(attr, torch.nn.Module) \
+                    and not isinstance(attr, Component):
                 state_dict = attr.state_dict(destination=state_dict,
                                              prefix=current_path + STATE_DICT_DELIMETER,
                                              keep_vars=state_dict._metadata[KEEP_VARS_KEY])

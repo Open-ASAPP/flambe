@@ -106,7 +106,8 @@ class Experiment(ClusterRunnable):
                  max_failures: int = 1,
                  stop_on_failure: bool = True,
                  merge_plot: bool = True,
-                 user_provider: Callable[[], str] = None) -> None:
+                 user_provider: Callable[[], str] = None,
+                 pickle_checkpoints: bool = False) -> None:
         super().__init__(env=env, user_provider=user_provider)
         self.name = name
 
@@ -152,6 +153,7 @@ class Experiment(ClusterRunnable):
             raise TypeError("Pipeline argument is not of type Dict[str, Schema]. "
                             f"Got {type(pipeline).__name__} instead")
         self.pipeline = pipeline
+        self.pickle_checkpoints = pickle_checkpoints
 
     def process_resources(
         self,
@@ -363,7 +365,8 @@ class Experiment(ClusterRunnable):
                               'global_vars': resources,
                               'verbose': verbose,
                               'custom_modules': list(self.extensions.keys()),
-                              'debug': debug}
+                              'debug': debug,
+                              'pickle_checkpoints': self.pickle_checkpoints}
                     # Filter out the tensorboard logger as we handle
                     # general and tensorboard-specific logging ourselves
                     tune_loggers = list(filter(lambda l: l != tf2_compat_logger and  # noqa: E741

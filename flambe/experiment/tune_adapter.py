@@ -36,6 +36,7 @@ class TuneAdapter(ray.tune.Trainable):
         self.verbose = config['verbose']
         self.hyper_params = config['hyper_params']
         self.debug = config['debug']
+        self.pickle_checkpoints = config['pickle_checkpoints']
 
         with TrialLogging(log_dir=self.logdir,
                           verbose=self.verbose,
@@ -152,7 +153,7 @@ class TuneAdapter(ray.tune.Trainable):
     def _save(self, checkpoint_dir: str) -> str:
         """Subclasses should override this to implement save()."""
         path = os.path.join(checkpoint_dir, "checkpoint.flambe")
-        self.block.save(path, overwrite=True)
+        self.block.save(path, pickle_only=self.pickle_checkpoints, overwrite=True)
         return path
 
     def _restore(self, checkpoint: str) -> None:

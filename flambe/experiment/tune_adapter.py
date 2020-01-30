@@ -8,6 +8,8 @@ from collections import OrderedDict
 import shutil
 
 import ray
+import torch
+import dill
 
 from flambe.compile import load_state_from_file, Schema, Component
 from flambe.compile.extensions import setup_default_modules, import_modules
@@ -153,13 +155,19 @@ class TuneAdapter(ray.tune.Trainable):
     def _save(self, checkpoint_dir: str) -> str:
         """Subclasses should override this to implement save()."""
         path = os.path.join(checkpoint_dir, "checkpoint.flambe")
-        self.block.save(path, pickle_only=self.pickle_checkpoints, overwrite=True)
+        if self.pickle_checkpoints:
+            torch.save(self.block, path, pickle_module=dill)
+        else:
+            self.block.save(path, overwrite=True)
         return path
 
     def _restore(self, checkpoint: str) -> None:
         """Subclasses should override this to implement restore()."""
-        state = load_state_from_file(checkpoint)
-        self.block.load_state(state)
+        if self.pickle_checkpoints:
+            self.block = torch.load(checkpoint, pickle_protocol=dill)
+        else:
+            state = load_state_from_file(checkpoint)
+            self.block.load_state(state)
 
     def _stop(self):
         """Subclasses should override this for any cleanup on stop."""

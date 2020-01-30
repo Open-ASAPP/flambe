@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 import torch
 from flambe.field import TextField, BoWField
@@ -132,6 +134,60 @@ def test_build_vocab_empty():
 
     vocab = {'justo': 0, 'Praesent': 1, 'luctus': 2, 'praesent': 3}
     assert field.vocab == vocab
+
+
+def test_build_vocab_setup_all_embeddings():
+    """
+    This test shows that all fields in the embeddings will be included.
+
+    In embeddings and data:
+        blue
+        green
+        yellow
+    In embeddings only:
+        purple
+        gold
+    In data only:
+        white
+
+    Expected vocab:
+        blue
+        green
+        yellow
+        purple
+        gold
+        white
+    """
+
+    field = TextField(
+        embeddings='not-a-real-embedding',
+        setup_all_embeddings=True,
+    )
+
+    embedding_model = MagicMock()
+    embedding_model.vocab = {
+        'blue': torch.rand(5),
+        'green': torch.rand(5),
+        'yellow': torch.rand(5),
+        'purple': torch.rand(5),
+        'gold': torch.rand(5),
+    }
+    embedding_model.__getitem__.side_effect = embedding_model.vocab.__getitem__
+    embedding_model.__contains__.side_effect = embedding_model.vocab.__contains__
+    TextField._get_embeddings = MagicMock(
+        return_value=(embedding_model, [torch.rand(5)]),
+    )
+
+    dummy = ["blue green", "yellow", 'white']
+    field.setup(dummy)
+
+    # set ordering isn't a real thing in python smh
+    for color in embedding_model.vocab:
+        assert color in field.vocab and field.vocab[color] > 1
+
+    assert field.vocab['<pad>'] == 0
+    assert field.vocab['<unk>'] == 1
+    assert field.vocab['white'] == 1
 
 
 def test_build_vocab_decorators():

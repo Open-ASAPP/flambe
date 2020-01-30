@@ -174,7 +174,7 @@ def test_build_vocab_setup_all_embeddings():
     }
     embedding_model.__getitem__.side_effect = embedding_model.vocab.__getitem__
     embedding_model.__contains__.side_effect = embedding_model.vocab.__contains__
-    TextField._get_embeddings = MagicMock(
+    field._get_embeddings = MagicMock(
         return_value=(embedding_model, [torch.rand(5)]),
     )
 

@@ -243,7 +243,8 @@ class TextField(Field):
     def _get_embeddings(
         self,
     ) -> Tuple[KeyedVectors, List[torch.tensor]]:
-        """Get the embeddings model and matrix used in the setup function
+        """
+        Get the embeddings model and matrix used in the setup function
 
         Returns
         -------

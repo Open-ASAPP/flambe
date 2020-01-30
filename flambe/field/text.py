@@ -88,8 +88,9 @@ class TextField(Field):
             associated. Defaults to True.
             Important: this flag will only work when using embeddings.
         setup_all_embeddings: bool
-            Controls if all words from the optional provided embeddings will
-            be added to the vocabulary and to the embedding matrix. Defaults to False.
+            Controls if all words from the optional provided
+            embeddings will be added to the vocabulary and to the
+            embedding matrix. Defaults to False.
 
         """
         self.tokenizer = tokenizer or WordTokenizer()

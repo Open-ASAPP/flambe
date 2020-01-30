@@ -421,7 +421,7 @@ class TransformerEncoderLayer(Module):
         """
         # Transpose and reverse
         if padding_mask is not None:
-            padding_mask = (-padding_mask + 1)
+            padding_mask = ~padding_mask.bool()
 
         src2 = self.self_attn(src, src, src, attn_mask=src_mask,
                               key_padding_mask=padding_mask)[0]
@@ -516,7 +516,7 @@ class TransformerDecoderLayer(Module):
         """
         # Transpose anr reverse
         if padding_mask is not None:
-            padding_mask = (-padding_mask + 1)
+            padding_mask = ~padding_mask
 
         tgt2 = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask,
                               key_padding_mask=padding_mask)[0]

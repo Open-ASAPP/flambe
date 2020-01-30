@@ -125,7 +125,7 @@ class RNNEncoder(Module):
         state: Tensor
             An optional previous state of shape [L x B x H]
         padding_mask: Tensor, optional
-            The padding mask of shape [B x S]
+            The padding mask of shape [B x S], dtype should be bool
 
         Returns
         -------
@@ -145,7 +145,7 @@ class RNNEncoder(Module):
         elif self.rnn_type == 'sru':
             # SRU takes a mask instead of PackedSequence objects
             # ~ operator negates bool tensor in torch 1.3
-            output, state = self.rnn(data, state, mask_pad=(~padding_mask).byte())
+            output, state = self.rnn(data, state, mask_pad=(~padding_mask))
         else:
             # Deal with variable length sequences
             lengths = padding_mask.long().sum(dim=0)

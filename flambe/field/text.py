@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 from collections import OrderedDict as odict
 from itertools import chain
 
@@ -145,18 +145,17 @@ class TextField(Field):
             List of input strings.
 
         """
+        # Iterate over all examples
+        examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
 
-        model = None
-        embeddings_matrix = []
+        model: KeyedVectors = {}
+        embeddings_matrix: List[torch.Tensor] = []
 
         if self.embeddings is not None:
             model, embeddings_matrix = self._get_embeddings()
 
-        # Iterate over all examples
-        examples = (e for dataset in data for e in dataset if dataset is not None)
-        if self.setup_all_embeddings:
-            # Safe in all examples except api.load(self.embeddings)
-            examples = chain(examples, model.vocab.keys())
+            if self.setup_all_embeddings:
+                examples = chain(examples, model.vocab.keys())
 
         # Get current last id
         index = len(self.vocab) - 1
@@ -243,7 +242,7 @@ class TextField(Field):
 
     def _get_embeddings(
         self,
-    ) -> Tuple[KeyedVectors, List[torch.tensor]]:
+    ) -> Tuple[KeyedVectors, List[torch.Tensor]]:
         """
         Get the embeddings model and matrix used in the setup function
 
@@ -251,7 +250,7 @@ class TextField(Field):
         -------
         KeyedVectors
             The embeddings object specified by the init parameters.
-        torch.Tensor
+        List[torch.Tensor]
             The embeddings_matrix with only special characters included.
         """
         embeddings_matrix = []

@@ -87,6 +87,18 @@ class TextField(Field):
             Whether to drop tokens that don't have embeddings
             associated. Defaults to True.
             Important: this flag will only work when using embeddings.
+        max_seq_len: int, optional
+            The maximum length possibly output by the process func.
+            If len of input tokens is larger than this number - then
+            the output will be truncated as a post processing step.
+        truncate_end: bool
+            Determines the window of observed text in process if the
+            input is larger than max_seq_len. If this value the window
+            starts from the end of the utterance. Defaults to False.
+
+            example: max_seq_len=3, input_text=1 2 3 4 5
+            truncate_end=false: output=1 2 3
+            truncate_end=true: output=3 4 5
         setup_all_embeddings: bool
             Controls if all words from the optional provided
             embeddings will be added to the vocabulary and to the

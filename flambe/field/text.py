@@ -93,8 +93,9 @@ class TextField(Field):
             the output will be truncated as a post processing step.
         truncate_end: bool
             Determines the window of observed text in process if the
-            input is larger than max_seq_len. If this value the window
-            starts from the end of the utterance. Defaults to False.
+            input is larger than max_seq_len. If this value is True
+            the window starts from the end of the utterance.
+            Defaults to False.
 
             example: max_seq_len=3, input_text=1 2 3 4 5
             truncate_end=false: output=1 2 3

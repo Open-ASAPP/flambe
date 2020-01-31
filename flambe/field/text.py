@@ -136,7 +136,11 @@ class TextField(Field):
         unique_ids = set(v for k, v in self.vocab.items())
         return len(unique_ids)
 
-    def setup(self, *data: np.ndarray) -> None:
+    def setup(
+        self,
+        *data: np.ndarray,
+        model: KeyedVectors = None,
+    ) -> None:
         """Build the vocabulary and sets embeddings.
 
         Parameters
@@ -147,15 +151,25 @@ class TextField(Field):
         """
         # Iterate over all examples
         examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
-
-        model: KeyedVectors = {}
         embeddings_matrix: List[torch.Tensor] = []
 
-        if self.embeddings is not None:
-            model, embeddings_matrix = self._get_embeddings()
+        if model is None and self.embeddings is not None:
+            model = get_embeddings(
+                self.embeddings_format,
+                self.embeddings,
+                self.embeddings_binary,
+            )
 
+        if model is not None:
             if self.setup_all_embeddings:
                 examples = chain(examples, model.vocab.keys())
+
+            # Add embeddings for special tokens
+            for special in self.specials:
+                if special in model:
+                    embeddings_matrix.append(torch.tensor(model[special]))
+                else:
+                    embeddings_matrix.append(torch.randn(model.vector_size))
 
         # Get current last id
         index = len(self.vocab) - 1
@@ -166,7 +180,7 @@ class TextField(Field):
             # Tokenize and add to vocabulary
             for token in self.tokenizer(example):
                 if token not in self.vocab:
-                    if self.embeddings is not None:
+                    if model is not None:
                         if token in model:
                             self.vocab[token] = index = index + 1
                             embeddings_matrix.append(torch.tensor(model[token]))
@@ -240,44 +254,37 @@ class TextField(Field):
                 ret = ret[:self.max_seq_len]
         return ret
 
-    def _get_embeddings(
-        self,
-    ) -> Tuple[KeyedVectors, List[torch.Tensor]]:
-        """
-        Get the embeddings model and matrix used in the setup function
 
-        Returns
-        -------
-        KeyedVectors
-            The embeddings object specified by the init parameters.
-        List[torch.Tensor]
-            The embeddings_matrix with only special characters included.
-        """
-        embeddings_matrix = []
-        model = None
+def get_embeddings(
+    embeddings_format: str,
+    embeddings: str,
+    embeddings_binary: bool=False,
+) -> Tuple[KeyedVectors, List[torch.Tensor]]:
+    """
+    Get the embeddings model and matrix used in the setup function
 
-        if self.embeddings_format == 'glove':
-            with temporary_file('temp.txt') as temp:
-                glove2word2vec(self.embeddings, temp)
-                model = KeyedVectors.load_word2vec_format(temp, binary=self.embeddings_binary)
-        elif self.embeddings_format == 'word2vec':
-            model = KeyedVectors.load_word2vec_format(self.embeddings,
-                                                      binary=self.embeddings_binary)
-        elif self.embeddings_format == 'fasttext':
-            model = fasttext.load_facebook_vectors(self.embeddings)
-        elif self.embeddings_format == 'gensim':
-            try:
-                model = KeyedVectors.load(self.embeddings)
-            except FileNotFoundError:
-                model = api.load(self.embeddings)
-        else:
-            raise ValueError("Only formats supported are word2vec, fasttext and gensim")
+    Returns
+    -------
+    KeyedVectors
+        The embeddings object specified by the init parameters.
+    """
+    model = None
 
-        # Add embeddings for special tokens
-        for special in self.specials:
-            if special in model:
-                embeddings_matrix.append(torch.tensor(model[special]))
-            else:
-                embeddings_matrix.append(torch.randn(model.vector_size))
+    if embeddings_format == 'glove':
+        with temporary_file('temp.txt') as temp:
+            glove2word2vec(embeddings, temp)
+            model = KeyedVectors.load_word2vec_format(temp, binary=embeddings_binary)
+    elif embeddings_format == 'word2vec':
+        model = KeyedVectors.load_word2vec_format(embeddings,
+                                                  binary=embeddings_binary)
+    elif embeddings_format == 'fasttext':
+        model = fasttext.load_facebook_vectors(embeddings)
+    elif embeddings_format == 'gensim':
+        try:
+            model = KeyedVectors.load(embeddings)
+        except FileNotFoundError:
+            model = api.load(embeddings)
+    else:
+        raise ValueError("Only formats supported are word2vec, fasttext and gensim")
 
-        return model, embeddings_matrix
+    return model

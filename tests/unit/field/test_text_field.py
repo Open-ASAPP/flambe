@@ -1,3 +1,4 @@
+from collections import OrderedDict as odict
 from unittest.mock import MagicMock
 
 import pytest
@@ -164,30 +165,37 @@ def test_build_vocab_setup_all_embeddings():
         setup_all_embeddings=True,
     )
 
-    embedding_model = MagicMock()
-    embedding_model.vocab = {
-        'blue': torch.rand(5),
-        'green': torch.rand(5),
-        'yellow': torch.rand(5),
-        'purple': torch.rand(5),
-        'gold': torch.rand(5),
+    model = MagicMock()
+    model.vocab = {
+        'purple': torch.rand(1),
+        'gold': torch.rand(1),
+        '<unk>': torch.rand(1),
+        'blue': torch.rand(1),
+        'green': torch.rand(1),
+        '<pad>': torch.rand(1),
+        'yellow': torch.rand(1),
     }
-    embedding_model.__getitem__.side_effect = embedding_model.vocab.__getitem__
-    embedding_model.__contains__.side_effect = embedding_model.vocab.__contains__
-    field._get_embeddings = MagicMock(
-        return_value=(embedding_model, [torch.rand(5)]),
-    )
+    model.__getitem__.side_effect = model.vocab.__getitem__
+    model.__contains__.side_effect = model.vocab.__contains__
 
     dummy = ["blue green", "yellow", 'white']
-    field.setup(dummy)
 
-    # set ordering isn't a real thing in python smh
-    for color in embedding_model.vocab:
-        assert color in field.vocab and field.vocab[color] > 1
+    field.setup(dummy, model=model)
 
-    assert field.vocab['<pad>'] == 0
-    assert field.vocab['<unk>'] == 1
-    assert field.vocab['white'] == 1
+    # assert vocab setup in expected order
+    assert field.vocab == odict([
+        ('<pad>', 0), ('<unk>', 1), ('blue', 2), ('green', 3),
+        ('yellow', 4), ('white', 1), ('purple', 5), ('gold', 6),
+    ])
+
+    # assert embedding matrix organized in expected order
+    assert torch.equal(
+        field.embedding_matrix,
+        torch.stack([
+            model['<pad>'], model['<unk>'], model['blue'], model['green'],
+            model['yellow'], model['purple'], model['gold'],
+        ]),
+    )
 
 
 def test_build_vocab_decorators():

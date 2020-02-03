@@ -271,7 +271,7 @@ class TextField(Field):
 def get_embeddings(
     embeddings_format: str,
     embeddings: str,
-    embeddings_binary: bool=False,
+    embeddings_binary: bool = False,
 ) -> Tuple[KeyedVectors, List[torch.Tensor]]:
     """
     Get the embeddings model and matrix used in the setup function

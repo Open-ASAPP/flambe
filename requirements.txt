@@ -12,7 +12,7 @@ requests~=2.21.0
 Flask~=1.0.0
 tensorboardx-hparams==1.7.2
 GitPython~=2.1.11
-sru~=2.1.7
+sru~=2.2.1
 pygments~=2.3.1
 nltk~=3.4.1
 dill>=0.3.1

@@ -42,6 +42,7 @@ class TextField(Field):
                  embeddings: Optional[str] = None,
                  embeddings_format: str = 'glove',
                  embeddings_binary: bool = False,
+                 model: KeyedVectors = None,
                  unk_init_all: bool = False,
                  drop_unknown: bool = False,
                  max_seq_len: Optional[int] = None,
@@ -79,6 +80,9 @@ class TextField(Field):
         embeddings_binary : bool, optional
             Whether the input embeddings are provided in binary format,
             by default False
+        model : KeyedVectors, optional
+            The embeddings model used for retrieving text embeddings,
+            by default None
         unk_init_all : bool, optional
             If True, every token not provided in the input embeddings is
             given a random embedding from a normal distribution.
@@ -117,6 +121,7 @@ class TextField(Field):
         self.embeddings = embeddings
         self.embeddings_format = embeddings_format
         self.embeddings_binary = embeddings_binary
+        self.model = model
         self.embedding_matrix: Optional[torch.Tensor] = None
         self.unk_init_all = unk_init_all
         self.drop_unknown = drop_unknown
@@ -152,7 +157,6 @@ class TextField(Field):
     def setup(
         self,
         *data: np.ndarray,
-        model: KeyedVectors = None,
     ) -> None:
         """Build the vocabulary and sets embeddings.
 
@@ -165,6 +169,7 @@ class TextField(Field):
         # Iterate over all examples
         examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
         embeddings_matrix: List[torch.Tensor] = []
+        model = self.model
 
         if model is None and self.embeddings is not None:
             model = get_embeddings(
@@ -267,6 +272,46 @@ class TextField(Field):
                 ret = ret[:self.max_seq_len]
         return ret
 
+    @classmethod
+    def from_embedding(
+        cls,
+        embeddings_format: str,
+        embeddings: str,
+        embeddings_binary: bool = False,
+        **kwargs,
+    ) -> TextField:
+        """
+        Optional constructor to create TextField from embeddings params.
+
+        Parameters
+        ----------
+        embeddings : Optional[str], optional
+            Path to pretrained embeddings, by default None
+        embeddings_format : str, optional
+            The format of the input embeddings, should be one of:
+            'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
+            be used to download embeddings hosted on gensim on the fly.
+            See https://github.com/RaRe-Technologies/gensim-data
+            for the list of available embedding aliases.
+        embeddings_binary : bool, optional
+            Whether the input embeddings are provided in binary format,
+            by default False
+
+        Returns
+        -------
+        TextField
+            The constructed text field with the requested model.
+        """
+        model = get_embeddings(
+            embeddings_format,
+            embeddings,
+            embeddings_binary,
+        )
+        return cls(
+            model=model,
+            **kwargs,
+        )
+
 
 def get_embeddings(
     embeddings_format: str,
@@ -276,10 +321,24 @@ def get_embeddings(
     """
     Get the embeddings model and matrix used in the setup function
 
+    Parameters
+    ----------
+    embeddings : Optional[str], optional
+        Path to pretrained embeddings, by default None
+    embeddings_format : str, optional
+        The format of the input embeddings, should be one of:
+        'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
+        be used to download embeddings hosted on gensim on the fly.
+        See https://github.com/RaRe-Technologies/gensim-data
+        for the list of available embedding aliases.
+    embeddings_binary : bool, optional
+        Whether the input embeddings are provided in binary format,
+        by default False
+
     Returns
     -------
     KeyedVectors
-        The embeddings object specified by the init parameters.
+        The embeddings object specified by the parameters.
     """
     model = None
 

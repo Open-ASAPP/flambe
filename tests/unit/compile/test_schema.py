@@ -175,8 +175,29 @@ class TestSchemaInitialize:
         s1 = Schema(C, args=[None, 1])
         s2 = Schema(B, args=[s1, 2])
         s3 = Schema(A, args=[s2, 3])
+        # Check basic usage
+        a = s3.initialize()
+        assert a.ay == 3
+        assert a.ax.by == 2
+        assert a.ax.bx.cy == 1
+        assert a.ax.bx.cx is None
+        # Check container usage
+        class c:
+            def __init__(self, stage_1):
+                self.stage_1 = stage_1
+            def get_param(self, path):
+                a, b = path[0], path[1:]
+                assert a == 'stage_1'
+                return self.stage_1.get_param(b)
+            def set_param(self, path, value):
+                a, b = path[0], path[1:]
+                assert a == 'stage_1'
+                self.stage_1.set_param(b, value)
+        root = c(stage_1=s3)
         cache = {}
-        a = s3.initialize(cache=cache)
+        a = s3.initialize(path=('stage_1',), cache=cache, root=root)
+        for k in cache:
+            assert k[0] == 'stage_1'
         assert a.ay == 3
         assert a.ax.by == 2
         assert a.ax.bx.cy == 1

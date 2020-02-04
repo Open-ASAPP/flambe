@@ -1,11 +1,11 @@
 import copy
-from typing import Optional, Dict, List, Set
+from typing import Optional, Dict, List, Set, Tuple, Any
 
-from flambe.compile import Schema, Link
+from flambe.compile import Schema, Link, Options
 from flambe.search.search import Checkpoint
 
 
-class Pipeline(Schema):
+class Pipeline:
 
     def __init__(self,
                  schemas: Dict[str, Schema],
@@ -53,11 +53,41 @@ class Pipeline(Schema):
         """
         return list(self.schemas.keys())[:-1]
 
+    def set_param(self, path: Optional[Tuple[str]], value: Any) -> None:
+        schema_name, path = path[0], path[1:]
+        self.schemas[schema_name].set_param(path, value)
+
+    def get_param(self, path: Optional[Tuple[str]]) -> None:
+        schema_name, path = path[0], path[1:]
+        return self.schemas[schema_name].get_param(path)
+
+    def extract_search_space(self) -> Dict[Tuple[str, ...], Options]:
+        search_space = {}
+        for name, schema in self.schemas.items():
+            for path, val in schema.extract_search_space():
+                new_path = (name,) + path
+                search_space[new_path] = val
+        return search_space
+
+    def extract_links(self) -> List[Link]:
+        links = []
+        for name, schema in self.schemas.items():
+            for path, item in Schema.traverse(schema, yield_schema='never'):
+                if isinstance(item, Link):
+                    links.append(item)
+        return links
+
+    def set_from_search_space(self, search_space: Dict[Tuple[str, ...], Any]) -> None:
+        for path, value in search_space.items():
+            name, new_path = path[0], path[1:]
+            schema = self.schemas[name]
+            schema.set_param(new_path, value)
+
     def initialize(self):
         """Override intialization."""
         cache = {}
         for name, schema in self.schemas.items():
-            obj = schema.initialize(cache=cache)
+            obj = schema.initialize(path=(name,), cache=cache, root=self)
             if name in self.checkpoints:
                 # TODO: what if we don't save states but the
                 # full object? How do we handle links then?

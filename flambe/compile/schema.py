@@ -443,7 +443,7 @@ class Schema(MutableMapping[str, Any]):
         except KeyError:
             raise KeyError(f'{self} has no path {path}. Failed at {last_item}')
 
-    def get_param(self, path: Optional[Tuple[str]]) -> None:
+    def get_param(self, path: Optional[Tuple[str]]) -> Any:
         current_obj = self
         last_item = None
         try:

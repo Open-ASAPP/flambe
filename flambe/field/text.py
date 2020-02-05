@@ -10,6 +10,7 @@ from gensim.scripts.glove2word2vec import glove2word2vec
 from gensim.models import fasttext
 from gensim.test.utils import temporary_file
 
+from flambe.compile.registrable import registrable_factory
 from flambe.field import Field
 from flambe.tokenizer import Tokenizer, WordTokenizer
 

@@ -269,6 +269,7 @@ class TextField(Field):
                 ret = ret[:self.max_seq_len]
         return ret
 
+    @registrable_factory
     @classmethod
     def with_embeddings(
         cls,

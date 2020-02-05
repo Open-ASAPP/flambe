@@ -39,9 +39,6 @@ class TextField(Field):
                  unk_token: Optional[str] = '<unk>',
                  sos_token: Optional[str] = None,
                  eos_token: Optional[str] = None,
-                 embeddings: Optional[str] = None,
-                 embeddings_format: str = 'glove',
-                 embeddings_binary: bool = False,
                  model: KeyedVectors = None,
                  unk_init_all: bool = False,
                  drop_unknown: bool = False,
@@ -273,13 +270,13 @@ class TextField(Field):
         return ret
 
     @classmethod
-    def from_embedding(
+    def with_embeddings(
         cls,
         embeddings_format: str,
         embeddings: str,
         embeddings_binary: bool = False,
         **kwargs,
-    ) -> TextField:
+    ):
         """
         Optional constructor to create TextField from embeddings params.
 

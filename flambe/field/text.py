@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set
 from collections import OrderedDict as odict
 from itertools import chain
 
@@ -295,7 +295,7 @@ def get_embeddings(
     embeddings: str,
     embeddings_format: str = 'glove',
     embeddings_binary: bool = False,
-) -> Tuple[KeyedVectors, List[torch.Tensor]]:
+) -> KeyedVectors:
     """
     Get the embeddings model and matrix used in the setup function
 

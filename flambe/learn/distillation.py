@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, List
 
 import torch
 import torch.nn.functional as F
@@ -41,7 +41,7 @@ class DistillationTrainer(Trainer):
                  lower_is_better: bool = False,
                  max_grad_norm: Optional[float] = None,
                  max_grad_abs_val: Optional[float] = None,
-                 extra_validation_metrics: Optional[Dict[str, Metric]] = None,
+                 extra_validation_metrics: Optional[List[Metric]] = None,
                  teacher_columns: Optional[Tuple[int, ...]] = None,
                  student_columns: Optional[Tuple[int, ...]] = None,
                  alpha_kl: float = 0.5,
@@ -193,7 +193,7 @@ class DistillationTrainer(Trainer):
 
         return loss
 
-    def _aggregate_preds(self, data_iterator) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _aggregate_preds(self, data_iterator) -> Tuple[torch.Tensor, torch.Tensor, float]:
         """Aggregate the predicitons and targets for the dataset.
 
         Parameters
@@ -221,4 +221,4 @@ class DistillationTrainer(Trainer):
 
         preds = torch.cat(preds, dim=0)
         targets = torch.cat(targets, dim=0)
-        return preds, targets
+        return preds, targets, 0.

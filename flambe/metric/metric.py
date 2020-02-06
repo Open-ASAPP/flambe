@@ -1,3 +1,4 @@
+from typing import Dict
 from abc import abstractmethod
 
 import torch
@@ -12,6 +13,7 @@ class Metric(Component):
     examples and provide as output a processd list of the same size.
 
     """
+
     @abstractmethod
     def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """Computes the metric over the given prediction and target.
@@ -31,6 +33,56 @@ class Metric(Component):
 
         """
         pass
+
+    def aggregate(self, state: dict, *args, **kwargs) -> Dict:
+        """
+
+        Parameters
+        ----------
+        state: dict
+            the state dictionary
+        args:
+            normally pred, target
+        kwargs
+
+        Returns
+        -------
+        dict
+            The updated state (even though the update happens in-place)
+        """
+        score = self.compute(*args, **kwargs)
+        score_np = score.cpu().detach().numpy() \
+            if isinstance(score, torch.Tensor) \
+            else score
+        try:
+            num_samples = args[0].size(0)
+        except (ValueError, AttributeError):
+            raise ValueError(f'Cannot get size from {type(args[0])}')
+        if not state:
+            state['accumulated_score'] = 0.
+            state['sample_count'] = 0
+        state['accumulated_score'] = \
+            (state['sample_count'] * state['accumulated_score'] +
+             num_samples * score_np.item()) / \
+            (state['sample_count'] + num_samples)
+        state['sample_count'] = state['sample_count'] + num_samples
+        return state
+
+    def finalize(self, state) -> float:
+        """
+        FInalizes the metric computation
+
+        Parameters
+        ----------
+        state: dict
+            the metric state
+
+        Returns
+        -------
+        Any
+            The final score. Can be anything, depending on metric.
+        """
+        return state.get('accumulated_score')
 
     def __call__(self, *args, **kwargs):
         """Makes Featurizer a callable."""

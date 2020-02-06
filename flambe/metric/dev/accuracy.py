@@ -5,7 +5,8 @@ from flambe.metric.metric import Metric
 
 class Accuracy(Metric):
 
-    def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def compute(self, pred: torch.Tensor, target: torch.Tensor) \
+            -> torch.Tensor:
         """Computes the loss.
 
         Parameters

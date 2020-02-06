@@ -58,6 +58,29 @@ def test_accuracy():
     metric_test_case(torch.tensor([[1.0, 0.0], [0.6, 0.4]]), torch.tensor([1, 1]), Accuracy(), 0)
 
 
+def test_aggregation_accuracy():
+    """ Test the aggregation functionality """
+    metric_state = {}
+    metric = Accuracy()
+    metric.aggregate(metric_state, torch.tensor([[0.1, 0.2], [0.9, 0.1]]), torch.tensor([1, 1]))
+    assert metric_state['accumulated_score'] == 0.5
+    metric.aggregate(metric_state, torch.tensor([[1.0, 0.0], [0.6, 0.4]]), torch.tensor([1, 1]))
+    assert metric_state['accumulated_score'] == 0.25
+    assert metric_state['sample_count'] == 4
+    assert metric.finalize(metric_state) == 0.25
+
+
+def test_aggregation_auc():
+    # for AUC (different aggregation functionality)
+    metric_state = {}
+    metric = AUC()
+    y_pred = torch.randint(0, 10000, [100])
+    y_true = torch.randint(0, 2, [100])
+    for yp, yt in zip(torch.split(y_pred, 10), torch.split(y_true, 10)):
+        metric.aggregate(metric_state, yp, yt)
+    assert metric.finalize(metric_state) == sklearn.metrics.roc_auc_score(y_true, y_pred)
+
+
 def test_perplexity():
     """Test perplexity"""
     metric_test_case(torch.tensor([[0.2, 0.8], [0.9, 0.1]]), torch.tensor([0, 0]), Perplexity(), 2.022418975830078)

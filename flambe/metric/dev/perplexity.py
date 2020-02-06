@@ -7,7 +7,7 @@ class Perplexity(Metric):
     """Token level perplexity, computed a exp(cross_entropy)."""
 
     def __init__(self):
-        """Initalizes the Perplexity metrc."""
+        """Perplexity, computed as CrossEntropy"""
         self.entropy = torch.nn.CrossEntropyLoss()
 
     def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

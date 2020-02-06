@@ -67,17 +67,6 @@ class TextField(Field):
         eos : Iterable[str], optional
             List of end of sentence tokens to add to the end of each
             sequence (defaults to an empty list)
-        embeddings : Optional[str], optional
-            Path to pretrained embeddings, by default None
-        embeddings_format : str, optional
-            The format of the input embeddings, should be one of:
-            'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
-            be used to download embeddings hosted on gensim on the fly.
-            See https://github.com/RaRe-Technologies/gensim-data
-            for the list of available embedding aliases.
-        embeddings_binary : bool, optional
-            Whether the input embeddings are provided in binary format,
-            by default False
         model : KeyedVectors, optional
             The embeddings model used for retrieving text embeddings,
             by default None
@@ -116,9 +105,6 @@ class TextField(Field):
         self.sos = sos_token
         self.eos = eos_token
 
-        self.embeddings = embeddings
-        self.embeddings_format = embeddings_format
-        self.embeddings_binary = embeddings_binary
         self.model = model
         self.embedding_matrix: Optional[torch.Tensor] = None
         self.unk_init_all = unk_init_all
@@ -169,13 +155,6 @@ class TextField(Field):
         embeddings_matrix: List[torch.Tensor] = []
         model = self.model
 
-        if model is None and self.embeddings is not None:
-            model = get_embeddings(
-                self.embeddings_format,
-                self.embeddings,
-                self.embeddings_binary,
-            )
-
         if model is not None:
             if self.setup_all_embeddings:
                 examples = chain(examples, model.vocab.keys())
@@ -213,7 +192,7 @@ class TextField(Field):
                     else:
                         self.vocab[token] = index = index + 1
 
-        if self.embeddings is not None:
+        if model is not None:
             self.embedding_matrix = torch.stack(embeddings_matrix)
 
     # TODO update when we add generics
@@ -255,7 +234,7 @@ class TextField(Field):
             numerical = self.vocab[token]  # type: ignore
 
             if self.drop_unknown and \
-                    self.embeddings is not None and numerical in self.unk_numericals:
+                    self.model is not None and numerical in self.unk_numericals:
                 # Don't add unknown tokens in case the flag is activated
                 continue
 
@@ -274,8 +253,8 @@ class TextField(Field):
     @classmethod
     def with_embeddings(
         cls,
-        embeddings_format: str,
         embeddings: str,
+        embeddings_format: str = 'glove',
         embeddings_binary: bool = False,
         **kwargs,
     ):
@@ -302,8 +281,8 @@ class TextField(Field):
             The constructed text field with the requested model.
         """
         model = get_embeddings(
-            embeddings_format,
             embeddings,
+            embeddings_format,
             embeddings_binary,
         )
         return cls(
@@ -313,8 +292,8 @@ class TextField(Field):
 
 
 def get_embeddings(
-    embeddings_format: str,
     embeddings: str,
+    embeddings_format: str = 'glove',
     embeddings_binary: bool = False,
 ) -> Tuple[KeyedVectors, List[torch.Tensor]]:
     """

@@ -160,11 +160,6 @@ def test_build_vocab_setup_all_embeddings():
         white
     """
 
-    field = TextField(
-        embeddings='not-a-real-embedding',
-        setup_all_embeddings=True,
-    )
-
     model = MagicMock()
     model.vocab = {
         'purple': torch.rand(1),
@@ -178,9 +173,14 @@ def test_build_vocab_setup_all_embeddings():
     model.__getitem__.side_effect = model.vocab.__getitem__
     model.__contains__.side_effect = model.vocab.__contains__
 
+    field = TextField(
+        model=model,
+        setup_all_embeddings=True,
+    )
+
     dummy = ["blue green", "yellow", 'white']
 
-    field.setup(dummy, model=model)
+    field.setup(dummy)
 
     # assert vocab setup in expected order
     assert field.vocab == odict([
@@ -222,9 +222,11 @@ def test_build_vocab_decorators():
 
 
 def test_load_embeddings():
-    field = TextField(pad_token=None,
-                      unk_init_all=False,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.with_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
     dummy = "a test !"
     field.setup([dummy])
 
@@ -235,9 +237,11 @@ def test_load_embeddings():
 
 
 def test_load_embeddings_empty_voc():
-    field = TextField(pad_token=None,
-                      unk_init_all=True,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.with_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=True,
+    )
 
     dummy = "justo Praesent luctus justo praesent"
     field.setup([dummy])
@@ -245,9 +249,11 @@ def test_load_embeddings_empty_voc():
     # No embeddings in the data, so get zeros
     assert len(field.embedding_matrix) == 5
 
-    field = TextField(pad_token=None,
-                      unk_init_all=False,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.with_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
 
     dummy = "justo Praesent luctus justo praesent"
     field.setup([dummy])

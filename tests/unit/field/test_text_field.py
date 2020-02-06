@@ -1,3 +1,6 @@
+from collections import OrderedDict as odict
+from unittest.mock import MagicMock
+
 import pytest
 import torch
 from flambe.field import TextField, BoWField
@@ -134,6 +137,67 @@ def test_build_vocab_empty():
     assert field.vocab == vocab
 
 
+def test_build_vocab_setup_all_embeddings():
+    """
+    This test shows that all fields in the embeddings will be included.
+
+    In embeddings and data:
+        blue
+        green
+        yellow
+    In embeddings only:
+        purple
+        gold
+    In data only:
+        white
+
+    Expected vocab:
+        blue
+        green
+        yellow
+        purple
+        gold
+        white
+    """
+
+    model = MagicMock()
+    model.vocab = {
+        'purple': torch.rand(1),
+        'gold': torch.rand(1),
+        '<unk>': torch.rand(1),
+        'blue': torch.rand(1),
+        'green': torch.rand(1),
+        '<pad>': torch.rand(1),
+        'yellow': torch.rand(1),
+    }
+    model.__getitem__.side_effect = model.vocab.__getitem__
+    model.__contains__.side_effect = model.vocab.__contains__
+
+    field = TextField(
+        model=model,
+        setup_all_embeddings=True,
+    )
+
+    dummy = ["blue green", "yellow", 'white']
+
+    field.setup(dummy)
+
+    # assert vocab setup in expected order
+    assert field.vocab == odict([
+        ('<pad>', 0), ('<unk>', 1), ('blue', 2), ('green', 3),
+        ('yellow', 4), ('white', 1), ('purple', 5), ('gold', 6),
+    ])
+
+    # assert embedding matrix organized in expected order
+    assert torch.equal(
+        field.embedding_matrix,
+        torch.stack([
+            model['<pad>'], model['<unk>'], model['blue'], model['green'],
+            model['yellow'], model['purple'], model['gold'],
+        ]),
+    )
+
+
 def test_build_vocab_decorators():
     field = TextField(pad_token=None, unk_token=None,
                       sos_token='<sos>', eos_token='<eos>')
@@ -158,9 +222,11 @@ def test_build_vocab_decorators():
 
 
 def test_load_embeddings():
-    field = TextField(pad_token=None,
-                      unk_init_all=False,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.with_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
     dummy = "a test !"
     field.setup([dummy])
 
@@ -171,9 +237,11 @@ def test_load_embeddings():
 
 
 def test_load_embeddings_empty_voc():
-    field = TextField(pad_token=None,
-                      unk_init_all=True,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.with_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=True,
+    )
 
     dummy = "justo Praesent luctus justo praesent"
     field.setup([dummy])
@@ -181,9 +249,11 @@ def test_load_embeddings_empty_voc():
     # No embeddings in the data, so get zeros
     assert len(field.embedding_matrix) == 5
 
-    field = TextField(pad_token=None,
-                      unk_init_all=False,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.with_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
 
     dummy = "justo Praesent luctus justo praesent"
     field.setup([dummy])

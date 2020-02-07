@@ -228,7 +228,7 @@ def test_build_vocab_decorators_missing_specials():
 
 
 def test_load_embeddings():
-    field = TextField.with_embeddings(
+    field = TextField.from_embeddings(
         embeddings="tests/data/dummy_embeddings/test.txt",
         pad_token=None,
         unk_init_all=False,
@@ -258,7 +258,7 @@ def test_load_embeddings_legacy():
 
 
 def test_load_embeddings_empty_voc():
-    field = TextField.with_embeddings(
+    field = TextField.from_embeddings(
         embeddings="tests/data/dummy_embeddings/test.txt",
         pad_token=None,
         unk_init_all=True,
@@ -270,7 +270,7 @@ def test_load_embeddings_empty_voc():
     # No embeddings in the data, so get zeros
     assert len(field.embedding_matrix) == 5
 
-    field = TextField.with_embeddings(
+    field = TextField.from_embeddings(
         embeddings="tests/data/dummy_embeddings/test.txt",
         pad_token=None,
         unk_init_all=False,

@@ -1,5 +1,6 @@
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 from collections import OrderedDict as odict
+from itertools import chain
 
 import torch
 import warnings
@@ -255,15 +256,18 @@ class TextField(Field):
 
         new_index = -1
 
-        for token, index in self.vocab.items():
-            if token in self.specials:
-                emb = torch.tensor(model[token]) if \
-                    token in model else torch.randn(model.vector_size)
-                embedding_matrix.append(emb)
-                new_vocab[token] = new_index = new_index + 1
-            else:
+        tokens: Iterable[str] = self.vocab.keys()
+
+        if self.setup_all_embeddings:
+            tokens = chain(tokens, model.vocab.keys())
+
+        for token in tokens:
+            if token not in new_vocab:
                 if token in model:
                     embedding_matrix.append(torch.tensor(model[token]))
+                    new_vocab[token] = new_index = new_index + 1
+                elif token in self.specials:
+                    embedding_matrix.append(torch.randn(model.vector_size))
                     new_vocab[token] = new_index = new_index + 1
                 else:
                     self.unk_numericals.add(self.vocab[token])
@@ -274,12 +278,6 @@ class TextField(Field):
                     else:
                         # Collapse all OOV's to the same <unk> token id
                         new_vocab[token] = new_vocab[self.unk]
-
-        if self.setup_all_embeddings:
-            for token in model.vocab.keys():
-                if token not in new_vocab:
-                    new_vocab[token] = new_index = new_index + 1
-                    embedding_matrix.append(torch.tensor(model[token]))
 
         return new_vocab, torch.stack(embedding_matrix)
 
@@ -404,5 +402,7 @@ class TextField(Field):
         return cls(
             model=model,
             setup_all_embeddings=setup_all_embeddings,
+            unk_init_all=unk_init_all,
+            drop_unknown=drop_unknown,
             **kwargs,
         )

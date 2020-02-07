@@ -136,7 +136,18 @@ class TextField(Field):
         unique_ids = set(v for k, v in self.vocab.items())
         return len(unique_ids)
 
-    def build_vocab(self, *data: np.ndarray) -> None:
+    def _build_vocab(self, *data: np.ndarray) -> None:
+        """
+        Build the vocabulary for this object based on the special
+        tokens and in the data provided.
+
+        This method is safe to be called multiple times.
+
+        Parameters
+        ----------
+        *data: np.ndarray
+            The data
+        """
         examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
 
         index = len(self.vocab) - 1
@@ -154,16 +165,29 @@ class TextField(Field):
                 if token not in self.vocab:
                     self.vocab[token] = index = index + 1
 
-        if self.setup_all_embeddings and self.model:
-            for token in self.model.vocab.keys():
-                if token not in self.vocab:
-                    self.vocab[token] = index = index + 1
+    def _build_embeddings(self, model: KeyedVectors) -> Tuple[odict, torch.Tensor]:
+        """
+        Create the embeddings matrix and the new vocabulary in
+        case this objects needs to use an embedding model.
 
-    def build_embedding_matrix(self, model: KeyedVectors) -> Tuple[odict, torch.Tensor]:
+        A new vocabulary needs to be built because of the parameters
+        that could allow, for example, collapsing OOVs.
+
+        Parameters
+        ----------
+        model: KeyedVectors
+            The embeddings
+
+        Returns
+        -------
+        Tuple[OrderedDict, torch.Tensor]
+            A tuple with the new embeddings and the embedding matrix
+        """
         embedding_matrix: List[torch.Tensor] = []
         new_vocab: odict[str, int] = odict()
 
         new_index = -1
+
         for token, index in self.vocab.items():
             if token in self.specials:
                 emb = torch.tensor(model[token]) if \
@@ -184,6 +208,13 @@ class TextField(Field):
                         # Collapse all OOV's to the same <unk> token id
                         new_vocab[token] = new_vocab[self.unk]
 
+        if self.setup_all_embeddings:
+            for token in model.vocab.keys():
+                if token not in new_vocab:
+                    new_vocab[token] = index
+                    index = index + 1
+                    embedding_matrix.append(torch.tensor(model[token]))
+
         return new_vocab, torch.stack(embedding_matrix)
 
     def setup(self, *data: np.ndarray) -> None:
@@ -195,9 +226,9 @@ class TextField(Field):
             List of input strings.
 
         """
-        self.build_vocab(*data)
+        self._build_vocab(*data)
         if self.model:
-            self.vocab, self.embedding_matrix = self.build_embedding_matrix(self.model)
+            self.vocab, self.embedding_matrix = self._build_embeddings(self.model)
 
     # TODO update when we add generics
     def process(self, example: str) -> torch.Tensor:  # type: ignore

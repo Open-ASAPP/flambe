@@ -84,11 +84,11 @@ def test_char_tokenizer():
 
 def test_build_vocab():
     field = TextField(pad_token='<pad>', unk_token='<unk>')
-    field.build_vocab()
+    field._build_vocab()
     assert field.vocab == {'<pad>': 0, '<unk>': 1}
 
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.build_vocab(dummy)
+    field._build_vocab(dummy)
 
     vocab = {'<pad>': 0, '<unk>': 1, 'justo': 2, 'Praesent': 3,
              'luctus': 4, 'praesent': 5}
@@ -203,11 +203,11 @@ def test_build_vocab_decorators_specials():
     field = TextField(pad_token='<pad>', unk_token='<unk>',
                       sos_token='<sos>', eos_token='<eos>')
 
-    field.build_vocab()
+    field._build_vocab()
 
     assert field.vocab == {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.build_vocab(dummy)
+    field._build_vocab(dummy)
 
     vocab = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3,
              'justo': 4, 'Praesent': 5, 'luctus': 6, 'praesent': 7}
@@ -217,11 +217,11 @@ def test_build_vocab_decorators_specials():
 def test_build_vocab_decorators_missing_specials():
     field = TextField(pad_token=None, unk_token=None,
                       sos_token='<sos>', eos_token='<eos>')
-    field.build_vocab()
+    field._build_vocab()
 
     assert field.vocab == {'<sos>': 0, '<eos>': 1}
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.build_vocab(dummy)
+    field._build_vocab(dummy)
 
     vocab = {'<sos>': 0, '<eos>': 1, 'justo': 2, 'Praesent': 3, 'luctus': 4, 'praesent': 5}
     assert field.vocab == vocab

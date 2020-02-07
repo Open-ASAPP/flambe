@@ -154,7 +154,10 @@ class TextField(Field):
                 raise ValueError("Cannot submit a model and use the embeddings parameters" +
                                  "simultaneously. Use the 'from_embeddings' factory instead.")
 
-            warnings.warn("The embeddings parameters will be deprecated in future release. " +
+            warnings.warn("The embeddings-exclusive parameters " +
+                          "('embeddings', 'embeddings_format', 'embeddings_binary', " +
+                          "'setup_all_embeddings', 'drop_unknown', 'unk_init_all') will be " +
+                          "deprecated in a future release. " +
                           "Please migrate to use the 'from_embeddings' factory.")
 
             model = get_embeddings(embeddings, embeddings_format, embeddings_binary)
@@ -355,6 +358,8 @@ class TextField(Field):
         embeddings_format: str = 'glove',
         embeddings_binary: bool = False,
         setup_all_embeddings: bool = False,
+        unk_init_all: bool = False,
+        drop_unknown: bool = False,
         **kwargs,
     ):
         """
@@ -377,6 +382,14 @@ class TextField(Field):
             Controls if all words from the optional provided
             embeddings will be added to the vocabulary and to the
             embedding matrix. Defaults to False.
+        unk_init_all : bool, optional
+            If True, every token not provided in the input embeddings is
+            given a random embedding from a normal distribution.
+            Otherwise, all of them map to the '<unk>' token.
+        drop_unknown: bool
+            Whether to drop tokens that don't have embeddings
+            associated. Defaults to True.
+            Important: this flag will only work when using embeddings.
 
         Returns
         -------

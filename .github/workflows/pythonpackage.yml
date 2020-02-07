@@ -20,6 +20,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r tests/requirements.txt
+        pip install tox
     - name: Run Unit Tests with tox
       run: |
         tox -- -v -m "not end2end and not examples"

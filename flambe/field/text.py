@@ -15,6 +15,55 @@ from flambe.field import Field
 from flambe.tokenizer import Tokenizer, WordTokenizer
 
 
+def get_embeddings(
+    embeddings: str,
+    embeddings_format: str = 'glove',
+    embeddings_binary: bool = False,
+) -> KeyedVectors:
+    """
+    Get the embeddings model and matrix used in the setup function
+
+    Parameters
+    ----------
+    embeddings : Optional[str], optional
+        Path to pretrained embeddings, by default None
+    embeddings_format : str, optional
+        The format of the input embeddings, should be one of:
+        'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
+        be used to download embeddings hosted on gensim on the fly.
+        See https://github.com/RaRe-Technologies/gensim-data
+        for the list of available embedding aliases.
+    embeddings_binary : bool, optional
+        Whether the input embeddings are provided in binary format,
+        by default False
+
+    Returns
+    -------
+    KeyedVectors
+        The embeddings object specified by the parameters.
+    """
+    model = None
+
+    if embeddings_format == 'glove':
+        with temporary_file('temp.txt') as temp:
+            glove2word2vec(embeddings, temp)
+            model = KeyedVectors.load_word2vec_format(temp, binary=embeddings_binary)
+    elif embeddings_format == 'word2vec':
+        model = KeyedVectors.load_word2vec_format(embeddings,
+                                                  binary=embeddings_binary)
+    elif embeddings_format == 'fasttext':
+        model = fasttext.load_facebook_vectors(embeddings)
+    elif embeddings_format == 'gensim':
+        try:
+            model = KeyedVectors.load(embeddings)
+        except FileNotFoundError:
+            model = api.load(embeddings)
+    else:
+        raise ValueError("Only formats supported are word2vec, fasttext and gensim")
+
+    return model
+
+
 class TextField(Field):
     """Featurize raw text inputs
 
@@ -103,10 +152,10 @@ class TextField(Field):
         if embeddings:
             if model:
                 raise ValueError("Cannot submit a model and use the embeddings parameters" +
-                                 "simultaneously. Use the 'with_embeddings' factory instead.")
+                                 "simultaneously. Use the 'from_embeddings' factory instead.")
 
             warnings.warn("The embeddings parameters will be deprecated in future release. " +
-                          "Please migrate to use the 'with_embeddings' factory.")
+                          "Please migrate to use the 'from_embeddings' factory.")
 
             model = get_embeddings(embeddings, embeddings_format, embeddings_binary)
 
@@ -301,11 +350,12 @@ class TextField(Field):
 
     @registrable_factory
     @classmethod
-    def with_embeddings(
+    def from_embeddings(
         cls,
         embeddings: str,
         embeddings_format: str = 'glove',
         embeddings_binary: bool = False,
+        setup_all_embeddings: bool = False,
         **kwargs,
     ):
         """
@@ -324,6 +374,10 @@ class TextField(Field):
         embeddings_binary : bool, optional
             Whether the input embeddings are provided in binary format,
             by default False
+        setup_all_embeddings: bool
+            Controls if all words from the optional provided
+            embeddings will be added to the vocabulary and to the
+            embedding matrix. Defaults to False.
 
         Returns
         -------
@@ -337,54 +391,6 @@ class TextField(Field):
         )
         return cls(
             model=model,
+            setup_all_embeddings=setup_all_embeddings,
             **kwargs,
         )
-
-
-def get_embeddings(
-    embeddings: str,
-    embeddings_format: str = 'glove',
-    embeddings_binary: bool = False,
-) -> KeyedVectors:
-    """
-    Get the embeddings model and matrix used in the setup function
-
-    Parameters
-    ----------
-    embeddings : Optional[str], optional
-        Path to pretrained embeddings, by default None
-    embeddings_format : str, optional
-        The format of the input embeddings, should be one of:
-        'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
-        be used to download embeddings hosted on gensim on the fly.
-        See https://github.com/RaRe-Technologies/gensim-data
-        for the list of available embedding aliases.
-    embeddings_binary : bool, optional
-        Whether the input embeddings are provided in binary format,
-        by default False
-
-    Returns
-    -------
-    KeyedVectors
-        The embeddings object specified by the parameters.
-    """
-    model = None
-
-    if embeddings_format == 'glove':
-        with temporary_file('temp.txt') as temp:
-            glove2word2vec(embeddings, temp)
-            model = KeyedVectors.load_word2vec_format(temp, binary=embeddings_binary)
-    elif embeddings_format == 'word2vec':
-        model = KeyedVectors.load_word2vec_format(embeddings,
-                                                  binary=embeddings_binary)
-    elif embeddings_format == 'fasttext':
-        model = fasttext.load_facebook_vectors(embeddings)
-    elif embeddings_format == 'gensim':
-        try:
-            model = KeyedVectors.load(embeddings)
-        except FileNotFoundError:
-            model = api.load(embeddings)
-    else:
-        raise ValueError("Only formats supported are word2vec, fasttext and gensim")
-
-    return model

@@ -242,6 +242,21 @@ def test_load_embeddings():
     assert torch.all(torch.eq(field.embedding_matrix[1:3], true_embeddings))
 
 
+def test_load_embeddings_legacy():
+    field = TextField(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
+    dummy = "a test !"
+    field.setup([dummy])
+
+    # Now we have embeddings to check against
+    true_embeddings = torch.tensor([[0.9, 0.1, 0.2, 0.3], [0.4, 0.5, 0.6, 0.7]])
+    assert len(field.embedding_matrix) == 3
+    assert torch.all(torch.eq(field.embedding_matrix[1:3], true_embeddings))
+
+
 def test_load_embeddings_empty_voc():
     field = TextField.with_embeddings(
         embeddings="tests/data/dummy_embeddings/test.txt",

@@ -2,6 +2,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 from collections import OrderedDict as odict
 
 import torch
+import warnings
 import numpy as np
 import gensim.downloader as api
 from gensim.models import KeyedVectors
@@ -39,7 +40,10 @@ class TextField(Field):
                  unk_token: str = '<unk>',
                  sos_token: Optional[str] = None,
                  eos_token: Optional[str] = None,
-                 model: KeyedVectors = None,
+                 embeddings: Optional[str] = None,
+                 embeddings_format: str = 'glove',
+                 embeddings_binary: bool = False,
+                 model: Optional[KeyedVectors] = None,
                  unk_init_all: bool = False,
                  drop_unknown: bool = False,
                  max_seq_len: Optional[int] = None,
@@ -96,6 +100,16 @@ class TextField(Field):
             embedding matrix. Defaults to False.
 
         """
+        if embeddings:
+            if model:
+                raise ValueError("Cannot submit a model and use the embeddings parameters" +
+                                 "simultaneously. Use the 'with_embeddings' factory instead.")
+
+            warnings.warn("The embeddings parameters will be deprecated in future release. " +
+                          "Please migrate to use the 'with_embeddings' factory.")
+
+            model = get_embeddings(embeddings, embeddings_format, embeddings_binary)
+
         if setup_all_embeddings and not model:
             raise ValueError("'setup_all_embeddings' cannot be enabled without passing embeddings.")
 

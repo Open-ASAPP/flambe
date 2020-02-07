@@ -275,8 +275,7 @@ class TextField(Field):
         if self.setup_all_embeddings:
             for token in model.vocab.keys():
                 if token not in new_vocab:
-                    new_vocab[token] = index
-                    index = index + 1
+                    new_vocab[token] = new_index = new_index + 1
                     embedding_matrix.append(torch.tensor(model[token]))
 
         return new_vocab, torch.stack(embedding_matrix)

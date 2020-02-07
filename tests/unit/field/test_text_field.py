@@ -84,10 +84,11 @@ def test_char_tokenizer():
 
 def test_build_vocab():
     field = TextField(pad_token='<pad>', unk_token='<unk>')
+    field.build_vocab()
     assert field.vocab == {'<pad>': 0, '<unk>': 1}
 
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.setup(dummy)
+    field.build_vocab(dummy)
 
     vocab = {'<pad>': 0, '<unk>': 1, 'justo': 2, 'Praesent': 3,
              'luctus': 4, 'praesent': 5}
@@ -198,26 +199,31 @@ def test_build_vocab_setup_all_embeddings():
     )
 
 
-def test_build_vocab_decorators():
-    field = TextField(pad_token=None, unk_token=None,
-                      sos_token='<sos>', eos_token='<eos>')
-
-    assert field.vocab == {'<sos>': 0, '<eos>': 1}
-    dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.setup(dummy)
-
-    vocab = {'<sos>': 0, '<eos>': 1, 'justo': 2, 'Praesent': 3, 'luctus': 4, 'praesent': 5}
-    assert field.vocab == vocab
-
+def test_build_vocab_decorators_specials():
     field = TextField(pad_token='<pad>', unk_token='<unk>',
                       sos_token='<sos>', eos_token='<eos>')
 
+    field.build_vocab()
+
     assert field.vocab == {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.setup(dummy)
+    field.build_vocab(dummy)
 
     vocab = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3,
              'justo': 4, 'Praesent': 5, 'luctus': 6, 'praesent': 7}
+    assert field.vocab == vocab
+
+
+def test_build_vocab_decorators_missing_specials():
+    field = TextField(pad_token=None, unk_token=None,
+                      sos_token='<sos>', eos_token='<eos>')
+    field.build_vocab()
+
+    assert field.vocab == {'<sos>': 0, '<eos>': 1}
+    dummy = ["justo Praesent luctus", "luctus praesent"]
+    field.build_vocab(dummy)
+
+    vocab = {'<sos>': 0, '<eos>': 1, 'justo': 2, 'Praesent': 3, 'luctus': 4, 'praesent': 5}
     assert field.vocab == vocab
 
 
@@ -261,8 +267,10 @@ def test_load_embeddings_empty_voc():
     # No embeddings in the data, so get zeros
     assert len(field.embedding_matrix) == 1
 
+
 def test_text_process():
     field = TextField()
+    field.setup()
 
     dummy = "justo Praesent luctus justo praesent"
     assert list(field.process(dummy)) == [1, 1, 1, 1, 1]
@@ -297,11 +305,12 @@ def test_bow_text_process_normalize_scale():
 
 def test_bow_text_process_scale():
     with pytest.raises(ValueError):
-        field = BoWField(min_freq=2, scale_factor=10)
+        _ = BoWField(min_freq=2, scale_factor=10)
 
 
 def test_text_process_lower():
     field = TextField(lower=True)
+    field.setup()
 
     dummy = "justo Praesent luctus justo praesent"
     assert list(field.process(dummy)) == [1, 1, 1, 1, 1]

@@ -1,6 +1,5 @@
-from typing import Dict, Iterable, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 from collections import OrderedDict as odict
-from itertools import chain
 
 import torch
 import numpy as np
@@ -37,7 +36,7 @@ class TextField(Field):
                  tokenizer: Optional[Tokenizer] = None,
                  lower: bool = False,
                  pad_token: Optional[str] = '<pad>',
-                 unk_token: Optional[str] = '<unk>',
+                 unk_token: str = '<unk>',
                  sos_token: Optional[str] = None,
                  eos_token: Optional[str] = None,
                  model: KeyedVectors = None,
@@ -97,6 +96,9 @@ class TextField(Field):
             embedding matrix. Defaults to False.
 
         """
+        if setup_all_embeddings and not model:
+            raise ValueError("'setup_all_embeddings' cannot be enabled without passing embeddings.")
+
         self.tokenizer = tokenizer or WordTokenizer()
         self.lower = lower
 
@@ -119,10 +121,6 @@ class TextField(Field):
         specials = [pad_token, unk_token, sos_token, eos_token]
         self.specials = [special for special in specials if special is not None]
 
-        index = -1
-        for token in self.specials:
-            self.vocab[token] = index = index + 1
-
         self.register_attrs('vocab')
 
     @property
@@ -138,10 +136,57 @@ class TextField(Field):
         unique_ids = set(v for k, v in self.vocab.items())
         return len(unique_ids)
 
-    def setup(
-        self,
-        *data: np.ndarray,
-    ) -> None:
+    def build_vocab(self, *data: np.ndarray) -> None:
+        examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
+
+        index = len(self.vocab) - 1
+
+        # First load special tokens
+        for token in self.specials:
+            if token not in self.vocab:
+                self.vocab[token] = index = index + 1
+
+        for example in examples:
+            # Lowercase if requested
+            example = example.lower() if self.lower else example
+            # Tokenize and add to vocabulary
+            for token in self.tokenizer(example):
+                if token not in self.vocab:
+                    self.vocab[token] = index = index + 1
+
+        if self.setup_all_embeddings and self.model:
+            for token in self.model.vocab.keys():
+                if token not in self.vocab:
+                    self.vocab[token] = index = index + 1
+
+    def build_embedding_matrix(self, model: KeyedVectors) -> Tuple[odict, torch.Tensor]:
+        embedding_matrix: List[torch.Tensor] = []
+        new_vocab: odict[str, int] = odict()
+
+        new_index = -1
+        for token, index in self.vocab.items():
+            if token in self.specials:
+                emb = torch.tensor(model[token]) if \
+                    token in model else torch.randn(model.vector_size)
+                embedding_matrix.append(emb)
+                new_vocab[token] = new_index = new_index + 1
+            else:
+                if token in model:
+                    embedding_matrix.append(torch.tensor(model[token]))
+                    new_vocab[token] = new_index = new_index + 1
+                else:
+                    self.unk_numericals.add(self.vocab[token])
+
+                    if self.unk_init_all:
+                        embedding_matrix.append(torch.randn(model.vector_size))
+                        new_vocab[token] = new_index = new_index + 1
+                    else:
+                        # Collapse all OOV's to the same <unk> token id
+                        new_vocab[token] = new_vocab[self.unk]
+
+        return new_vocab, torch.stack(embedding_matrix)
+
+    def setup(self, *data: np.ndarray) -> None:
         """Build the vocabulary and sets embeddings.
 
         Parameters
@@ -150,50 +195,9 @@ class TextField(Field):
             List of input strings.
 
         """
-        # Iterate over all examples
-        examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
-        embeddings_matrix: List[torch.Tensor] = []
-        model = self.model
-
-        if model is not None:
-            if self.setup_all_embeddings:
-                examples = chain(examples, model.vocab.keys())
-
-            # Add embeddings for special tokens
-            for special in self.specials:
-                if special in model:
-                    embeddings_matrix.append(torch.tensor(model[special]))
-                else:
-                    embeddings_matrix.append(torch.randn(model.vector_size))
-
-        # Get current last id
-        index = len(self.vocab) - 1
-
-        for example in examples:
-            # Lowercase if requested
-            example = example.lower() if self.lower else example
-            # Tokenize and add to vocabulary
-            for token in self.tokenizer(example):
-                if token not in self.vocab:
-                    if model is not None:
-                        if token in model:
-                            self.vocab[token] = index = index + 1
-                            embeddings_matrix.append(torch.tensor(model[token]))
-                        else:
-                            if self.unk_init_all:
-                                # Give every OOV it's own embedding
-                                self.vocab[token] = index = index + 1
-                                embeddings_matrix.append(torch.randn(model.vector_size))
-                            else:
-                                # Collapse all OOV's to the same token
-                                # id
-                                self.vocab[token] = self.vocab[self.unk]
-                            self.unk_numericals.add(self.vocab[token])
-                    else:
-                        self.vocab[token] = index = index + 1
-
-        if model is not None:
-            self.embedding_matrix = torch.stack(embeddings_matrix)
+        self.build_vocab(*data)
+        if self.model:
+            self.vocab, self.embedding_matrix = self.build_embedding_matrix(self.model)
 
     # TODO update when we add generics
     def process(self, example: str) -> torch.Tensor:  # type: ignore

@@ -139,7 +139,7 @@ class TextField(Field):
     def _build_vocab(self, *data: np.ndarray) -> None:
         """
         Build the vocabulary for this object based on the special
-        tokens and in the data provided.
+        tokens and the data provided.
 
         This method is safe to be called multiple times.
 
@@ -147,6 +147,7 @@ class TextField(Field):
         ----------
         *data: np.ndarray
             The data
+
         """
         examples: Iterable = (e for dataset in data for e in dataset if dataset is not None)
 

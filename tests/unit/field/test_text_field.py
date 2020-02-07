@@ -1,5 +1,7 @@
 from collections import OrderedDict as odict
-from unittest.mock import MagicMock
+from gensim.models import KeyedVectors
+
+import numpy as np
 
 import pytest
 import torch
@@ -161,18 +163,14 @@ def test_build_vocab_setup_all_embeddings():
         white
     """
 
-    model = MagicMock()
-    model.vocab = {
-        'purple': torch.rand(1),
-        'gold': torch.rand(1),
-        '<unk>': torch.rand(1),
-        'blue': torch.rand(1),
-        'green': torch.rand(1),
-        '<pad>': torch.rand(1),
-        'yellow': torch.rand(1),
-    }
-    model.__getitem__.side_effect = model.vocab.__getitem__
-    model.__contains__.side_effect = model.vocab.__contains__
+    model = KeyedVectors(10)
+    model.add('purple', np.random.rand(10))
+    model.add('gold', np.random.rand(10))
+    model.add('<unk>', np.random.rand(10))
+    model.add('blue', np.random.rand(10))
+    model.add('green', np.random.rand(10))
+    model.add('<pad>', np.random.rand(10))
+    model.add('yellow', np.random.rand(10))
 
     field = TextField(
         model=model,
@@ -193,8 +191,10 @@ def test_build_vocab_setup_all_embeddings():
     assert torch.equal(
         field.embedding_matrix,
         torch.stack([
-            model['<pad>'], model['<unk>'], model['blue'], model['green'],
-            model['yellow'], model['purple'], model['gold'],
+            torch.tensor(model['<pad>']), torch.tensor(model['<unk>']),
+            torch.tensor(model['blue']), torch.tensor(model['green']),
+            torch.tensor(model['yellow']), torch.tensor(model['purple']),
+            torch.tensor(model['gold'])
         ]),
     )
 

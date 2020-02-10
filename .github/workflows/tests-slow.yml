@@ -9,6 +9,7 @@ on:
  
 jobs:
   examples:
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
       matrix:

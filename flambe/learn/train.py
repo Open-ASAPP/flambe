@@ -1,6 +1,7 @@
 import math
-from typing import Dict, List, Optional, Any, Tuple, Iterator
+from typing import Dict, List, Optional, Any, Tuple, Iterator, Iterable, Union
 
+import numpy as np
 import torch
 from torch.optim.optimizer import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler, ReduceLROnPlateau
@@ -45,7 +46,10 @@ class Trainer(Component):
                  lower_is_better: bool = False,
                  max_grad_norm: Optional[float] = None,
                  max_grad_abs_val: Optional[float] = None,
-                 extra_validation_metrics: Optional[Dict[str, Metric]] = None) -> None:
+                 extra_validation_metrics: Optional[Iterable[Metric]] = None,
+                 extra_training_metrics: Optional[Iterable[Metric]] = None,
+                 extra_training_metrics_log_interval: Optional[int] = None) \
+            -> None:
         """Initialize an instance of Trainer
 
         Parameters
@@ -93,13 +97,23 @@ class Trainer(Component):
         max_grad_abs_val: float, optional
             Maximum absolute value of all gradient vector components
             after clipping.
-        extra_validation_metrics: Optional[Dict[str, Metric]]
+        extra_validation_metrics: Optional[Iterable[Metric]]
             A dict with extra metrics to show in each step
             but which don't guide the training procedures
             (i.e model selection through early stopping)
             The key of the metric will be used for displaying
-            the values in tensorboard.
-
+            the values in tensorboard. Only logged during eval
+        extra_training_metrics: Optional[Iterable[Metric]]
+            A dict with extra metrics to show in each step
+            but which don't guide the training procedures
+            (i.e model selection through early stopping)
+            The key of the metric will be used for displaying
+            the values in tensorboard. Only logged during train
+        extra_training_metrics_log_interval: Optional[int]
+            The interval during training to log the
+            extra_training_metrics.
+            Set to None to disable and only log at the end of an epoch
+            For eval, the interval is _always_ the entire epoch.
         """
         self.dataset = dataset
         self.train_sampler = train_sampler
@@ -113,7 +127,13 @@ class Trainer(Component):
         self.lower_is_better = lower_is_better
         self.max_grad_norm = max_grad_norm
         self.max_grad_abs_val = max_grad_abs_val
-        self.extra_validation_metrics = extra_validation_metrics or {}
+        self.validation_metrics = extra_validation_metrics if \
+            extra_validation_metrics is not None else []
+        self.training_metrics = extra_training_metrics if \
+            extra_training_metrics is not None else []
+        self.extra_training_metrics_log_interval = -1 \
+            if extra_training_metrics_log_interval is None \
+            else extra_training_metrics_log_interval
 
         # By default, no prefix applied to tb logs
         self.tb_log_prefix = None
@@ -144,7 +164,8 @@ class Trainer(Component):
         self.max_steps = max_steps
 
         self._step = 0
-        self._best_metric = None
+        self._best_metric: Union[float, None] = None
+        self._last_train_log_step = 0
         self._best_model: Dict[str, torch.Tensor] = dict()
         self.register_attrs('_step', '_best_metric', '_best_model')
 
@@ -172,6 +193,8 @@ class Trainer(Component):
 
     def _compute_loss(self, batch: Tuple[torch.Tensor, ...]) -> torch.Tensor:
         """Compute the loss given a single batch
+        DEPRECATED, only exists for legacy compatibility with custom
+        trainers
 
         Parameters
         ----------
@@ -179,15 +202,63 @@ class Trainer(Component):
             The batch to train on.
 
         """
+        print('Warning: flambe.learn.train.Trainer._compute_loss is deprecated. '
+              'Please use flambe.learn.train.Trainer._compute_batch in the future.')
+        batch = self._batch_to_device(batch)
         pred, target = self.model(*batch)
         loss = self.loss_fn(pred, target)
         return loss
 
+    def _compute_batch(self, batch: Tuple[torch.Tensor, ...],
+                       metrics: List[Tuple] = []) \
+            -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """ Computes a batch.
+
+        Does a model forward pass over a batch, and returns prediction,
+        target and loss.
+
+        Parameters
+        ----------
+        batch: Tuple[torch.Tensor, ...]
+            The batch to train on.
+
+        """
+        batch = self._batch_to_device(batch)
+        pred, target = self.model(*batch)
+        for metric, state in metrics:
+            metric.aggregate(state, pred, target)
+        loss = self.loss_fn(pred, target)
+        return pred, target, loss
+
+    @staticmethod
+    def _log_metrics(log_prefix: str,
+                     metrics_with_states: List[Tuple],
+                     global_step: int) -> None:
+        """Logs all provided metrics
+
+        Iterates through the provided list of metrics with states,
+        finalizes the metric, and logs it.
+
+        Parameters
+        ----------
+        log_prefix: str
+            A string, such as a tensorboard prefix
+        metrics_with_states: List[Tuple[Metric, Dict]]
+            a list of metric-state tuples
+        global_step: int
+            the global step for loggin
+        """
+        for metric, state in metrics_with_states:
+            log(f'{log_prefix}/{metric}', metric.finalize(state), global_step)
+
     def _train_step(self) -> None:
         """Run a training step over the training data."""
         self.model.train()
+        metrics_with_states: List[Tuple] = [(metric, {}) for metric in self.training_metrics]
+        self._last_train_log_step = 0
 
-        tb_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
+        log_prefix = f"{self.tb_log_prefix} " if self.tb_log_prefix else ""
+        log_prefix += 'Training'
 
         with torch.enable_grad():
             for i in range(self.iter_per_step):
@@ -204,8 +275,8 @@ class Trainer(Component):
                     batch = self._batch_to_device(batch)
 
                     # Compute loss
-                    loss = self._compute_loss(batch) / self.batches_per_iter
-                    accumulated_loss += loss.item()
+                    _, _, loss = self._compute_batch(batch, metrics_with_states)
+                    accumulated_loss += loss.item() / self.batches_per_iter
                     loss.backward()
 
                 # Log loss
@@ -217,10 +288,10 @@ class Trainer(Component):
                 if self.max_grad_abs_val:
                     clip_grad_value_(self.model.parameters(), self.max_grad_abs_val)
 
-                log(f'{tb_prefix}Training/Loss', accumulated_loss, global_step)
-                log(f'{tb_prefix}Training/Gradient_Norm', self.model.gradient_norm,
+                log(f'{log_prefix}/Loss', accumulated_loss, global_step)
+                log(f'{log_prefix}/Gradient_Norm', self.model.gradient_norm,
                     global_step)
-                log(f'{tb_prefix}Training/Parameter_Norm', self.model.parameter_norm,
+                log(f'{log_prefix}/Parameter_Norm', self.model.parameter_norm,
                     global_step)
 
                 # Optimize
@@ -229,14 +300,25 @@ class Trainer(Component):
                 # Update iter scheduler
                 if self.iter_scheduler is not None:
                     learning_rate = self.iter_scheduler.get_lr()[0]  # type: ignore
-                    log(f'{tb_prefix}Training/LR', learning_rate, global_step)
+                    log(f'{log_prefix}/LR', learning_rate, global_step)
                     self.iter_scheduler.step()  # type: ignore
 
-            # Zero the gradients when exiting a train step
+                # Zero the gradients when exiting a train step
                 self.optimizer.zero_grad()
+                # logging train metrics
+                if self.extra_training_metrics_log_interval > self._last_train_log_step:
+                    self._log_metrics(log_prefix, metrics_with_states, global_step)
+                    self._last_train_log_step = i
+            if self._last_train_log_step != i:
+                # log again at end of step, if not logged at the end of
+                # step before
+                self._log_metrics(log_prefix, metrics_with_states, global_step)
 
-    def _aggregate_preds(self, data_iterator: Iterator) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Aggregate the predicitons and targets for the dataset.
+    def _aggregate_preds(self, data_iterator: Iterator) \
+            -> Tuple[torch.Tensor, torch.Tensor, float]:
+        """ DEPRECATED
+        Aggregate the predicitons,
+        targets and mean loss for the dataset.
 
         Parameters
         ----------
@@ -245,33 +327,42 @@ class Trainer(Component):
 
         Returns
         -------
-        Tuple[torch.tensor, torch.tensor]
-            The predictions and targets.
+        Tuple[torch.tensor, torch.tensor, float]
+            The predictions, targets and mean loss.
+
+        DEPRECATED; only existed to aggregate for the metric functions.
+        The metric functions do this in-place now.
 
         """
-        preds, targets = [], []
+        preds, targets, loss = [], [], []
         for batch in data_iterator:
-            batch = self._batch_to_device(batch)
-            pred, target = self.model(*batch)
+            pred, target, batch_loss = self._compute_batch(batch)
+            loss.append(batch_loss.item())
             preds.append(pred.cpu())
             targets.append(target.cpu())
-
+        loss = sum(loss) / len(loss)
         preds = torch.cat(preds, dim=0)
         targets = torch.cat(targets, dim=0)
-        return preds, targets
+        return preds, targets, loss
 
     def _eval_step(self) -> None:
         """Run an evaluation step over the validation data."""
         self.model.eval()
+        metric_fn_state: Dict[Metric, Dict] = {}
+        metrics_with_states: List[Tuple] = \
+            [(metric, {}) for metric in self.validation_metrics]
 
         # Initialize a 1-epoch iteration through the validation set
         val_iterator = self.val_sampler.sample(self.dataset.val)
 
         with torch.no_grad():
-
-            preds, targets = self._aggregate_preds(val_iterator)
-            val_loss = self.loss_fn(preds, targets).item()
-            val_metric = self.metric_fn(preds, targets).item()
+            loss = []
+            for batch in val_iterator:
+                _, _, batch_loss = self._compute_batch(
+                    batch, [(self.metric_fn, metric_fn_state), *metrics_with_states])
+                loss.append(batch_loss.item())
+            val_loss = np.NaN if loss == [] else sum(loss) / len(loss)
+            val_metric = self.metric_fn.finalize(metric_fn_state)
 
         # Update best model
         sign = (-1)**(self.lower_is_better)
@@ -297,10 +388,11 @@ class Trainer(Component):
         # Log metrics
         log(f'{tb_prefix}Validation/Loss', val_loss, self._step)
         log(f'{tb_prefix}Validation/{self.metric_fn}', val_metric, self._step)
-        log(f'{tb_prefix}Best/{self.metric_fn}', self._best_metric, self._step)  # type: ignore
-        for metric_name, metric in self.extra_validation_metrics.items():
-            log(f'{tb_prefix}Validation/{metric_name}',
-                metric(preds, targets).item(), self._step)  # type: ignore
+        log(f'{tb_prefix}Best/{self.metric_fn}',
+            self._best_metric, self._step)  # type: ignore
+        for (metric, state) in metrics_with_states:
+            log(f'{tb_prefix}Validation/{metric}',
+                metric.finalize(state), self._step)  # type: ignore
 
     def run(self) -> bool:
         """Evaluate and then train until the next checkpoint

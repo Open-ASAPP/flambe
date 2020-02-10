@@ -21,7 +21,7 @@ class RNNEncoder(Module):
     state by pooling the encoder states either by taking the maximum,
     average, or by taking the last hidden state before padding.
 
-    Padding is delt with by using torch's PackedSequence.
+    Padding is dealt with by using torch's PackedSequence.
 
     Attributes
     ----------
@@ -83,6 +83,8 @@ class RNNEncoder(Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.enforce_sorted = enforce_sorted
+        self.output_size = 2 * hidden_size if bidirectional else hidden_size
+
         if rnn_type in ['lstm', 'gru']:
             if kwargs:
                 logger.warn(f"The following '{kwargs}' will be ignored " +
@@ -227,6 +229,7 @@ class PooledRNNEncoder(Module):
                               layer_norm=layer_norm,
                               highway_bias=highway_bias,
                               rescale=rescale)
+        self.output_size = 2 * hidden_size if bidirectional else hidden_size
 
     def forward(self,
                 data: Tensor,

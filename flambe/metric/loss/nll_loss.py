@@ -29,14 +29,20 @@ class MultiLabelNLLLoss(Metric):
             'none' | 'mean' | 'sum'.
             'none': no reduction will be applied,
             'mean': the output will be averaged
-            'sum': the output will be summed.
-
+            'sum': the output will be summed.\
         """
+        super().__init__()
         self.weight = weight
         self.ignore_index = ignore_index
         self.reduction = reduction
 
-    def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def __str__(self) -> str:
+        """Return the name of the Metric (for use in logging)."""
+        return 'MultiLabelNLLLoss' if self.weight is None \
+            else 'WeightedMultiLabelNLLLoss'
+
+    def compute(self, pred: torch.Tensor, target: torch.Tensor) \
+            -> torch.Tensor:
         """Computes the Negative log likelihood loss for multilabel.
 
         Parameters

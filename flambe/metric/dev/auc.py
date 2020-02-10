@@ -1,3 +1,5 @@
+from typing import Dict
+
 import torch
 import sklearn.metrics
 import numpy as np
@@ -14,9 +16,56 @@ class AUC(Metric):
         ----------
         max_fpr : float, optional
             Maximum false positive rate to compute the area under
-
         """
         self.max_fpr = max_fpr
+
+    def __str__(self) -> str:
+        """Return the name of the Metric (for use in logging)."""
+        return f'AUC@{self.max_fpr}'
+
+    @staticmethod
+    def aggregate(state: dict, *args, **kwargs) -> Dict:
+        """Aggregates by simply storing preds and targets
+
+        Parameters
+        ----------
+        state: dict
+            the metric state
+        args: the pred, target tuple
+
+        Returns
+        -------
+        dict
+            the state dict
+        """
+        pred, target = args
+        if not state:
+            state['pred'] = []
+            state['target'] = []
+        state['pred'].append(pred.cpu().detach())
+        state['target'].append(target.cpu().detach())
+        return state
+
+    def finalize(self, state: Dict) -> float:
+        """Finalizes the metric computation
+
+        Parameters
+        ----------
+        state: dict
+            the metric state
+
+        Returns
+        -------
+        float
+            The final score.
+        """
+        if not state:
+            # call on empty state
+            return np.NaN
+        pred = torch.cat(state['pred'], dim=0)
+        target = torch.cat(state['target'], dim=0)
+        state['accumulated_score'] = self.compute(pred, target)
+        return state['accumulated_score']
 
     def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """Compute AUC at the given max false positive rate.

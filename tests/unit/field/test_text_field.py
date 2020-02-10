@@ -1,3 +1,8 @@
+from collections import OrderedDict as odict
+from gensim.models import KeyedVectors
+
+import numpy as np
+
 import pytest
 import torch
 from flambe.field import TextField, BoWField
@@ -81,10 +86,11 @@ def test_char_tokenizer():
 
 def test_build_vocab():
     field = TextField(pad_token='<pad>', unk_token='<unk>')
+    field._build_vocab()
     assert field.vocab == {'<pad>': 0, '<unk>': 1}
 
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.setup(dummy)
+    field._build_vocab(dummy)
 
     vocab = {'<pad>': 0, '<unk>': 1, 'justo': 2, 'Praesent': 3,
              'luctus': 4, 'praesent': 5}
@@ -134,33 +140,114 @@ def test_build_vocab_empty():
     assert field.vocab == vocab
 
 
-def test_build_vocab_decorators():
-    field = TextField(pad_token=None, unk_token=None,
-                      sos_token='<sos>', eos_token='<eos>')
+def test_build_vocab_setup_all_embeddings():
+    """
+    This test shows that all fields in the embeddings will be included.
 
-    assert field.vocab == {'<sos>': 0, '<eos>': 1}
-    dummy = ["justo Praesent luctus", "luctus praesent"]
+    In embeddings and data:
+        blue
+        green
+        yellow
+    In embeddings only:
+        purple
+        gold
+    In data only:
+        white
+
+    Expected vocab:
+        blue
+        green
+        yellow
+        purple
+        gold
+        white
+    """
+
+    model = KeyedVectors(10)
+    model.add('purple', np.random.rand(10))
+    model.add('gold', np.random.rand(10))
+    model.add('<unk>', np.random.rand(10))
+    model.add('blue', np.random.rand(10))
+    model.add('green', np.random.rand(10))
+    model.add('<pad>', np.random.rand(10))
+    model.add('yellow', np.random.rand(10))
+
+    field = TextField(
+        model=model,
+        setup_all_embeddings=True,
+    )
+
+    dummy = ["blue green", "yellow", 'white']
+
     field.setup(dummy)
 
-    vocab = {'<sos>': 0, '<eos>': 1, 'justo': 2, 'Praesent': 3, 'luctus': 4, 'praesent': 5}
-    assert field.vocab == vocab
+    # assert vocab setup in expected order
+    assert field.vocab == odict([
+        ('<pad>', 0), ('<unk>', 1), ('blue', 2), ('green', 3),
+        ('yellow', 4), ('white', 1), ('purple', 5), ('gold', 6),
+    ])
 
+    # assert embedding matrix organized in expected order
+    assert torch.equal(
+        field.embedding_matrix,
+        torch.stack([
+            torch.tensor(model['<pad>']), torch.tensor(model['<unk>']),
+            torch.tensor(model['blue']), torch.tensor(model['green']),
+            torch.tensor(model['yellow']), torch.tensor(model['purple']),
+            torch.tensor(model['gold'])
+        ]),
+    )
+
+
+def test_build_vocab_decorators_specials():
     field = TextField(pad_token='<pad>', unk_token='<unk>',
                       sos_token='<sos>', eos_token='<eos>')
 
+    field._build_vocab()
+
     assert field.vocab == {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
     dummy = ["justo Praesent luctus", "luctus praesent"]
-    field.setup(dummy)
+    field._build_vocab(dummy)
 
     vocab = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3,
              'justo': 4, 'Praesent': 5, 'luctus': 6, 'praesent': 7}
     assert field.vocab == vocab
 
 
+def test_build_vocab_decorators_missing_specials():
+    field = TextField(pad_token=None, unk_token=None,
+                      sos_token='<sos>', eos_token='<eos>')
+    field._build_vocab()
+
+    assert field.vocab == {'<sos>': 0, '<eos>': 1}
+    dummy = ["justo Praesent luctus", "luctus praesent"]
+    field._build_vocab(dummy)
+
+    vocab = {'<sos>': 0, '<eos>': 1, 'justo': 2, 'Praesent': 3, 'luctus': 4, 'praesent': 5}
+    assert field.vocab == vocab
+
+
 def test_load_embeddings():
-    field = TextField(pad_token=None,
-                      unk_init_all=False,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.from_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
+    dummy = "a test !"
+    field.setup([dummy])
+
+    # Now we have embeddings to check against
+    true_embeddings = torch.tensor([[0.9, 0.1, 0.2, 0.3], [0.4, 0.5, 0.6, 0.7]])
+    assert len(field.embedding_matrix) == 3
+    assert torch.all(torch.eq(field.embedding_matrix[1:3], true_embeddings))
+
+
+def test_load_embeddings_legacy():
+    field = TextField(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
     dummy = "a test !"
     field.setup([dummy])
 
@@ -171,9 +258,11 @@ def test_load_embeddings():
 
 
 def test_load_embeddings_empty_voc():
-    field = TextField(pad_token=None,
-                      unk_init_all=True,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.from_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=True,
+    )
 
     dummy = "justo Praesent luctus justo praesent"
     field.setup([dummy])
@@ -181,9 +270,11 @@ def test_load_embeddings_empty_voc():
     # No embeddings in the data, so get zeros
     assert len(field.embedding_matrix) == 5
 
-    field = TextField(pad_token=None,
-                      unk_init_all=False,
-                      embeddings="tests/data/dummy_embeddings/test.txt")
+    field = TextField.from_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+    )
 
     dummy = "justo Praesent luctus justo praesent"
     field.setup([dummy])
@@ -191,8 +282,10 @@ def test_load_embeddings_empty_voc():
     # No embeddings in the data, so get zeros
     assert len(field.embedding_matrix) == 1
 
+
 def test_text_process():
     field = TextField()
+    field.setup()
 
     dummy = "justo Praesent luctus justo praesent"
     assert list(field.process(dummy)) == [1, 1, 1, 1, 1]
@@ -227,11 +320,12 @@ def test_bow_text_process_normalize_scale():
 
 def test_bow_text_process_scale():
     with pytest.raises(ValueError):
-        field = BoWField(min_freq=2, scale_factor=10)
+        _ = BoWField(min_freq=2, scale_factor=10)
 
 
 def test_text_process_lower():
     field = TextField(lower=True)
+    field.setup()
 
     dummy = "justo Praesent luctus justo praesent"
     assert list(field.process(dummy)) == [1, 1, 1, 1, 1]

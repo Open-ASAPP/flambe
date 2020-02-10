@@ -7,7 +7,7 @@ class BPC(Metric):
     """Bits per character. Computed as log_2(perplexity)"""
 
     def __init__(self):
-        """Initalizes the Metric."""
+        """Initializes the metric with CE loss."""
         self.entropy = torch.nn.CrossEntropyLoss()
 
     def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

@@ -64,7 +64,7 @@ class AUC(Metric):
             return np.NaN
         pred = torch.cat(state['pred'], dim=0)
         target = torch.cat(state['target'], dim=0)
-        state['accumulated_score'] = self.compute(pred, target)
+        state['accumulated_score'] = self.compute(pred, target).item()
         return state['accumulated_score']
 
     def compute(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

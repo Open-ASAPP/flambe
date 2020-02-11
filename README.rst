@@ -22,6 +22,10 @@
     :target: https://flambe.ai/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://badge.fury.io/py/flambe.svg
+    :target: https://badge.fury.io/py/flambe
+    :alt: PyPI version
+
 |
 
 Welcome to Flambé, a `PyTorch <https://pytorch.org/>`_-based library that allows users to:

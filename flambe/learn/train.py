@@ -127,7 +127,7 @@ class Trainer(Component):
         self.lower_is_better = lower_is_better
         self.max_grad_norm = max_grad_norm
         self.max_grad_abs_val = max_grad_abs_val
-        self.validation_metrics = extra_validation_metrics if \
+        self.extra_validation_metrics = extra_validation_metrics if \
             extra_validation_metrics is not None else []
         self.training_metrics = extra_training_metrics if \
             extra_training_metrics is not None else []
@@ -350,7 +350,7 @@ class Trainer(Component):
         self.model.eval()
         metric_fn_state: Dict[Metric, Dict] = {}
         metrics_with_states: List[Tuple] = \
-            [(metric, {}) for metric in self.validation_metrics]
+            [(metric, {}) for metric in self.extra_validation_metrics]
 
         # Initialize a 1-epoch iteration through the validation set
         val_iterator = self.val_sampler.sample(self.dataset.val)

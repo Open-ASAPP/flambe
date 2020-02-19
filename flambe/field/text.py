@@ -190,10 +190,6 @@ class TextField(Field):
 
         self.embedding_matrix: Optional[torch.Tensor] = None
 
-        self.unk_init_all = embeddings_info.unk_init_all
-        self.drop_unknown = embeddings_info.drop_unknown
-        self.setup_all_embeddings = embeddings_info.setup_all_embeddings
-
         self.max_seq_len = max_seq_len
         self.truncate_end = truncate_end
 
@@ -248,7 +244,7 @@ class TextField(Field):
                 if token not in self.vocab:
                     self.vocab[token] = index = index + 1
 
-    def _build_embeddings(self, model: KeyedVectors) -> Tuple[odict, torch.Tensor]:
+    def _build_embeddings(self, model: KeyedVectors, setup_all_embeddings: bool, unk_init_all: bool) -> Tuple[odict, torch.Tensor]:
         """
         Create the embeddings matrix and the new vocabulary in
         case this objects needs to use an embedding model.
@@ -273,7 +269,7 @@ class TextField(Field):
 
         tokens: Iterable[str] = self.vocab.keys()
 
-        if self.setup_all_embeddings:
+        if setup_all_embeddings:
             tokens = chain(tokens, model.vocab.keys())
 
         for token in tokens:
@@ -287,7 +283,7 @@ class TextField(Field):
                 else:
                     self.unk_numericals.add(self.vocab[token])
 
-                    if self.unk_init_all:
+                    if unk_init_all:
                         embedding_matrix.append(torch.randn(model.vector_size))
                         new_vocab[token] = new_index = new_index + 1
                     else:
@@ -311,7 +307,8 @@ class TextField(Field):
             model = get_embeddings(self.embeddings_info.embeddings,
                                    self.embeddings_info.embeddings_format,
                                    self.embeddings_info.embeddings_binary)
-            self.vocab, self.embedding_matrix = self._build_embeddings(model)
+            self.vocab, self.embedding_matrix = self._build_embeddings(model, self.embeddings_info.setup_all_embeddings,
+                                                                       self.embeddings_info.unk_init_all)
 
     # TODO update when we add generics
     def process(self, example: str) -> torch.Tensor:  # type: ignore
@@ -351,8 +348,8 @@ class TextField(Field):
 
             numerical = self.vocab[token]  # type: ignore
 
-            if self.drop_unknown and \
-                    self.embedding_matrix is not None and numerical in self.unk_numericals:
+            if self.embedding_matrix is not None and self.embeddings_info.drop_unknown and \
+                    numerical in self.unk_numericals:
                 # Don't add unknown tokens in case the flag is activated
                 continue
 

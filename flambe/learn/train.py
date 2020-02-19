@@ -173,6 +173,11 @@ class Trainer(Component):
 
         self._create_train_iterator()
 
+    @property
+    def validation_metrics(self):
+        """Adding property for backwards compatibility"""
+        return self.extra_validation_metrics
+
     def _create_train_iterator(self):
         self._train_iterator = self.train_sampler.sample(self.dataset.train, self.n_epochs)
 

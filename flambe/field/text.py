@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple, NamedTuple
 from collections import OrderedDict as odict
 from itertools import chain
 
@@ -65,6 +65,15 @@ def get_embeddings(
     return model
 
 
+class EmbeddingsInformation(NamedTuple):
+     embeddings: str
+     embeddings_format: str = 'glove'
+     embeddings_binary: bool = False
+     setup_all_embeddings: bool = False
+     unk_init_all: bool = False
+     drop_unknown: bool = False
+
+
 class TextField(Field):
     """Featurize raw text inputs
 
@@ -90,10 +99,10 @@ class TextField(Field):
                  unk_token: str = '<unk>',
                  sos_token: Optional[str] = None,
                  eos_token: Optional[str] = None,
+                 embeddings_info: Optional[EmbeddingsInformation] = None,
                  embeddings: Optional[str] = None,
                  embeddings_format: str = 'glove',
                  embeddings_binary: bool = False,
-                 model: Optional[KeyedVectors] = None,
                  unk_init_all: bool = False,
                  drop_unknown: bool = False,
                  max_seq_len: Optional[int] = None,
@@ -120,9 +129,8 @@ class TextField(Field):
         eos : Iterable[str], optional
             List of end of sentence tokens to add to the end of each
             sequence (defaults to an empty list)
-        model : KeyedVectors, optional
-            The embeddings model used for retrieving text embeddings,
-            by default None
+        embeddings_info : EmbeddingsInformation, optional
+            The embeddings information. By default None
         unk_init_all : bool, optional
             If True, every token not provided in the input embeddings is
             given a random embedding from a normal distribution.
@@ -151,8 +159,8 @@ class TextField(Field):
 
         """
         if embeddings:
-            if model:
-                raise ValueError("Cannot submit a model and use the embeddings parameters" +
+            if embeddings_info:
+                raise ValueError("Cannot submit embeddings information and use the embeddings parameters" +
                                  "simultaneously. Use the 'from_embeddings' factory instead.")
 
             warnings.warn("The embeddings-exclusive parameters " +
@@ -161,10 +169,14 @@ class TextField(Field):
                           "deprecated in a future release. " +
                           "Please migrate to use the 'from_embeddings' factory.")
 
-            model = get_embeddings(embeddings, embeddings_format, embeddings_binary)
-
-        if setup_all_embeddings and not model:
-            raise ValueError("'setup_all_embeddings' cannot be enabled without passing embeddings.")
+            embeddings_info = EmbeddingsInformation(
+                embeddings=embeddings,
+                embeddings_format=embeddings_format,
+                embeddings_binary=embeddings_binary,
+                setup_all_embeddings=setup_all_embeddings,
+                unk_init_all=unk_init_all,
+                drop_unknown=drop_unknown
+            )
 
         self.tokenizer = tokenizer or WordTokenizer()
         self.lower = lower
@@ -174,11 +186,14 @@ class TextField(Field):
         self.sos = sos_token
         self.eos = eos_token
 
-        self.model = model
+        self.embeddings_info = embeddings_info
+
         self.embedding_matrix: Optional[torch.Tensor] = None
-        self.unk_init_all = unk_init_all
-        self.drop_unknown = drop_unknown
-        self.setup_all_embeddings = setup_all_embeddings
+
+        self.unk_init_all = embeddings_info.unk_init_all
+        self.drop_unknown = embeddings_info.drop_unknown
+        self.setup_all_embeddings = embeddings_info.setup_all_embeddings
+
         self.max_seq_len = max_seq_len
         self.truncate_end = truncate_end
 
@@ -291,8 +306,12 @@ class TextField(Field):
 
         """
         self._build_vocab(*data)
-        if self.model:
-            self.vocab, self.embedding_matrix = self._build_embeddings(self.model)
+
+        if self.embeddings_info:
+            model = get_embeddings(self.embeddings_info.embeddings,
+                                   self.embeddings_info.embeddings_format,
+                                   self.embeddings_info.embeddings_binary)
+            self.vocab, self.embedding_matrix = self._build_embeddings(model)
 
     # TODO update when we add generics
     def process(self, example: str) -> torch.Tensor:  # type: ignore
@@ -333,7 +352,7 @@ class TextField(Field):
             numerical = self.vocab[token]  # type: ignore
 
             if self.drop_unknown and \
-                    self.model is not None and numerical in self.unk_numericals:
+                    self.embedding_matrix is not None and numerical in self.unk_numericals:
                 # Don't add unknown tokens in case the flag is activated
                 continue
 
@@ -394,15 +413,16 @@ class TextField(Field):
         TextField
             The constructed text field with the requested model.
         """
-        model = get_embeddings(
-            embeddings,
-            embeddings_format,
-            embeddings_binary,
-        )
-        return cls(
-            model=model,
+        embeddings_info = EmbeddingsInformation(
+            embeddings=embeddings,
+            embeddings_format=embeddings_format,
+            embeddings_binary=embeddings_binary,
             setup_all_embeddings=setup_all_embeddings,
             unk_init_all=unk_init_all,
-            drop_unknown=drop_unknown,
+            drop_unknown=drop_unknown
+        )
+
+        return cls(
+            embeddings_info=embeddings_info,
             **kwargs,
         )

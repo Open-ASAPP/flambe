@@ -66,12 +66,43 @@ def get_embeddings(
 
 
 class EmbeddingsInformation(NamedTuple):
-     embeddings: str
-     embeddings_format: str = 'glove'
-     embeddings_binary: bool = False
-     setup_all_embeddings: bool = False
-     unk_init_all: bool = False
-     drop_unknown: bool = False
+    """
+    Information about an embedding model.
+
+    Parameters
+    ----------
+    embeddings : str
+        Path to pretrained embeddings or the embedding name
+        in case format is gensim.
+    embeddings_format : str, optional
+        The format of the input embeddings, should be one of:
+        'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
+        be used to download embeddings hosted on gensim on the fly.
+        See https://github.com/RaRe-Technologies/gensim-data
+        for the list of available embedding aliases.
+    embeddings_binary : bool, optional
+        Whether the input embeddings are provided in binary format,
+        by default False
+    setup_all_embeddings: bool
+        Controls if all words from the optional provided
+        embeddings will be added to the vocabulary and to the
+        embedding matrix. Defaults to False.
+    unk_init_all : bool, optional
+        If True, every token not provided in the input embeddings is
+        given a random embedding from a normal distribution.
+        Otherwise, all of them map to the '<unk>' token.
+    drop_unknown: bool
+        Whether to drop tokens that don't have embeddings
+        associated. Defaults to True.
+        Important: this flag will only work when using embeddings.
+
+    """
+    embeddings: str
+    embeddings_format: str = 'gensim'
+    embeddings_binary: bool = False
+    setup_all_embeddings: bool = False
+    unk_init_all: bool = False
+    drop_unknown: bool = False
 
 
 class TextField(Field):
@@ -131,11 +162,28 @@ class TextField(Field):
             sequence (defaults to an empty list)
         embeddings_info : EmbeddingsInformation, optional
             The embeddings information. By default None
+        embeddings : str
+            WIlL BE DEPRECATED SOON. USE 'from_embeddings' FACTORY INSTEAD.
+            Path to pretrained embeddings or the embedding name
+            in case format is gensim.
+        embeddings_format : str, optional
+            WIlL BE DEPRECATED SOON. USE 'from_embeddings' FACTORY INSTEAD.
+            The format of the input embeddings, should be one of:
+            'glove', 'word2vec', 'fasttext' or 'gensim'. The latter can
+            be used to download embeddings hosted on gensim on the fly.
+            See https://github.com/RaRe-Technologies/gensim-data
+            for the list of available embedding aliases.
+        embeddings_binary : bool, optional
+            WIlL BE DEPRECATED SOON. USE 'from_embeddings' FACTORY INSTEAD.
+            Whether the input embeddings are provided in binary format,
+            by default False
         unk_init_all : bool, optional
+            WIlL BE DEPRECATED SOON. USE 'from_embeddings' FACTORY INSTEAD.
             If True, every token not provided in the input embeddings is
             given a random embedding from a normal distribution.
             Otherwise, all of them map to the '<unk>' token.
         drop_unknown: bool
+            WIlL BE DEPRECATED SOON. USE 'from_embeddings' FACTORY INSTEAD.
             Whether to drop tokens that don't have embeddings
             associated. Defaults to True.
             Important: this flag will only work when using embeddings.
@@ -153,6 +201,7 @@ class TextField(Field):
             truncate_end=false: output=1 2 3
             truncate_end=true: output=3 4 5
         setup_all_embeddings: bool
+            WIlL BE DEPRECATED SOON. USE 'from_embeddings' FACTORY INSTEAD.
             Controls if all words from the optional provided
             embeddings will be added to the vocabulary and to the
             embedding matrix. Defaults to False.

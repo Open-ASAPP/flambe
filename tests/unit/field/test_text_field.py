@@ -254,6 +254,7 @@ def test_load_embeddings_with_extra_tokens():
     assert '<a>' in field.vocab and '<b>' in field.vocab
     assert '<c>' not in field.vocab
     assert field.embedding_matrix[field.vocab['<a>']].size(-1) == 4
+    assert field.embedding_matrix[field.vocab['<b>']].size(-1) == 4
 
 
 def test_load_embeddings_legacy():
@@ -360,12 +361,12 @@ def recursive_tensor_to_list(data):
     if isinstance(data, list):
         return [recursive_tensor_to_list(d) for d in data]
     elif isinstance(data, dict):
-        return dict((k, recursive_tensor_to_list(v)) for k, v in data.items())
+        return {(k, recursive_tensor_to_list(v)) for k, v in data.items()}
     elif isinstance(data, torch.Tensor):
         return data.tolist()
 
 
-def test_load_embeddings_with_extra_tokens():
+def test_setup_with_extra_tokens():
     field = TextField.from_embeddings(
         embeddings="tests/data/dummy_embeddings/test.txt",
         pad_token=None,

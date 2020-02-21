@@ -299,8 +299,8 @@ class TextField(Field):
                     self.vocab[token] = index = index + 1
 
     def _build_embeddings(self, model: KeyedVectors,
-                          build_vocab_from_embeddings: bool,
-                          unk_init_all: bool) -> Tuple[odict, torch.Tensor]:
+                          setup_vocab_from_embeddings: bool,
+                          initialize_unknowns: bool) -> Tuple[odict, torch.Tensor]:
         """
         Create the embeddings matrix and the new vocabulary in
         case this objects needs to use an embedding model.
@@ -312,6 +312,14 @@ class TextField(Field):
         ----------
         model: KeyedVectors
             The embeddings
+        setup_vocab_from_embeddings: bool
+            Controls if all words from the optional provided
+            embeddings will be added to the vocabulary and to the
+            embedding matrix. Defaults to False.
+        initialize_unknowns
+            If True, every unknown token will be assigned
+            a random embedding from a normal distribution.
+            Otherwise, all of them map to the '<unk>' token.
 
         Returns
         -------
@@ -325,7 +333,7 @@ class TextField(Field):
 
         tokens: Iterable[str] = self.vocab.keys()
 
-        if build_vocab_from_embeddings:
+        if setup_vocab_from_embeddings:
             tokens = chain(tokens, model.vocab.keys())
 
         for token in tokens:
@@ -339,7 +347,7 @@ class TextField(Field):
                 else:
                     self.unk_numericals.add(self.vocab[token])
 
-                    if unk_init_all:
+                    if initialize_unknowns:
                         embedding_matrix.append(torch.randn(model.vector_size))
                         new_vocab[token] = new_index = new_index + 1
                     else:

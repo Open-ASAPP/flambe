@@ -242,6 +242,20 @@ def test_load_embeddings():
     assert torch.all(torch.eq(field.embedding_matrix[1:3], true_embeddings))
 
 
+def test_load_embeddings_with_extra_tokens():
+    field = TextField.from_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+        additional_vocab_tokens=['<a>', '<b>', '<c>']
+    )
+    dummy = "a test ! <a> <b> "
+    field.setup([dummy])
+    assert '<a>' in field.vocab and '<b>' in field.vocab
+    assert '<c>' not in field.vocab
+    assert field.embedding_matrix[field.vocab['<a>']].size(-1) == 4
+
+
 def test_load_embeddings_legacy():
     field = TextField(
         embeddings="tests/data/dummy_embeddings/test.txt",
@@ -340,3 +354,31 @@ def test_text_process_unk():
     dummy = "justo Praesent luctus justo praesent"
     with pytest.raises(Exception):
         field.process(dummy)
+
+
+def recursive_tensor_to_list(data):
+    if isinstance(data, list):
+        return [recursive_tensor_to_list(d) for d in data]
+    elif isinstance(data, dict):
+        return dict((k, recursive_tensor_to_list(v)) for k, v in data.items())
+    elif isinstance(data, torch.Tensor):
+        return data.tolist()
+
+
+def test_load_embeddings_with_extra_tokens():
+    field = TextField.from_embeddings(
+        embeddings="tests/data/dummy_embeddings/test.txt",
+        pad_token=None,
+        unk_init_all=False,
+        additional_vocab_tokens=['<a>', '<b>', '<c>']
+    )
+
+    dummy = "this is a test"
+    field.setup([dummy])
+    assert recursive_tensor_to_list(field.process(dummy)) == [1, 2, 3, 4]
+
+    dummy = "this is a test <a>"
+    assert recursive_tensor_to_list(field.process(dummy)) == [1, 2, 3, 4, 0]
+
+    field.setup([dummy])
+    assert recursive_tensor_to_list(field.process(dummy)) == [1, 2, 3, 4, 5]

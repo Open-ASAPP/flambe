@@ -358,6 +358,7 @@ class TextField(Field):
         setup_all_embeddings: bool = False,
         unk_init_all: bool = False,
         drop_unknown: bool = False,
+        additional_vocab_tokens: Optional[List[str]] = None,
         **kwargs,
     ):
         """
@@ -388,6 +389,10 @@ class TextField(Field):
             Whether to drop tokens that don't have embeddings
             associated. Defaults to True.
             Important: this flag will only work when using embeddings.
+        additional_vocab_tokens: Optional[List[str]]
+            A list of tokens that should be included in the embedding
+            matrix explicitly, even if they are not part of the loaded
+            model of pretrained embeddings.
 
         Returns
         -------
@@ -399,6 +404,12 @@ class TextField(Field):
             embeddings_format,
             embeddings_binary,
         )
+        # include additional provided tokens in the model
+        if additional_vocab_tokens:
+            # noinspection PyTypeChecker
+            model.add(additional_vocab_tokens,
+                      np.random.normal(size=(len(additional_vocab_tokens),
+                                             model.vector_size)).astype(model.vectors.dtype))
         return cls(
             model=model,
             setup_all_embeddings=setup_all_embeddings,

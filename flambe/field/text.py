@@ -219,8 +219,8 @@ class TextField(Field):
 
             warnings.warn("The embeddings-exclusive parameters " +
                           "('embeddings', 'embeddings_format', 'embeddings_binary', " +
-                          "'build_vocab_from_embeddings', 'drop_unknown', 'unk_init_all') will be " +
-                          "deprecated in a future release. " +
+                          "'build_vocab_from_embeddings', 'drop_unknown', 'unk_init_all') " +
+                          "will be deprecated in a future release. " +
                           "Please migrate to use the 'from_embeddings' factory.")
 
             embeddings_info = EmbeddingsInformation(

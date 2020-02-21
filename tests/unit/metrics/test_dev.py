@@ -78,7 +78,7 @@ def test_aggregation_auc():
     y_true = torch.randint(0, 2, [100])
     for yp, yt in zip(torch.split(y_pred, 10), torch.split(y_true, 10)):
         metric.aggregate(metric_state, yp, yt)
-    assert metric.finalize(metric_state) == sklearn.metrics.roc_auc_score(y_true, y_pred)
+    assert metric.finalize(metric_state) == approx(sklearn.metrics.roc_auc_score(y_true, y_pred), NUMERIC_PRECISION)
 
 
 def test_perplexity():

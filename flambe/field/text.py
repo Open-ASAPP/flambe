@@ -83,7 +83,7 @@ class EmbeddingsInformation(NamedTuple):
     embeddings_binary : bool, optional
         Whether the input embeddings are provided in binary format,
         by default False
-    setup_all_embeddings: bool
+    build_vocab_from_embeddings: bool
         Controls if all words from the optional provided
         embeddings will be added to the vocabulary and to the
         embedding matrix. Defaults to False.
@@ -100,7 +100,7 @@ class EmbeddingsInformation(NamedTuple):
     embeddings: str
     embeddings_format: str = 'gensim'
     embeddings_binary: bool = False
-    setup_all_embeddings: bool = False
+    build_vocab_from_embeddings: bool = False
     unk_init_all: bool = False
     drop_unknown: bool = False
 
@@ -138,7 +138,7 @@ class TextField(Field):
                  drop_unknown: bool = False,
                  max_seq_len: Optional[int] = None,
                  truncate_end: bool = False,
-                 setup_all_embeddings: bool = False) -> None:
+                 build_vocab_from_embeddings: bool = False) -> None:
         """Initialize the TextField.
 
         Parameters
@@ -203,7 +203,7 @@ class TextField(Field):
             example: max_seq_len=3, input_text=1 2 3 4 5
             truncate_end=false: output=1 2 3
             truncate_end=true: output=3 4 5
-        setup_all_embeddings: bool
+        build_vocab_from_embeddings: bool
             WIlL BE DEPRECATED SOON. USE 'from_embeddings'
             FACTORY INSTEAD.
             Controls if all words from the optional provided
@@ -219,7 +219,7 @@ class TextField(Field):
 
             warnings.warn("The embeddings-exclusive parameters " +
                           "('embeddings', 'embeddings_format', 'embeddings_binary', " +
-                          "'setup_all_embeddings', 'drop_unknown', 'unk_init_all') will be " +
+                          "'build_vocab_from_embeddings', 'drop_unknown', 'unk_init_all') will be " +
                           "deprecated in a future release. " +
                           "Please migrate to use the 'from_embeddings' factory.")
 
@@ -227,7 +227,7 @@ class TextField(Field):
                 embeddings=embeddings,
                 embeddings_format=embeddings_format,
                 embeddings_binary=embeddings_binary,
-                setup_all_embeddings=setup_all_embeddings,
+                build_vocab_from_embeddings=build_vocab_from_embeddings,
                 unk_init_all=unk_init_all,
                 drop_unknown=drop_unknown
             )
@@ -299,7 +299,7 @@ class TextField(Field):
                     self.vocab[token] = index = index + 1
 
     def _build_embeddings(self, model: KeyedVectors,
-                          setup_all_embeddings: bool,
+                          build_vocab_from_embeddings: bool,
                           unk_init_all: bool) -> Tuple[odict, torch.Tensor]:
         """
         Create the embeddings matrix and the new vocabulary in
@@ -325,7 +325,7 @@ class TextField(Field):
 
         tokens: Iterable[str] = self.vocab.keys()
 
-        if setup_all_embeddings:
+        if build_vocab_from_embeddings:
             tokens = chain(tokens, model.vocab.keys())
 
         for token in tokens:
@@ -365,7 +365,7 @@ class TextField(Field):
                                    self.embeddings_info.embeddings_binary)
             self.vocab, self.embedding_matrix = self._build_embeddings(
                 model,
-                self.embeddings_info.setup_all_embeddings,
+                self.embeddings_info.build_vocab_from_embeddings,
                 self.embeddings_info.unk_init_all)
 
     # TODO update when we add generics
@@ -429,7 +429,7 @@ class TextField(Field):
         embeddings: str,
         embeddings_format: str = 'glove',
         embeddings_binary: bool = False,
-        setup_all_embeddings: bool = False,
+        build_vocab_from_embeddings: bool = False,
         unk_init_all: bool = False,
         drop_unknown: bool = False,
         **kwargs,
@@ -450,7 +450,7 @@ class TextField(Field):
         embeddings_binary : bool, optional
             Whether the input embeddings are provided in binary format,
             by default False
-        setup_all_embeddings: bool
+        build_vocab_from_embeddings: bool
             Controls if all words from the optional provided
             embeddings will be added to the vocabulary and to the
             embedding matrix. Defaults to False.
@@ -472,7 +472,7 @@ class TextField(Field):
             embeddings=embeddings,
             embeddings_format=embeddings_format,
             embeddings_binary=embeddings_binary,
-            setup_all_embeddings=setup_all_embeddings,
+            build_vocab_from_embeddings=build_vocab_from_embeddings,
             unk_init_all=unk_init_all,
             drop_unknown=drop_unknown
         )

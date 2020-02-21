@@ -141,7 +141,7 @@ def test_build_vocab_empty():
     assert field.vocab == vocab
 
 
-def test_build_vocab_setup_all_embeddings():
+def test_build_vocab_build_vocab_from_embeddings():
     """
     This test shows that all fields in the embeddings will be included.
 
@@ -179,7 +179,7 @@ def test_build_vocab_setup_all_embeddings():
         field = TextField.from_embeddings(
             embeddings=tmpfile.name,
             embeddings_format='gensim',
-            setup_all_embeddings=True,
+            build_vocab_from_embeddings=True,
         )
 
         dummy = ["blue green", "yellow", 'white']

@@ -361,7 +361,7 @@ def recursive_tensor_to_list(data):
     if isinstance(data, list):
         return [recursive_tensor_to_list(d) for d in data]
     elif isinstance(data, dict):
-        return {(k, recursive_tensor_to_list(v)) for k, v in data.items()}
+        return {k: recursive_tensor_to_list(v) for k, v in data.items()}
     elif isinstance(data, torch.Tensor):
         return data.tolist()
 

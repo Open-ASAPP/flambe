@@ -368,7 +368,11 @@ class PickledDataLink(Registrable):
 
     def __call__(self, stash: Dict[str, Any]) -> Any:
         if self.obj_value is not None:
-            if self.obj_value != stash[self.obj_id]:
+            diff_obj_stash = self.obj_value != stash[self.obj_id]
+            is_tensor = isinstance(diff_obj_stash, torch.Tensor)
+
+            # == comparison between tensors returns a tensor, not bool
+            if (is_tensor and torch.any(diff_obj_stash)) or (not is_tensor and diff_obj_stash):
                 warn("PickledDataLink called second time with different stash")
             return self.obj_value
         self.obj_value = stash[self.obj_id]

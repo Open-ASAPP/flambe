@@ -138,7 +138,7 @@ class TextField(Field):
                  drop_unknown: bool = False,
                  max_seq_len: Optional[int] = None,
                  truncate_end: bool = False,
-                 build_vocab_from_embeddings: bool = False) -> None:
+                 setup_all_embeddings: bool = False) -> None:
         """Initialize the TextField.
 
         Parameters
@@ -203,7 +203,7 @@ class TextField(Field):
             example: max_seq_len=3, input_text=1 2 3 4 5
             truncate_end=false: output=1 2 3
             truncate_end=true: output=3 4 5
-        build_vocab_from_embeddings: bool
+        setup_all_embeddings: bool
             WIlL BE DEPRECATED SOON. USE 'from_embeddings'
             FACTORY INSTEAD.
             Controls if all words from the optional provided
@@ -219,7 +219,7 @@ class TextField(Field):
 
             warnings.warn("The embeddings-exclusive parameters " +
                           "('embeddings', 'embeddings_format', 'embeddings_binary', " +
-                          "'build_vocab_from_embeddings', 'drop_unknown', 'unk_init_all') " +
+                          "'setup_all_embeddings', 'drop_unknown', 'unk_init_all') " +
                           "will be deprecated in a future release. " +
                           "Please migrate to use the 'from_embeddings' factory.")
 
@@ -227,7 +227,7 @@ class TextField(Field):
                 embeddings=embeddings,
                 embeddings_format=embeddings_format,
                 embeddings_binary=embeddings_binary,
-                build_vocab_from_embeddings=build_vocab_from_embeddings,
+                build_vocab_from_embeddings=setup_all_embeddings,
                 unk_init_all=unk_init_all,
                 drop_unknown=drop_unknown
             )

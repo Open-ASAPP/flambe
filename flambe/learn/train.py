@@ -140,6 +140,10 @@ class Trainer(Component):
 
         # Select right device
         self.device = select_device(device)
+        
+        # Implemnet single machine multi-gpu training
+        if torch.cuda.device_count() > 1:
+            self.model = torch.nn.DataParallel(self.model)
 
         if (not getattr(self.train_sampler, 'drop_last', False) and batches_per_iter != 1):
             raise ValueError(f'batches_per_iter cannot be set to {batches_per_iter} '
@@ -212,6 +216,8 @@ class Trainer(Component):
         batch = self._batch_to_device(batch)
         pred, target = self.model(*batch)
         loss = self.loss_fn(pred, target)
+        if torch.cuda.device_count() > 1:
+            loss = loss.mean()
         return loss
 
     def _compute_batch(self, batch: Tuple[torch.Tensor, ...],

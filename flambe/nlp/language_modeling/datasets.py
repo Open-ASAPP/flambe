@@ -3,8 +3,6 @@ from zipfile import ZipFile
 from io import BytesIO
 import requests
 
-import nltk
-
 from flambe.dataset import TabularDataset
 from flambe.field import Field
 
@@ -15,7 +13,7 @@ class PTBDataset(TabularDataset):
     PTB_URL = "https://raw.githubusercontent.com/yoonkim/lstm-char-cnn/master/data/ptb/"
 
     def __init__(self,  # nosec
-                 split_by_sentence: bool = False,
+                 split_by_line: bool = False,
                  end_of_line_token: Optional[str] = '<eol>',  # nosec
                  cache: bool = False,
                  transform: Dict[str, Union[Field, Dict]] = None) -> None:
@@ -23,15 +21,15 @@ class PTBDataset(TabularDataset):
 
         Parameters
         ----------
-        split_by_sentence: bool, Optional
-            If true, tokenizes per sentence. Default ``False``.
+        split_by_line: bool, Optional
+            If true, tokenizes per line. Default ``False``.
         end_of_line_token: str, Optional
             Token added at the end of every line.
 
         see TabularDataset for other arguments.
 
         """
-        self.split_by_sentence = split_by_sentence
+        self.split_by_line = split_by_line
         self.eol = end_of_line_token
 
         train_path = self.PTB_URL + "train.txt"
@@ -61,13 +59,13 @@ class PTBDataset(TabularDataset):
         """
         decoded_text = file.decode('utf-8')
         # Replace end of line tokens
-        if self.eol is not None and not self.split_by_sentence:
+        if self.eol is not None and not self.split_by_line:
             decoded_text = decoded_text.replace('\n', self.eol)
 
         # Split by sentence or unroll
-        if self.split_by_sentence:
-            nltk.download('punkt', quiet=True)
-            text = [(sent.strip(),) for sent in nltk.tokenize.sent_tokenize(decoded_text)]
+        if self.split_by_line:
+            eol = self.eol or ''
+            text = [(sent.strip() + ' ' + eol,) for sent in decoded_text.split('\n')]
         else:
             text = [(decoded_text,)]
 
@@ -89,8 +87,8 @@ class Wiki103(TabularDataset):
 
         Parameters
         ----------
-        split_by_sentence: bool, Optional
-            If true, tokenizes per sentence. Default ``False``.
+        split_by_line: bool, Optional
+            If true, tokenizes per line. Default ``False``.
         end_of_line_token: str, Optional
             Token added at the end of every line.
 

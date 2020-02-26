@@ -1,6 +1,6 @@
 name: Run fast tests
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   unit:
@@ -37,7 +37,7 @@ jobs:
       with:
         name: artifacts
         path: test_results
-    
+
   end2end:
     runs-on: ubuntu-latest
     strategy:
@@ -67,19 +67,3 @@ jobs:
     - name: Run End2End Tests with tox
       run: |
         tox -- -v -m "end2end"
-
-  sonarCloudTrigger:
-    name: SonarCloud Trigger
-    needs: unit
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Download test results
-      uses: actions/download-artifact@v1
-      with:
-        name: artifacts
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@v1.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

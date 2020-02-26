@@ -6,9 +6,11 @@ from flambe.metric.dev.perplexity import Perplexity
 from flambe.metric.dev.bpc import BPC
 from flambe.metric.dev.auc import AUC
 from flambe.metric.dev.binary import BinaryPrecision, BinaryRecall, BinaryAccuracy, F1
+from flambe.metric.dev.recall import Recall
 
 
 __all__ = ['Metric',
            'Accuracy', 'AUC', 'Perplexity', 'BPC',
            'MultiLabelCrossEntropy', 'MultiLabelNLLLoss',
-           'BinaryPrecision', 'BinaryRecall', 'BinaryAccuracy', 'F1']
+           'BinaryPrecision', 'BinaryRecall', 'BinaryAccuracy', 'F1',
+           'Recall']

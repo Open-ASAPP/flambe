@@ -19,7 +19,7 @@ class PretrainedTransformerField(Field):
     def __init__(self,
                  alias: str,
                  cache_dir: Optional[str] = None,
-                 max_len_truncate: Optional[int] = None,
+                 max_len_truncate: int = 500,
                  add_special_tokens: bool = True, **kwargs) -> None:
         """Initialize a pretrained tokenizer.
 
@@ -29,8 +29,10 @@ class PretrainedTransformerField(Field):
             Alias of a pretrained tokenizer.
         cache_dir: str, optional
             A directory where to cache the downloaded vocabularies.
-        max_len_truncate: int, optional
-            If given, truncates the length of the tokenized sequence.
+        max_len_truncate: int, default = 500
+            Truncates the length of the tokenized sequence.
+            Because several pretrained models crash when this is
+            > 500, it defaults to 500
         add_special_tokens: bool, optional
             Add the special tokens to the inputs. Default ``True``.
 

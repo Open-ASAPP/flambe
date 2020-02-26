@@ -104,9 +104,7 @@ class PrototypicalTextClassifier(Module):
         if isinstance(query_encoding, tuple):  # RNN
             query_encoding = query_encoding[0]
 
-        if prototypes is not None:
-            prototypes = prototypes
-        elif support is not None and support_label is not None:
+        if prototypes is None and support is not None and support_label is not None:
             if self.detach_mean:
                 support = support.detach()
                 support_label = support_label.detach()  # type: ignore

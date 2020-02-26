@@ -20,6 +20,9 @@ def all_subclasses(class_: Type[Any]) -> Set[Type[Any]]:
         All subclasses of class_
 
     """
+    if not class_.__subclasses__():
+        return set()
+
     subsubclasses = set([s for c in class_.__subclasses__() for s in all_subclasses(c)])
     return set(class_.__subclasses__()).union(subsubclasses)
 

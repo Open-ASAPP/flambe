@@ -112,6 +112,8 @@ class Registrable(ABC):
         global _reg_prefix
         if _reg_prefix is not None:
             tag_namespace = _reg_prefix
+        elif tag_namespace is not None:
+            tag_namespace = tag_namespace
         elif (tag_namespace is None and top_level_module_name is not None) and \
                 (top_level_module_name != 'flambe' and top_level_module_name != 'tests'):
             tag_namespace = top_level_module_name

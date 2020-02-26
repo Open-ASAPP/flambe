@@ -267,7 +267,7 @@ function update() {
         updateTopAlerts(state);
         updateEnv(state);
         updateCountTable(state);
-        if (network === undefined && state != null){
+        if (network === undefined && state !== null){
             startVis(state);
             createModals(state);
         }

@@ -63,7 +63,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg" style="margin: 1em;">
       <div class="container">
-        <img src="{{url_for('static', filename='ASAPP_Flambe_Logo_RGB_FullColor.svg')}}" width="30%"/>
+        <img src="{{url_for('static', filename='ASAPP_Flambe_Logo_RGB_FullColor.svg')}}" alt="flambe" width="30%"/>
 
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -97,6 +97,7 @@
         <div id="top-alert" class="alert" role="alert">
         </div>
             <table id="state-table" class="table">
+              <caption>Experiment progress</caption>
               <thead>
                 <tr>
                   <th scope="col"><h5><span class="badge badge-info">Pending</span></h5></th>

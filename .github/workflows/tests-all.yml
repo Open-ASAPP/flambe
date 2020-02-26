@@ -1,14 +1,13 @@
-name: Run slow tests
+name: Run all tests
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  # run all the tests and sonar cloud on push to master
   push:
     branches:
       - master
 
 jobs:
-  examples:
+  all-tests:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
@@ -35,12 +34,21 @@ jobs:
         pip install --upgrade -r tests/requirements.txt
         pip install tox awscli
         python -m awscli configure set region us-east-1
-    - name: Text examples
+    - name: Run the unit tests
       run: |
-        python3 -m tox -- -v -m "examples"
+        tox -- -v -m "not end2end and not examples"
+    - name: Upload the unit test results
+      uses: actions/upload-artifact@v1
+      with:
+        name: artifacts
+        path: test_results
+    - name: Run end2end and example tests
+      run: |
+        tox -- -v -m "end2end and examples"
 
-  sonarCloudTrigger:
+  sonar-cloud:
     name: SonarCloud Trigger
+    needs: all-tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

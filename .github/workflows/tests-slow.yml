@@ -1,8 +1,6 @@
 name: Run slow tests
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
   push:
     branches:
       - master
@@ -38,18 +36,3 @@ jobs:
     - name: Text examples
       run: |
         python3 -m tox -- -v -m "examples"
-
-  sonarCloudTrigger:
-    name: SonarCloud Trigger
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Download test results
-      uses: actions/download-artifact@v1
-      with:
-        name: artifacts
-    - name: SonarCloud Scan
-      uses: SonarSource/sonarcloud-github-action@v1.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

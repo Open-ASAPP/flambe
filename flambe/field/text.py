@@ -82,7 +82,7 @@ class EmbeddingsInformation(NamedTuple):
         for the list of available embedding aliases.
     embeddings_binary : bool, optional
         Whether the input embeddings are provided in binary format,
-        by default False
+        by default False.
     build_vocab_from_embeddings: bool
         Controls if all words from the optional provided
         embeddings will be added to the vocabulary and to the
@@ -93,7 +93,7 @@ class EmbeddingsInformation(NamedTuple):
         Otherwise, all of them map to the '<unk>' token.
     drop_unknown: bool
         Whether to drop tokens that don't have embeddings
-        associated. Defaults to True.
+        associated. Defaults to False.
         Important: this flag will only work when using embeddings.
 
     """
@@ -190,7 +190,7 @@ class TextField(Field):
             WIlL BE DEPRECATED SOON. USE 'from_embeddings'
             FACTORY INSTEAD.
             Whether to drop tokens that don't have embeddings
-            associated. Defaults to True.
+            associated. Defaults to False.
             Important: this flag will only work when using embeddings.
         max_seq_len: int, optional
             The maximum length possibly output by the process func.
@@ -531,7 +531,7 @@ class TextField(Field):
             Otherwise, all of them map to the '<unk>' token.
         drop_unknown: bool
             Whether to drop tokens that don't have embeddings
-            associated. Defaults to True.
+            associated. Defaults to False.
             Important: this flag will only work when using embeddings.
         additional_special_tokens: Optional[List[str]]
             Additional tokens that have a reserved interpretation in

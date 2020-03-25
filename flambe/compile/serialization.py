@@ -9,6 +9,7 @@ import dill
 import torch
 
 from flambe.compile.registrable import yaml
+from flambe.compile.utils import write_deps
 from flambe.compile.downloader import download_manager
 from flambe.compile.extensions import import_modules, is_installed_module, install_extensions, \
     setup_default_modules
@@ -18,7 +19,7 @@ from flambe.compile.const import STATE_DICT_DELIMETER, FLAMBE_SOURCE_KEY, FLAMBE
     FLAMBE_CONFIG_KEY, FLAMBE_DIRECTORIES_KEY, VERSION_KEY, \
     HIGHEST_SERIALIZATION_PROTOCOL_VERSION, DEFAULT_SERIALIZATION_PROTOCOL_VERSION, \
     DEFAULT_PROTOCOL, STATE_FILE_NAME, VERSION_FILE_NAME, SOURCE_FILE_NAME, CONFIG_FILE_NAME, \
-    PROTOCOL_VERSION_FILE_NAME, FLAMBE_STASH_KEY, STASH_FILE_NAME
+    PROTOCOL_VERSION_FILE_NAME, FLAMBE_STASH_KEY, STASH_FILE_NAME, REQUIREMENTS_FILE_NAME
 
 
 logger = logging.getLogger(__name__)
@@ -293,6 +294,9 @@ def save_state_to_file(state: State,
                 f_proto.write(str(DEFAULT_SERIALIZATION_PROTOCOL_VERSION))
             with open(os.path.join(current_path, STASH_FILE_NAME), 'wb') as f_stash:
                 torch.save(node.object_stash, f_stash, pickle_module, pickle_protocol)
+
+        write_deps(os.path.join(path, REQUIREMENTS_FILE_NAME))
+
     if compress:
         compressed_file_name = original_path + '.tar.gz'
         with tarfile.open(name=compressed_file_name, mode='w:gz') as tar_gz:

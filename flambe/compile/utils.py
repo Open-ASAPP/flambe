@@ -1,6 +1,11 @@
-from typing import Type, Set, Any, Optional, List
+from typing import Type, Set, Any, Optional, List, Iterable
 
 from urllib.parse import urlparse
+
+try:
+    from pip._internal.operations import freeze
+except ImportError:  # pip < 10.0
+    from pip.operations import freeze
 
 
 def all_subclasses(class_: Type[Any]) -> Set[Type[Any]]:
@@ -90,3 +95,37 @@ def _is_url(resource: str) -> bool:
     """
     scheme = urlparse(resource).scheme
     return scheme != ''
+
+
+def get_frozen_deps() -> Iterable[str]:
+    """Get the frozen dependencies that are locally installed.
+
+    This should yield the same results as runnning 'pip freeze'.
+
+    Returns
+    -------
+    Iterable[str]
+        The frozen dependencies as strings.
+
+    """
+    return freeze.freeze()
+
+
+def write_deps(filename: str, deps: Optional[Iterable[str]] = None) -> None:
+    """Write dependencies on a filename, following Python's convention
+    for requiremnets.
+
+    Parameters
+    ----------
+    filename: str
+        The filename where the dependencies will be written.
+    deps: Optional[Iterable[str]]
+        Optional dependencies to write. If not provided,
+        this method will get the dependencies automatically.
+        This parameter should be used for testing purposes only.
+
+    """
+    deps = deps or get_frozen_deps()
+    with open(filename, "w+") as f:
+        f.writelines('\n'.join(deps))
+        f.flush()

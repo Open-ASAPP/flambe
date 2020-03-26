@@ -274,8 +274,12 @@ class Experiment(ClusterRunnable):
 
         # By default use all CPUs if no GPU is present
         devices = self.devices if self.devices else None
-        if devices is None and utils.local_has_gpu():
-            devices = {"cpu": 4, "gpu": 1}
+        if devices is None:
+            cluster_devices = ray.cluster_resources()
+            if 'GPU' in cluster_devices or 'gpu' in cluster_devices:
+                devices = {"cpu": 4, "gpu": 1}
+            else:
+                devices = {"cpu": 1}
 
         to_resume = None
         if isinstance(self.resume, str):
@@ -594,7 +598,6 @@ class Experiment(ClusterRunnable):
         )
 
         self.set_serializable_attr("resources", new_resources)
-        self.set_serializable_attr("devices", cluster.get_max_resources())
         self.set_serializable_attr(
             "save_path", f"{cluster.orchestrator.get_home_path()}/{self.name}")
 

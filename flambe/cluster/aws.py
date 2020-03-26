@@ -533,6 +533,9 @@ class AWSCluster(Cluster):
         tags = self._get_all_tags()
         tags['Role'] = role
 
+        # Assign a temporary name for the machine at creation time
+        tags['Name'] = self._get_creation_name(role)
+
         boto_tags: List[Dict[str, str]] = [{'Key': k, 'Value': v} for k, v in tags.items()]
 
         ebs = {
@@ -1022,3 +1025,27 @@ class AWSCluster(Cluster):
 
         """
         return self._get_ami(_type, '0.0.0')
+
+    def _get_creation_name(self, role: str) -> str:
+        """Get an initial name the instance will receive at
+        creation time.
+
+        This name can be updated later using the 'name_hosts' method or
+        the 'name_instance' method.
+
+        Parameters
+        ----------
+        role: str
+            'Orchestrator' or 'Factory'
+
+        Returns
+        -------
+        str
+            The initial instance name.
+
+        """
+        if role not in ['Orchestrator', 'Factory']:
+            raise ValueError(f"Incorrect instance role {role}")
+
+        return self.get_orchestrator_name() if role == 'Orchestrator' \
+            else self.get_factory_basename()

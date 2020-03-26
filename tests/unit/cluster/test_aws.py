@@ -137,9 +137,9 @@ def test_launch_orchestrator(subnet, sec_group, get_cluster):
     assert len(orch.security_groups) == 1
     assert orch.security_groups[0]['GroupId'] == sec_group.id
 
-    assert len(orch.tags) == 4
+    assert len(orch.tags) == 5
 
-    keys = ['creator', 'Purpose', 'Cluster-Name', 'Role']
+    keys = ['creator', 'Purpose', 'Cluster-Name', 'Role', 'Name']
     for x in orch.tags:
         k, v = x['Key'], x['Value']
 
@@ -153,6 +153,8 @@ def test_launch_orchestrator(subnet, sec_group, get_cluster):
             assert v == 'Orchestrator'
         if k == 'Purpose':
             assert v == 'flambe'
+        if k == 'Name':
+            assert v == cluster._get_creation_name('Orchestrator')
 
     assert len(orch.block_device_mappings) == 1
     assert orch.block_device_mappings[0]['DeviceName'] == '/dev/sda1'
@@ -264,9 +266,9 @@ def test_launch_factories(mock_wait, mock_contains_gpu, subnet, sec_group, get_c
         assert len(f.security_groups) == 1
         assert f.security_groups[0]['GroupId'] == sec_group.id
 
-        assert len(f.tags) == 4
+        assert len(f.tags) == 5
 
-        keys = ['creator', 'Purpose', 'Cluster-Name', 'Role']
+        keys = ['creator', 'Purpose', 'Cluster-Name', 'Role', 'Name']
         for x in f.tags:
             k, v = x['Key'], x['Value']
 
@@ -280,6 +282,8 @@ def test_launch_factories(mock_wait, mock_contains_gpu, subnet, sec_group, get_c
                 assert v == 'Factory'
             if k == 'Purpose':
                 assert v == 'flambe'
+            if k == 'Name':
+                assert v == cluster._get_creation_name('Factory')
 
         assert len(f.block_device_mappings) == 1
         assert f.block_device_mappings[0]['DeviceName'] == '/dev/sda1'
@@ -425,6 +429,21 @@ def test_instances_lifecycle(mock_wait, mock_contains_gpu, create_cluster):
         assert i.state['Name'] == 'running'
 
     cluster.terminate_instances()
-    instances = list(ec2.instances.all()) # Reload instances
+    instances = list(ec2.instances.all())  # Reload instances
     for i in instances:
         assert i.state['Name'] == 'terminated'
+
+
+def test_get_creation_name(get_cluster):
+    cluster = get_cluster(name='my-cluster')
+
+    assert cluster._get_creation_name('Orchestrator') == 'my-cluster_orchestrator'
+    assert cluster._get_creation_name('Factory') == 'my-cluster_factory'
+
+
+@pytest.mark.parametrize('invalid_role', ['', 'orch', 'orchestrator', 'factory', 'Factories'])
+def test_get_creation_name_invalid_role(invalid_role, get_cluster):
+    cluster = get_cluster(name='my-cluster')
+
+    with pytest.raises(ValueError):
+        cluster._get_creation_name(invalid_role)

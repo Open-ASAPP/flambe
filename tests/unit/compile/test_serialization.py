@@ -4,6 +4,7 @@ from collections import abc, OrderedDict
 import os
 
 import torch
+import tarfile
 import dill
 import mock
 from ruamel.yaml.compat import StringIO
@@ -651,6 +652,26 @@ class TestSerializationIntegration:
         check_mapping_equivalence(new_state, old_state)
         check_mapping_equivalence(old_state._metadata, new_state._metadata, exclude_config=False)
 
+    def test_module_save_requirements_file(self, basic_object):
+        old_obj = basic_object(from_config=True)
+        with tempfile.TemporaryDirectory() as root_path:
+            path = os.path.join(root_path, 'savefile.flambe')
+            save(old_obj, path, compress=False, pickle_only=False)
+
+            assert os.path.exists(os.path.join(path, 'requirements.txt'))
+
+    def test_module_save_requirements_file_compress(self, basic_object):
+        old_obj = basic_object(from_config=True)
+        with tempfile.TemporaryDirectory() as root_path:
+            path = os.path.join(root_path, 'savefile.flambe')
+            save(old_obj, path, compress=True, pickle_only=False)
+            path += '.tar.gz'
+
+            with tarfile.open(path, 'r:gz') as tar_gz:
+                tar_gz.extractall(path=root_path)
+
+            assert os.path.exists(os.path.join(root_path, 'savefile.flambe', 'requirements.txt'))
+
     @pytest.mark.parametrize("pickle_only", [True, False])
     @pytest.mark.parametrize("compress_save_file", [True, False])
     def test_module_save_and_load_roundtrip_pytorch(self,
@@ -670,7 +691,6 @@ class TestSerializationIntegration:
         new_state = new_obj.get_state()
         check_mapping_equivalence(new_state, old_state)
         check_mapping_equivalence(old_state._metadata, new_state._metadata, exclude_config=False)
-
 
     def test_module_save_and_load_roundtrip_pytorch_only_bridge(self):
         a = BasicStateful.compile(x=3)

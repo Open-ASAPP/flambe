@@ -652,25 +652,23 @@ class TestSerializationIntegration:
         check_mapping_equivalence(new_state, old_state)
         check_mapping_equivalence(old_state._metadata, new_state._metadata, exclude_config=False)
 
-    def test_module_save_requirements_file(self, basic_object):
+    @pytest.mark.parametrize("compress_save_file", [True, False])
+    @mock.patch('flambe.compile.utils.get_frozen_deps')
+    def test_module_save_requirements_file(self, mock_freeze, compress_save_file, basic_object):
+        mock_freeze.return_value = ['pkgA==1.2.3', 'pkgB']
         old_obj = basic_object(from_config=True)
         with tempfile.TemporaryDirectory() as root_path:
             path = os.path.join(root_path, 'savefile.flambe')
-            save(old_obj, path, compress=False, pickle_only=False)
+            save(old_obj, path, compress=compress_save_file, pickle_only=False)
+            if compress_save_file:
+                with tarfile.open(f"{path}.tar.gz", 'r:gz') as tar_gz:
+                    tar_gz.extractall(path=root_path)
 
+            mock_freeze.assert_called_once()
             assert os.path.exists(os.path.join(path, 'requirements.txt'))
 
-    def test_module_save_requirements_file_compress(self, basic_object):
-        old_obj = basic_object(from_config=True)
-        with tempfile.TemporaryDirectory() as root_path:
-            path = os.path.join(root_path, 'savefile.flambe')
-            save(old_obj, path, compress=True, pickle_only=False)
-            path += '.tar.gz'
-
-            with tarfile.open(path, 'r:gz') as tar_gz:
-                tar_gz.extractall(path=root_path)
-
-            assert os.path.exists(os.path.join(root_path, 'savefile.flambe', 'requirements.txt'))
+            with open(os.path.join(path, 'requirements.txt'), 'r') as f:
+                assert f.read() == 'pkgA==1.2.3\npkgB'
 
     @pytest.mark.parametrize("pickle_only", [True, False])
     @pytest.mark.parametrize("compress_save_file", [True, False])

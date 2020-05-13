@@ -587,7 +587,7 @@ class AWSCluster(Cluster):
         for idx, ins in enumerate(boto_instances):
             ins.wait_until_running()
 
-        logger.debug(f"Created instances running")
+        logger.debug("Created instances running")
 
         ret = []
         for idx, ins in enumerate(boto_instances):
@@ -833,7 +833,7 @@ class AWSCluster(Cluster):
                     self._create_cloudwatch_event(f_id, mins=mins, cpu_thresh=0.5)
                     logger.info(cl.YE(f"{f.host} timeout of {mins} mins set"))
         else:
-            logger.info(cl.YE(f"Factories have no timeout"))
+            logger.info(cl.YE("Factories have no timeout"))
 
         orch_host = self.orchestrator.host
         orch_id = self._get_instance_id_by_host(orch_host)

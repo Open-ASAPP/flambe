@@ -168,7 +168,7 @@ class Builder(Runnable):
                 )
             except subprocess.CalledProcessError as exc:
                 logger.debug(exc.output)
-                raise ValueError(f"Error uploading artifacts to s3. " +
+                raise ValueError("Error uploading artifacts to s3. " +
                                  "Check logs for more information")
             else:
                 logger.info(cl.BL(f"Done uploading to {self.destination}"))

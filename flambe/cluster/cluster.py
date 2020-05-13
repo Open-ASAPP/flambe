@@ -752,7 +752,7 @@ class Cluster(Runnable):
                     logger.debug(f"Key in {ins.host} differs from others")
                     return False  # Keys mismatch
 
-        logger.debug(f"All hosts contain same key pair")
+        logger.debug("All hosts contain same key pair")
         return True
 
     def distribute_keys(self) -> None:

@@ -481,7 +481,7 @@ class Instance(object):
             If command fails
 
         """
-        cmd = f'''
+        cmd = '''
         docker stop $(docker ps -a -q);
         docker rm $(docker ps -a -q);
         '''
@@ -905,7 +905,7 @@ class CPUFactoryInstance(Instance):
         """Return the number of CPUs this host contains.
 
         """
-        cmd = self._run_cmd(f"python3 -c 'import multiprocessing; " +
+        cmd = self._run_cmd("python3 -c 'import multiprocessing; " +
                             "print(multiprocessing.cpu_count())'")
 
         if cmd.success:
@@ -927,7 +927,7 @@ class CPUFactoryInstance(Instance):
             If command to get the number of GPUs fails.
 
         """
-        cmd = self._run_cmd(f"python3 -c 'import torch; print(torch.cuda.device_count())'")
+        cmd = self._run_cmd("python3 -c 'import torch; print(torch.cuda.device_count())'")
 
         if cmd.success:
             return int(cmd.msg)
@@ -1179,7 +1179,7 @@ class OrchestratorInstance(Instance):
         """
         force_params = "--force" if force else ""
         cmd = (
-            f"tmux new-session -d -s 'flambe' " +
+            "tmux new-session -d -s 'flambe' " +
             f"'bash -lc \"flambe {config_file} --secrets {secrets_file} " +
             f"{force_params} &> output.log\"'"
         )

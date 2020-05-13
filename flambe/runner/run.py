@@ -39,7 +39,7 @@ def main(args: argparse.Namespace) -> None:
         print(cl.BL(f"VERSION: {flambe.__version__}\n"))
 
     if args.debug:
-        print(cl.YE(f"Debug mode activated\n"))
+        print(cl.YE("Debug mode activated\n"))
         if args.cluster is not None:
             raise ValueError('Will not run on cluster in debug mode. ' +
                              'Please disable debug mode or run locally.')

@@ -77,7 +77,7 @@ def download_s3_file(url: str, destination: str) -> None:
         s3 = boto3.client('s3')
         s3.download_file(parsed_url.netloc, parsed_url.path[1:], destination)
     except botocore.client.ClientError:
-        raise ValueError(f"Error downlaoding artifact from s3.")
+        raise ValueError("Error downlaoding artifact from s3.")
 
 
 def http_exists(url: str) -> bool:
@@ -138,7 +138,7 @@ def download_s3_folder(url: str, destination: str) -> None:
         )
     except subprocess.CalledProcessError as exc:
         logger.debug(exc.output)
-        raise ValueError(f"Error downlaoding artifacts from s3. " +
+        raise ValueError("Error downlaoding artifacts from s3. " +
                          "Check logs for more information")
 
 

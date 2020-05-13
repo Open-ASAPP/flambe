@@ -199,7 +199,7 @@ class Experiment(ClusterRunnable):
         if not self.resume and not force and os.path.exists(self.full_save_path) \
                 and list(get_files(self.full_save_path)):
             raise error.ParsingRunnableError(
-                f"Results from an experiment with the same name were located in the save path " +
+                "Results from an experiment with the same name were located in the save path " +
                 f"{self.full_save_path}. To overide this results, please use '--force' " +
                 "To use these results and resume the experiment, pick 'resume: True' " +
                 "If not, just pick another save_path/name."
@@ -227,7 +227,7 @@ class Experiment(ClusterRunnable):
 
         if any(map(lambda x: isinstance(x, ClusterResource), self.resources.values())):
             raise ValueError(
-                f"Local experiments doesn't support resources with '!cluster' tags. " +
+                "Local experiments doesn't support resources with '!cluster' tags. " +
                 "The '!cluster' tag is used for those resources that need to be handled " +
                 "in the cluster when running remote experiments.")
 
@@ -264,7 +264,7 @@ class Experiment(ClusterRunnable):
             ray.init(redis_address=f"{self.env.orchestrator_ip}:{const.RAY_REDIS_PORT}", **kwargs)
         else:
             ray.init(**kwargs)
-            logger.debug(f"Ray cluster up")
+            logger.debug("Ray cluster up")
 
         # Initialize map from block to list of checkpoints
         # This is used whe resolving links over other computable blocks
@@ -589,7 +589,7 @@ class Experiment(ClusterRunnable):
         cluster.orchestrator.launch_report_site(
             f"{output_dir_remote}/state.pkl",
             port=const.REPORT_SITE_PORT,
-            output_log=f"output.log",
+            output_log="output.log",
             output_dir=output_dir_remote,
             tensorboard_port=const.TENSORBOARD_PORT
         )

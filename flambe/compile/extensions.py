@@ -222,9 +222,9 @@ def install_extensions(extensions: Dict[str, str],
 
             output = output.decode("utf-8")
 
-            for l in output.splitlines():
-                logger.debug(l)
-                r = re.search(r'Successfully uninstalled (?P<pkg_name>\D*)-(?P<version>.*)', l)
+            for line in output.splitlines():
+                logger.debug(line)
+                r = re.search(r'Successfully uninstalled (?P<pkg_name>\D*)-(?P<version>.*)', line)
                 if r and 'pkg_name' in r.groupdict():
                     logger.info(cl.RE(f"WARNING: While installing {ext}, " +
                                       f"existing {r.groupdict()['pkg_name']}-" +

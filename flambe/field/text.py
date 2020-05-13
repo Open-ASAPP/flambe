@@ -386,6 +386,11 @@ class TextField(Field):
 
         tokens: Iterable[str] = self.vocab.keys()
 
+        # Compute statistics about word embedding distribution
+        # This is used for sampling new random word embeddings
+        vectors = np.array([model[key] for key in model.vocab.keys()])
+        mean, std = np.mean(vectors, axis=0), np.std(vectors, axis=0)
+
         if setup_vocab_from_embeddings:
             tokens = chain(tokens, model.vocab.keys())
 
@@ -395,13 +400,15 @@ class TextField(Field):
                     embedding_matrix.append(torch.tensor(model[token]))
                     new_vocab[token] = new_index = new_index + 1
                 elif token in self.specials:
-                    embedding_matrix.append(torch.randn(model.vector_size))
+                    rand_emb = torch.tensor(np.random.normal(mean, std), dtype=torch.float32)
+                    embedding_matrix.append(rand_emb)
                     new_vocab[token] = new_index = new_index + 1
                 else:
                     self.unk_numericals.add(self.vocab[token])
 
                     if initialize_unknowns:
-                        embedding_matrix.append(torch.randn(model.vector_size))
+                        rand_emb = torch.tensor(np.random.normal(mean, std), dtype=torch.float32)
+                        embedding_matrix.append(rand_emb)
                         new_vocab[token] = new_index = new_index + 1
                     else:
                         # Collapse all OOV's to the same <unk> token id

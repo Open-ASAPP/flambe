@@ -216,8 +216,8 @@ class StructuredSelfAttentivePooling(Module):
         dimensions = [input_size, *attention_units, attention_heads]
         layers = []
         # iterating over hidden layers
-        for l in range(len(dimensions) - 2):
-            layers.append(nn.Linear(dimensions[l], dimensions[l + 1], bias=is_biased))
+        for layer in range(len(dimensions) - 2):
+            layers.append(nn.Linear(dimensions[layer], dimensions[layer + 1], bias=is_biased))
             layers.append(nn.Tanh() if hidden_activation is None else hidden_activation)
         # adding output layer
         layers.append(nn.Linear(dimensions[-2], dimensions[-1], bias=False))

@@ -100,8 +100,8 @@ def _batch_from_nested_col(col: Tuple, pad: int) -> torch.Tensor:
 
     # Compute the max length for each level
     lvl_to_lens: Dict[int, List] = defaultdict(list)
-    for l in lens:
-        for lvl, lns in l.items():
+    for length in lens:
+        for lvl, lns in length.items():
             lvl_to_lens[lvl].extend(lns)
     max_lens = odict([(lvl, max(lvl_to_lens[lvl])) for lvl in sorted(lvl_to_lens.keys())])
 

@@ -73,7 +73,7 @@ class BoWField(Field):
         self.full_vocab: Dict[str, int] = {}
 
         if scale_factor and not normalize:
-            raise ValueError(f"Cannot specify scale_factor without normalizing")
+            raise ValueError("Cannot specify scale_factor without normalizing")
 
         self.register_attrs('vocab', 'full_vocab')
 

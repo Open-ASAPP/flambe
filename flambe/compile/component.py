@@ -703,7 +703,7 @@ class Link(Registrable):
 
     def convert(self) -> Callable[..., Any]:
         if self.local:
-            return ray.tune.function(lambda spec: eval(f'spec'))  # TODO what do here
+            return ray.tune.function(lambda spec: eval('spec'))  # TODO what do here
         return ray.tune.function(lambda spec: eval(f'spec.config.params.{self.root_schema}'))
 
 
@@ -1412,7 +1412,7 @@ class Component(Registrable):
         for kw in newkeywords:
             if isinstance(newkeywords[kw], YAML_TYPES):
                 msg = f"'{cls}' property '{kw}' is still yaml type {type(newkeywords[kw])}\n"
-                msg += f"This could be because of a typo or the class is not registered properly"
+                msg += "This could be because of a typo or the class is not registered properly"
                 warn(msg)
         # Find intended constructor in case using some factory
         factory_method: Callable[..., Any] = cls
